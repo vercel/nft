@@ -1,0 +1,3 @@
+[
+  "amd-disable/input.js"
+]

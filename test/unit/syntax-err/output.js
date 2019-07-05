@@ -1,0 +1,3 @@
+[
+  "syntax-err/input.js"
+]

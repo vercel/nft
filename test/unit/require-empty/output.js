@@ -1,0 +1,3 @@
+[
+  "require-empty/input.js"
+]

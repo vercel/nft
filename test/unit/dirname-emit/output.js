@@ -1,0 +1,3 @@
+[
+  "dirname-emit/input.js"
+]
