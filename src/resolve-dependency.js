@@ -15,7 +15,7 @@ module.exports = function resolveDependency (specifier, parent, job) {
 };
 
 function resolvePath (path, parent, job) {
-  return resolveFile(path, job) || resolveDir(path, parent, job) || notFound(path);
+  return resolveFile(path, job) || resolveDir(path, parent, job) || notFound(path, parent);
 }
 
 function resolveFile (path, job) {
@@ -45,8 +45,8 @@ function resolveDir (path, parent, job) {
   return resolveFile(resolve(path, 'index'), job);
 }
 
-function notFound (specifier) {
-  const e = new Error("Cannot find module '" + specifier + "'");
+function notFound (specifier, parent) {
+  const e = new Error("Cannot find module '" + specifier + "' loaded from " + parent);
   e.code = 'MODULE_NOT_FOUND';
   throw e;
 }
@@ -54,15 +54,16 @@ function notFound (specifier) {
 const nodeBuiltins = new Set([...require("repl")._builtinLibs, "constants", "module", "timers", "console", "_stream_writable", "_stream_readable", "_stream_duplex"]);
 
 function resolvePackage (name, parent, job) {
+  let packageParent = parent;
   if (nodeBuiltins.has(name)) return 'node:' + name;
   let separatorIndex;
-  const rootSeparatorIndex = parent.indexOf('/');
-  while ((separatorIndex = parent.lastIndexOf('/')) > rootSeparatorIndex) {
-    parent = parent.substr(0, separatorIndex);
-    const nodeModulesDir = parent + '/node_modules';
+  const rootSeparatorIndex = packageParent.indexOf('/');
+  while ((separatorIndex = packageParent.lastIndexOf('/')) > rootSeparatorIndex) {
+    packageParent = packageParent.substr(0, separatorIndex);
+    const nodeModulesDir = packageParent + '/node_modules';
     if (!job.isDir(nodeModulesDir)) continue;
     const resolved = resolveFile(nodeModulesDir + '/' + name, job) || resolveDir(nodeModulesDir + '/' + name, parent, job);
     if (resolved) return resolved;
   }
-  notFound(name);
+  notFound(name, parent);
 }

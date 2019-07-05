@@ -16,12 +16,13 @@ switch (os.platform()) {
 
 // helper for emitting the associated shared libraries when a binary is emitted
 module.exports = async function (path, job) {
+  // console.log('Emitting shared libs for ' + path);
   const pkgPath = getPackageBase(path);
   if (!pkgPath)
     return;
 
   const files = await new Promise((resolve, reject) =>
-    glob(pkgPath + sharedlibGlob, { ignore: '**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
+    glob(pkgPath + sharedlibGlob, { ignore: pkgPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
   );
   files.forEach(file => job.emitFile(file, 'sharedlib'));
 };

@@ -143,7 +143,7 @@ class Job {
     const { deps, assets } = await analyze(path, source, this.ignoreFn, this.base);
     await Promise.all([
       ...[...assets].map(async asset => {
-        if (asset.endsWith('.js') || asset.endsWith('.mjs'))
+        if (asset.endsWith('.js') || asset.endsWith('.mjs') || asset.endsWith('.node'))
           await this.emitDependency(asset, path);
         else
           this.emitFile(asset, 'asset', path);
@@ -153,7 +153,6 @@ class Job {
           var resolved = await resolveDependency(dep, path, this);
           // ignore builtins
           if (resolved.startsWith('node:')) return;
-          // console.log('-> ' + resolved);
         }
         catch (e) {
           this.warnings.add(e);

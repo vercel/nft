@@ -166,7 +166,7 @@ module.exports = async function (id, code, ignoreFn, ignoreBase, log) {
       if (log)
         console.log('Globbing ' + assetDirPath + wildcardPattern);
       const files = (await new Promise((resolve, reject) => 
-        glob(assetDirPath + wildcardPattern, { mark: true, ignore: '**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
+        glob(assetDirPath + wildcardPattern, { mark: true, ignore: assetDirPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
       ));
       files
       .filter(name => 
@@ -309,7 +309,7 @@ module.exports = async function (id, code, ignoreFn, ignoreBase, log) {
       if (log)
         console.log('Globbing ' + assetDirPath + wildcardPattern);
       const files = (await new Promise((resolve, reject) => 
-        glob(wildcardDirPath + wildcardPattern, { mark: true, ignore: '**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
+        glob(wildcardDirPath + wildcardPattern, { mark: true, ignore: wildcardDirPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
       ));
       files
       .filter(name =>
