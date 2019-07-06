@@ -10,7 +10,7 @@ const glob = require('glob');
 const getPackageBase = require('./utils/get-package-base');
 const { pregyp, nbind } = require('./utils/binary-locators');
 const handleSpecialCases = require('./utils/special-cases');
-const resolve = require('resolve');
+const resolve = require('./resolve-dependency.js');
 const stage3 = require('acorn-stage3');
 acorn = acorn.Parser.extend(stage3);
 const os = require('os');
@@ -140,14 +140,14 @@ function isAbsolutePathStr (str) {
 
 const BOUND_REQUIRE = Symbol();
 
-module.exports = async function (id, code, ignoreFn, ignoreBase, log) {
+module.exports = async function (id, code, job) {
   const assets = new Set();
   const deps = new Set();
 
   const dir = path.dirname(id);
   // if (typeof options.production === 'boolean' && staticProcess.env.NODE_ENV === UNKNOWN)
   //  staticProcess.env.NODE_ENV = options.production ? 'production' : 'dev';
-  cwd = ignoreBase || process.cwd();
+  cwd = job.base || process.cwd();
   const pkgBase = getPackageBase(id);
 
   const emitAssetDirectory = (wildcardPath) => {
@@ -159,11 +159,11 @@ module.exports = async function (id, code, ignoreFn, ignoreBase, log) {
       return patternPath[index - 1] === path.sep ? '**/*' : '*';
     }) || '/**/*';
 
-    if (ignoreFn(ignoreBase ? path.relative(ignoreBase, assetDirPath + wildcardPattern) : assetDirPath + wildcardPattern, id))
+    if (job.ignoreFn(job.base ? path.relative(job.base, assetDirPath + wildcardPattern) : assetDirPath + wildcardPattern, id))
       return;
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
-      if (log)
+      if (job.log)
         console.log('Globbing ' + assetDirPath + wildcardPattern);
       const files = (await new Promise((resolve, reject) => 
         glob(assetDirPath + wildcardPattern, { mark: true, ignore: assetDirPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
@@ -221,7 +221,7 @@ module.exports = async function (id, code, ignoreFn, ignoreBase, log) {
           return m.default;
         },
         resolve (specifier) {
-          return resolve.sync(specifier, { basedir: dir, extensions });
+          return resolve(specifier, id, job);
         }
       }
     };
@@ -302,11 +302,11 @@ module.exports = async function (id, code, ignoreFn, ignoreBase, log) {
       return patternPath[index - 1] === path.sep ? '**/*' : '*';
     }) || '/**/*';
 
-    if (ignoreFn(ignoreBase ? path.relative(ignoreBase, wildcardDirPath + wildcardPattern) : wildcardDirPath + wildcardPattern, id))
+    if (job.ignoreFn(job.base ? path.relative(job.base, wildcardDirPath + wildcardPattern) : wildcardDirPath + wildcardPattern, id))
       return;
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
-      if (log)
+      if (job.log)
         console.log('Globbing ' + assetDirPath + wildcardPattern);
       const files = (await new Promise((resolve, reject) => 
         glob(wildcardDirPath + wildcardPattern, { mark: true, ignore: wildcardDirPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
@@ -352,7 +352,7 @@ module.exports = async function (id, code, ignoreFn, ignoreBase, log) {
 
   handleWrappers(ast);
   let scope = attachScopes(ast, 'scope');
-  ({ ast = ast, scope = scope } = handleSpecialCases({ id, ast, scope, emitAsset: path => assets.add(path), emitAssetDirectory }) || {});
+  ({ ast = ast, scope = scope } = handleSpecialCases({ id, ast, scope, emitAsset: path => assets.add(path), emitAssetDirectory, job }) || {});
 
   walk(ast, {
     enter (node, parent) {
@@ -703,7 +703,7 @@ module.exports = async function (id, code, ignoreFn, ignoreBase, log) {
     if (pkgBase) {
       const nodeModulesBase = id.substr(0, id.indexOf(path.sep + 'node_modules')) + path.sep + 'node_modules' + path.sep;
       if (!assetPath.startsWith(nodeModulesBase)) {
-        if (log) console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
+        if (job.log) console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
         return false;
       }
     }

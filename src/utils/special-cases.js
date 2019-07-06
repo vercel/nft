@@ -1,8 +1,34 @@
 const path = require('path');
-const resolve = require('resolve');
+const resolve = require('../resolve-dependency');
 
-module.exports = function ({ id, ast, emitAsset, emitAssetDirectory }) {
-  if (id.endsWith('google-gax/build/src/grpc.js') || global._unit && id.includes('google-gax')) {
+module.exports = function ({ id, ast, emitAsset, emitAssetDirectory, job }) {
+  if (id.endsWith('uglify-es/tools/node.js')) {
+    emitAsset(path.resolve(id, '../../lib/utils.js'));
+    emitAsset(path.resolve(id, '../../lib/ast.js'));
+    emitAsset(path.resolve(id, '../../lib/parse.js'));
+    emitAsset(path.resolve(id, '../../lib/transform.js'));
+    emitAsset(path.resolve(id, '../../lib/scope.js'));
+    emitAsset(path.resolve(id, '../../lib/output.js'));
+    emitAsset(path.resolve(id, '../../lib/compress.js'));
+    emitAsset(path.resolve(id, '../../lib/sourcemap.js'));
+    emitAsset(path.resolve(id, '../../lib/mozilla-ast.js'));
+    emitAsset(path.resolve(id, '../../lib/propmangle.js'));
+    emitAsset(path.resolve(id, '../../lib/minify.js'));
+    emitAsset(path.resolve(id, '../exports.js'));
+  }
+  else if (id.endsWith('uglify-js/tools/node.js')) {
+    emitAsset(path.resolve(id, '../../lib/utils.js'));
+    emitAsset(path.resolve(id, '../../lib/ast.js'));
+    emitAsset(path.resolve(id, '../../lib/parse.js'));
+    emitAsset(path.resolve(id, '../../lib/transform.js'));
+    emitAsset(path.resolve(id, '../../lib/scope.js'));
+    emitAsset(path.resolve(id, '../../lib/output.js'));
+    emitAsset(path.resolve(id, '../../lib/compress.js'));
+    emitAsset(path.resolve(id, '../../lib/sourcemap.js'));
+    emitAsset(path.resolve(id, '../../lib/mozilla-ast.js'));
+    emitAsset(path.resolve(id, '../../lib/propmangle.js'));
+  }
+  else if (id.endsWith('google-gax/build/src/grpc.js') || global._unit && id.includes('google-gax')) {
     // const googleProtoFilesDir = path.normalize(google_proto_files_1.getProtoPath('..'));
     // ->
     // const googleProtoFilesDir = path.resolve(__dirname, '../../../google-proto-files');
@@ -30,7 +56,7 @@ module.exports = function ({ id, ast, emitAsset, emitAssetDirectory }) {
           statement.expression.right.arguments[0].arguments[0].type === 'Literal') {
         const arg = statement.expression.right.arguments[0].arguments[0].value;
         try {
-          var resolved = resolve.sync(arg, { basedir: path.dirname(id) });
+          var resolved = resolve(arg, id, job);
         }
         catch (e) {
           return;

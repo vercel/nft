@@ -21,13 +21,12 @@ const skipTests = [
   'json-without-ext',
   'firebase',
   'chromeless',
+  'azure-cosmos',
+  'bindings-failure',
+  'pug',
 
   // hmm
-  'esm',
-
-  // uglify-es / uglify-js
-  'browserify-middleware',
-  'pug',
+  'esm'
 ];
 
 for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
@@ -39,7 +38,6 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
       // ignore other integration tests
       ignore: ['test/integration/**']
     });
-    // console.log(fileList);
     // warnings.forEach(warning => console.warn(warning));
     rimraf.sync(tmpdir);
     fs.mkdirSync(tmpdir);

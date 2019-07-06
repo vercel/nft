@@ -30,7 +30,8 @@ class Job {
   constructor ({
     base,
     filterBase,
-    ignore
+    ignore,
+    log = false
   }) {
     if (base) {
       if (filterBase !== false) filterBase = true;
@@ -60,6 +61,7 @@ class Job {
       }
     }
     this.base = base;
+    this.log = log;
     this.reasons = Object.create(null);
 
     this.fileCache = new Map();
@@ -140,7 +142,7 @@ class Job {
     const source = this.readFile(path);
     if (source === null) throw new Error('File ' + path + ' does not exist.');
 
-    const { deps, assets } = await analyze(path, source, this.ignoreFn, this.base);
+    const { deps, assets } = await analyze(path, source, this);
     await Promise.all([
       ...[...assets].map(async asset => {
         if (asset.endsWith('.js') || asset.endsWith('.mjs') || asset.endsWith('.node'))
