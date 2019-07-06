@@ -18,6 +18,11 @@ module.exports = async function (files, opts = {}) {
       return job.emitDependency(path);
   }));
 
+  if (opts.readFile)
+    job.readFile = opts.readFile;
+  if (opts.isDir)
+    job.isDir = opts.isDir;
+
   return {
     fileList: [...job.fileList].sort(),
     reasons: job.reasons,
