@@ -135,11 +135,6 @@ const excludeAssetExtensions = new Set(['.h', '.cmake', '.c', '.cpp']);
 const excludeAssetFiles = new Set(['CHANGELOG.md', 'README.md', 'readme.md', 'changelog.md']);
 let cwd;
 
-function backtrack (self, parent) {
-  if (!parent || parent.type !== 'ArrayExpression')
-    return self.skip();
-}
-
 const absoluteRegEx = /^\/[^\/]+|^[a-z]:[\\/][^\\/]+/i;
 function isAbsolutePathStr (str) {
   return typeof str === 'string' && str.match(absoluteRegEx);
@@ -372,6 +367,24 @@ module.exports = async function (id, code, job) {
   let scope = attachScopes(ast, 'scope');
   ({ ast = ast, scope = scope } = handleSpecialCases({ id, ast, scope, emitAsset: path => assets.add(path), emitAssetDirectory, job }) || {});
 
+  function backtrack (self, parent) {
+    // computing a static expression outward
+    // -> compute and backtrack
+    if (!staticChildNode) throw new Error('Internal error: No staticChildNode for backtrack.');
+    const curStaticValue = computePureStaticValue(parent, true);
+    if (curStaticValue) {
+      if ('value' in curStaticValue && typeof curStaticValue.value !== 'symbol' ||
+          typeof curStaticValue.then !== 'symbol' && typeof curStaticValue.else !== 'symbol') {
+        staticChildValue = curStaticValue;
+        staticChildNode = parent;
+        if (self.skip) self.skip();
+        return;
+      }
+    }
+    // no static value -> see if we should emit the asset if it exists
+    emitStaticChildAsset();
+  }
+
   walk(ast, {
     enter (node, parent) {
       if (node.scope) {
@@ -382,8 +395,8 @@ module.exports = async function (id, code, job) {
         }
       }
 
-      if (staticChildNode)
-        return backtrack(this, parent);
+      // currently backtracking
+      if (staticChildNode) return;
 
       if (node.type === 'Identifier') {
         if (isIdentifierRead(node, parent)) {
@@ -395,7 +408,7 @@ module.exports = async function (id, code, job) {
               binding && (typeof binding === 'function' || typeof binding === 'object') && binding[TRIGGER]) {
             staticChildValue = { value: typeof binding === 'string' ? binding : undefined };
             staticChildNode = node;
-            return this.skip();
+            backtrack(this, parent);
           }
         }
       }
@@ -430,10 +443,10 @@ module.exports = async function (id, code, job) {
         // and that function has a [TRIGGER] symbol -> trigger asset emission from it
         if (calleeValue && typeof calleeValue.value === 'function' && calleeValue.value[TRIGGER]) {
           staticChildValue = computePureStaticValue(node, true);
-          // if it computes, then we start backtrackingelse 
+          // if it computes, then we start backtracking
           if (staticChildValue) {
             staticChildNode = node;
-            return backtrack(this, parent);
+            backtrack(this, parent);
           }
         }
         // handle well-known function symbol cases
@@ -473,7 +486,6 @@ module.exports = async function (id, code, job) {
                     staticChildValue = { value: resolved };
                     staticChildNode = node;
                     emitStaticChildAsset(staticBindingsInstance);
-                    return backtrack(this, parent);
                   }
                 }
               }
@@ -512,7 +524,7 @@ module.exports = async function (id, code, job) {
                 // if it computes, then we start backtracking
                 if (staticChildValue) {
                   staticChildNode = node.arguments[0];
-                  return backtrack(this, parent);
+                  backtrack(this, parent);
                 }
               }
             break;
@@ -522,6 +534,7 @@ module.exports = async function (id, code, job) {
                 const rootDir = computePureStaticValue(node.arguments[0], false);
                 if (rootDir && rootDir.value)
                   emitAssetDirectory(rootDir.value + '/intl');
+                return this.skip();
               }
             break;
           }
@@ -553,7 +566,6 @@ module.exports = async function (id, code, job) {
               staticChildValue = computed;
               staticChildNode = decl.init;
               emitStaticChildAsset();
-              return backtrack(this, parent);
             }
           }
         }
@@ -583,7 +595,6 @@ module.exports = async function (id, code, job) {
               staticChildValue = computed;
               staticChildNode = node.right;
               emitStaticChildAsset();
-              return backtrack(this, parent);
             }
           }
         }
@@ -646,21 +657,7 @@ module.exports = async function (id, code, job) {
         }
       }
 
-      // computing a static expression outward
-      // -> compute and backtrack
-      if (staticChildNode) {
-        const curStaticValue = computePureStaticValue(node, true);
-        if (curStaticValue) {
-          if ('value' in curStaticValue && typeof curStaticValue.value !== 'symbol' ||
-              typeof curStaticValue.then !== 'symbol' && typeof curStaticValue.else !== 'symbol') {
-            staticChildValue = curStaticValue;
-            staticChildNode = node;
-            return;
-          }
-        }
-        // no static value -> see if we should emit the asset if it exists
-        emitStaticChildAsset();
-      }
+      if (staticChildNode) backtrack(this, parent);
     }
   });
 

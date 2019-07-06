@@ -27,7 +27,7 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
     await Promise.all(fileList.map(async file => {
       const outPath = path.resolve(tmpdir, file);
       await mkdirp(path.dirname(outPath));
-      await writeFile(outPath, await readFile(path.resolve(__dirname, '..', file)));
+      await writeFile(outPath, await readFile(path.resolve(__dirname, '..', file)), { mode: 0o777 });
     }));
     const ps = fork(`${tmpdir}/test/integration/${integrationTest}`, {
       stdio: fails ? 'pipe' : 'inherit'

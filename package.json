@@ -19,7 +19,8 @@
     "graceful-fs": "^4.1.15",
     "micromatch": "^4.0.2",
     "mkdirp": "^0.5.1",
-    "rollup-pluginutils": "^2.3.3"
+    "rollup-pluginutils": "^2.3.3",
+    "typescript": "^3.5.2"
   },
   "devDependencies": {
     "@azure/cosmos": "^2.1.7",

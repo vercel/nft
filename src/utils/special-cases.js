@@ -118,6 +118,11 @@ const specialCases = {
       }
     }
   },
+  'typescript' ({ id, emitAssetDirectory }) {
+    if (id.endsWith('typescript/lib/tsc.js')) {
+      emitAssetDirectory(path.resolve(id, '../'));
+    }
+  },
   'uglify-es' ({ id, emitAsset }) {
     if (id.endsWith('uglify-es/tools/node.js')) {
       emitAsset(path.resolve(id, '../../lib/utils.js'));

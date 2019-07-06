@@ -1,7 +1,6 @@
-const { relative, resolve, sep } = require('path');
+const { extname, relative, resolve, sep } = require('path');
 const sharedlibEmit = require('./utils/sharedlib-emit');
 const fs = require('fs');
-const path = require('path');
 const analyze = require('./analyze');
 const resolveDependency = require('./resolve-dependency');
 const { isMatch } = require('micromatch');
@@ -145,7 +144,8 @@ class Job {
     const { deps, assets } = await analyze(path, source, this);
     await Promise.all([
       ...[...assets].map(async asset => {
-        if (asset.endsWith('.js') || asset.endsWith('.mjs') || asset.endsWith('.node'))
+        const ext = extname(asset);
+        if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '')
           await this.emitDependency(asset, path);
         else
           this.emitFile(asset, 'asset', path);
