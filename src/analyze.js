@@ -35,6 +35,7 @@ const staticProcess = {
 const EXPRESS_SET = Symbol();
 const EXPRESS_ENGINE = Symbol();
 const NBIND_INIT = Symbol();
+const SET_ROOT_DIR = Symbol();
 const FS_FN = Symbol();
 const BINDINGS = Symbol();
 const fsSymbols = {
@@ -93,6 +94,12 @@ const staticModules = Object.assign(Object.create(null), {
   },
   'resolve-from': {
     default: resolveFrom
+  },
+  'strong-globalize': {
+    default: {
+      SetRootDir: SET_ROOT_DIR
+    },
+    SetRootDir: SET_ROOT_DIR
   }
 });
 const globalBindings = {
@@ -180,6 +187,9 @@ module.exports = async function (id, code, job) {
 
   let assetEmissionPromises = Promise.resolve();
 
+  // remove shebang
+  code = code.replace(/^#![^\n\r]*[\r\n]/, '');
+
   let ast, isESM;
   try {
     ast = acorn.parse(code, { allowReturnOutsideFunction: true });
@@ -217,6 +227,7 @@ module.exports = async function (id, code, job) {
       shadowDepth: 0,
       value: {
         [FUNCTION] (specifier) {
+          deps.add(specifier);
           const m = staticModules[specifier];
           return m.default;
         },
@@ -254,6 +265,7 @@ module.exports = async function (id, code, job) {
     for (const decl of ast.body) {
       if (decl.type === 'ImportDeclaration') {
         const source = decl.source.value;
+        deps.add(source);
         const staticModule = staticModules[source];
         if (staticModule) {
           for (const impt of decl.specifiers) {
@@ -265,6 +277,9 @@ module.exports = async function (id, code, job) {
               setKnownBinding(impt.local.name, staticModule[impt.imported.name]);
           }
         }
+      }
+      else if (decl.type === 'ExportNamedDeclaration') {
+        if (decl.source) deps.add(decl.source.value);
       }
     }
   }
@@ -298,9 +313,12 @@ module.exports = async function (id, code, job) {
     const dirIndex = wildcardIndex === -1 ? wildcardRequire.length : wildcardRequire.lastIndexOf(path.sep, wildcardIndex);
     const wildcardDirPath = wildcardRequire.substr(0, dirIndex);
     const patternPath = wildcardRequire.substr(dirIndex);
-    const wildcardPattern = patternPath.replace(wildcardRegEx, (_match, index) => {
+    let wildcardPattern = patternPath.replace(wildcardRegEx, (_match, index) => {
       return patternPath[index - 1] === path.sep ? '**/*' : '*';
     }) || '/**/*';
+
+    if (!wildcardPattern.endsWith('*'))
+      wildcardPattern += '?(.js|.json|.node)';
 
     if (job.ignoreFn(job.base ? path.relative(job.base, wildcardDirPath + wildcardPattern) : wildcardDirPath + wildcardPattern, id))
       return;
@@ -498,6 +516,14 @@ module.exports = async function (id, code, job) {
                 }
               }
             break;
+            // strong globalize (emits intl folder)
+            case SET_ROOT_DIR:
+              if (node.arguments[0]) {
+                const rootDir = computePureStaticValue(node.arguments[0], false);
+                if (rootDir && rootDir.value)
+                  emitAssetDirectory(rootDir.value + '/intl');
+              }
+            break;
           }
         }
       }
@@ -528,22 +554,6 @@ module.exports = async function (id, code, job) {
               staticChildNode = decl.init;
               emitStaticChildAsset();
               return backtrack(this, parent);
-            }
-          }
-          else {
-            // var known = ...;
-            if (decl.id.type === 'Identifier') {
-              setKnownBinding(decl.id.name, UNKNOWN);
-            }
-            // var { known } = ...;
-            else if (decl.id.type === 'ObjectPattern') {
-              for (const prop of decl.id.properties) {
-                if (prop.type !== 'Property' ||
-                    prop.key.type !== 'Identifier' ||
-                    prop.value.type !== 'Identifier')
-                  continue;
-                setKnownBinding(prop.value.name, UNKNOWN);
-              }
             }
           }
         }

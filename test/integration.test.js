@@ -11,26 +11,9 @@ const { fork } = require('child_process');
 
 const tmpdir = path.resolve(os.tmpdir(), 'node-file-trace');
 
-jest.setTimeout(20000);
-
-const skipTests = [
-  'leveldown',
-  'sequelize',
-  'loopback',
-  'lighthouse',
-  'json-without-ext',
-  'firebase',
-  'chromeless',
-  'azure-cosmos',
-  'bindings-failure',
-  'pug',
-
-  // hmm
-  'esm'
-];
+jest.setTimeout(50000);
 
 for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
-  if (skipTests.some(skipTest => integrationTest === skipTest + '.js')) continue;
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
     const fails = integrationTest.endsWith('failure.js');
     const { fileList, reasons, warnings } = await nodeFileTrace([`${__dirname}/integration/${integrationTest}`], {
