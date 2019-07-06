@@ -4,7 +4,6 @@ const nodeFileTrace = require('../src/node-file-trace');
 global._unit = true;
 
 for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
-  if (unitTest.startsWith('pkginfo')) continue;
   it(`should correctly trace ${unitTest}`, async () => {
     const unitPath = `${__dirname}/unit/${unitTest}`;
     const { fileList, reasons } = await nodeFileTrace([`${unitPath}/input.js`], {

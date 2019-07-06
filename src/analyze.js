@@ -1,5 +1,5 @@
 const path = require('path');
-const { statSync } = require('fs');
+const { existsSync, statSync } = require('fs');
 const { walk } = require('estree-walker');
 const { attachScopes } = require('rollup-pluginutils');
 const evaluate = require('./utils/static-eval');
@@ -36,6 +36,7 @@ const EXPRESS_SET = Symbol();
 const EXPRESS_ENGINE = Symbol();
 const NBIND_INIT = Symbol();
 const SET_ROOT_DIR = Symbol();
+const PKG_INFO = Symbol();
 const FS_FN = Symbol();
 const BINDINGS = Symbol();
 const fsSymbols = {
@@ -100,6 +101,9 @@ const staticModules = Object.assign(Object.create(null), {
       SetRootDir: SET_ROOT_DIR
     },
     SetRootDir: SET_ROOT_DIR
+  },
+  'pkginfo': {
+    default: PKG_INFO
   }
 });
 const globalBindings = {
@@ -536,6 +540,15 @@ module.exports = async function (id, code, job) {
                   emitAssetDirectory(rootDir.value + '/intl');
                 return this.skip();
               }
+            break;
+            // pkginfo - require('pkginfo')(module) -> loads package.json
+            case PKG_INFO:
+              let pjsonPath = path.resolve(id, '../package.json');
+              const rootPjson = path.resolve('/package.json');
+              while (pjsonPath !== rootPjson && !existsSync(pjsonPath))
+                pjsonPath = path.resolve(pjsonPath, '../package.json');
+              if (pjsonPath !== rootPjson)
+                assets.add(pjsonPath);
             break;
           }
         }
