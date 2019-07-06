@@ -17,7 +17,6 @@ const os = require('os');
 const handleWrappers = require('./utils/wrappers.js');
 const resolveFrom = require('resolve-from');
 
-const extensions = ['.js', '.json', '.node'];
 const { UNKNOWN, FUNCTION, WILDCARD, wildcardRegEx } = evaluate;
 
 const staticProcess = {
