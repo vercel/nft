@@ -11,17 +11,17 @@ gracefulify(fs);
 module.exports = async function (files, opts = {}) {
   const job = new Job(opts);
 
+  if (opts.readFile)
+    job.readFile = opts.readFile;
+  if (opts.isDir)
+    job.isDir = opts.isDir;
+
   await Promise.all(files.map(file => {
     const path = resolve(file);
     job.emitFile(path, 'initial');
     if (path.endsWith('.js') || path.endsWith('.node'))
       return job.emitDependency(path);
   }));
-
-  if (opts.readFile)
-    job.readFile = opts.readFile;
-  if (opts.isDir)
-    job.isDir = opts.isDir;
 
   return {
     fileList: [...job.fileList].sort(),
