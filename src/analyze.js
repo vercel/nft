@@ -201,7 +201,7 @@ module.exports = async function (id, code, job) {
     }
     catch (e) {
       // Parser errors just skip analysis
-      return { assets, deps };
+      return { assets, deps, isESM: false };
     }
   }
 
@@ -674,7 +674,7 @@ module.exports = async function (id, code, job) {
   });
 
   await assetEmissionPromises;
-  return { assets, deps };
+  return { assets, deps, isESM };
 
   function emitAssetPath (assetPath) {
     // verify the asset file / directory exists

@@ -25,6 +25,7 @@ module.exports = async function (files, opts = {}) {
 
   return {
     fileList: [...job.fileList].sort(),
+    esmFileList: [...job.esmFileList].sort(),
     reasons: job.reasons,
     warnings: [...job.warnings]
   };
@@ -72,6 +73,7 @@ class Job {
     this.isDirCache = new Map();
 
     this.fileList = new Set();
+    this.esmFileList = new Set();
     this.processed = new Set();
 
     this.warnings = new Set();
@@ -146,7 +148,9 @@ class Job {
     const source = this.readFile(path);
     if (source === null) throw new Error('File ' + path + ' does not exist.');
 
-    const { deps, assets } = await analyze(path, source, this);
+    const { deps, assets, isESM } = await analyze(path, source, this);
+    if (isESM)
+      this.esmFileList.add(this.base ? relative(this.base, path) : path);
     await Promise.all([
       ...[...assets].map(async asset => {
         const ext = extname(asset);
