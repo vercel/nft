@@ -7,7 +7,7 @@
   "types": "./node-file-trace.d.ts",
   "scripts": {
     "test": "jest",
-    "test-coverage": "jest"
+    "test-coverage": "jest --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
   },
   "files": [
     "node-file-trace.d.ts",
@@ -44,6 +44,7 @@
     "browserify-middleware": "^8.1.1",
     "canvas": "^2.5.0",
     "chromeless": "^1.5.2",
+    "codecov": "^3.1.0",
     "consolidate": "^0.15.1",
     "copy": "^0.3.2",
     "cowsay": "^1.4.0",
