@@ -10,7 +10,8 @@
     "test-coverage": "jest"
   },
   "files": [
-    "dist/*"
+    "node-file-trace.d.ts",
+    "src/*"
   ],
   "dependencies": {
     "acorn": "^6.1.1",
