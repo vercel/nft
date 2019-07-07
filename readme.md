@@ -19,7 +19,7 @@ Provide the list of source files as input:
 ```js
 const nodeFileTrace = require('@zeit/node-file-trace');
 const files = ['./src/main.js', './src/second.js'];
-const fileList = await nodeFileTrace(files);
+const { fileList } = await nodeFileTrace(files);
 ```
 
 The list of files will include all `node_modules` modules and assets that may be needed by the application code.
