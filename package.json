@@ -1,6 +1,6 @@
 {
   "name": "@zeit/node-file-trace",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "repository": "zeit/node-file-trace",
   "license": "MIT",
   "main": "./src/node-file-trace.js",
