@@ -24,8 +24,7 @@
     "mkdirp": "^0.5.1",
     "node-pre-gyp": "^0.13.0",
     "resolve-from": "^5.0.0",
-    "rollup-pluginutils": "^2.3.3",
-    "typescript": "^3.5.2"
+    "rollup-pluginutils": "^2.3.3"
   },
   "devDependencies": {
     "@azure/cosmos": "^2.1.7",
@@ -94,6 +93,7 @@
     "swig": "^1.4.2",
     "tiny-json-http": "^7.1.2",
     "twilio": "^3.33.0",
+    "typescript": "^3.5.2",
     "vm2": "^3.8.2",
     "vue": "^2.6.10",
     "vue-server-renderer": "^2.6.10",
