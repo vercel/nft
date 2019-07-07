@@ -7,6 +7,6 @@ interface NodeFileTraceOptions {
   isDir?: (path: string) => boolean;
 }
 
-declare function NodeFileTrace (files: string[], opts: NodeFileTraceOptions): Promise<{ fileList: string[] }>;
+declare function NodeFileTrace (files: string[], opts: NodeFileTraceOptions): Promise<{ fileList: string[], esmFileList: string[] }>;
 
 export = NodeFileTrace;
