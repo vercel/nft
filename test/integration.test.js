@@ -7,11 +7,13 @@ const rimraf = require('rimraf');
 const mkdirp = promisify(require('mkdirp'));
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
+const readlink = promisify(fs.readlink);
+const symlink = promisify(fs.symlink);
 const { fork } = require('child_process');
 
 const tmpdir = path.resolve(os.tmpdir(), 'node-file-trace');
 
-jest.setTimeout(50000);
+jest.setTimeout(100000);
 
 for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
@@ -25,9 +27,21 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
     rimraf.sync(tmpdir);
     fs.mkdirSync(tmpdir);
     await Promise.all(fileList.map(async file => {
+      const inPath = path.resolve(__dirname, '..', file);
       const outPath = path.resolve(tmpdir, file);
-      await mkdirp(path.dirname(outPath));
-      await writeFile(outPath, await readFile(path.resolve(__dirname, '..', file)), { mode: 0o777 });
+      try {
+        var symlinkPath = await readlink(inPath);
+      }
+      catch (e) {
+        if (e.code !== 'EINVAL') throw e;
+      }
+      mkdirp.sync(path.dirname(outPath));
+      if (symlinkPath) {
+        await symlink(symlinkPath, outPath);
+      }
+      else {
+        await writeFile(outPath, await readFile(inPath), { mode: 0o777 });
+      }
     }));
     const ps = fork(`${tmpdir}/test/integration/${integrationTest}`, {
       stdio: fails ? 'pipe' : 'inherit'
