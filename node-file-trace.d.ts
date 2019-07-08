@@ -2,6 +2,7 @@ interface NodeFileTraceOptions {
   base?: string;
   filterBase?: boolean;
   ignore?: string | string[] | ((path: string) => boolean);
+  ts?: boolean;
   
   readFile?: (path: string) => Buffer | string | null;
   isDir?: (path: string) => boolean;

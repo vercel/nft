@@ -16,10 +16,12 @@ module.exports = async function (files, opts = {}) {
   if (opts.isDir)
     job.isDir = opts.isDir;
 
+  job.ts = true;
+
   await Promise.all(files.map(file => {
     const path = resolve(file);
     job.emitFile(path, 'initial');
-    if (path.endsWith('.js') || path.endsWith('.node'))
+    if (path.endsWith('.js') || path.endsWith('.node') || job.ts && path.endsWith('.ts'))
       return job.emitDependency(path);
   }));
 
@@ -154,7 +156,7 @@ class Job {
     await Promise.all([
       ...[...assets].map(async asset => {
         const ext = extname(asset);
-        if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '')
+        if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '' || this.ts && ext === '.ts')
           await this.emitDependency(asset, path);
         else
           this.emitFile(asset, 'asset', path);
