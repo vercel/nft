@@ -25,15 +25,6 @@ async function getResult(url) {
   return result;
 }
 
-async function main() {
-  const result = await getResult('https://zeit.co/about');
-  if (req && result && result.lhr && result.lhr.categories) {
-    console.log('success');
-  } else {
-    console.log('fail');
-  }
-}
-
 getResult('https://zeit.co/about')
   .then(result => {
     if (result && result.lhr && result.lhr.categories) {
