@@ -34,5 +34,5 @@ getResult('https://zeit.co/about')
     }
   })
   .catch(err => {
-    console.error(err)
+    throw err;
   });
