@@ -34,5 +34,5 @@ getResult('https://zeit.co/about')
     }
   })
   .catch(err => {
-    throw err;
+    setTimeout(() => { throw err }, 100)
   });
