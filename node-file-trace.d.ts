@@ -1,6 +1,5 @@
 interface NodeFileTraceOptions {
   base?: string;
-  filterBase?: boolean;
   ignore?: string | string[] | ((path: string) => boolean);
   ts?: boolean;
   log?: boolean;

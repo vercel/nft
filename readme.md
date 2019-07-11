@@ -30,28 +30,15 @@ The list of files will include all `node_modules` modules and assets that may be
 
 The base path for the file list - all files will be provided as relative to this base.
 
+By default the `process.cwd()` is used:
+
 ```js
 const { fileList } = await nodeFileTrace(files, {
   base: process.cwd()
 }
 ```
 
-If no base is provided, absolute paths are always output.
-
-By default any files below the `base` are ignored in the listing and analysis.
-
-#### FilterBase
-
-Boolean, defaults to true.
-
-```js
-const { fileList } = await nodeFileTrace(files, {
-  base: process.cwd(),
-  filterBase: false
-}
-```
-
-By setting this to `false`, it allows opting out of excluding any files below the `base` path in the list.
+Any files below the `base` are ignored in the listing and analysis.
 
 #### Ignore
 

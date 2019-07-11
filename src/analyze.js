@@ -154,7 +154,7 @@ module.exports = async function (id, code, job) {
   const dir = path.dirname(id);
   // if (typeof options.production === 'boolean' && staticProcess.env.NODE_ENV === UNKNOWN)
   //  staticProcess.env.NODE_ENV = options.production ? 'production' : 'dev';
-  cwd = job.base || process.cwd();
+  cwd = job.base;
   const pkgBase = getPackageBase(id);
 
   const emitAssetDirectory = (wildcardPath) => {
@@ -166,7 +166,7 @@ module.exports = async function (id, code, job) {
       return patternPath[index - 1] === path.sep ? '**/*' : '*';
     }).replace(repeatGlobRegEx, '/**/*') || '/**/*';
 
-    if (job.ignoreFn(job.base ? path.relative(job.base, assetDirPath + wildcardPattern) : assetDirPath + wildcardPattern, id))
+    if (job.ignoreFn(path.relative(job.base, assetDirPath + wildcardPattern)))
       return;
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
@@ -320,7 +320,7 @@ module.exports = async function (id, code, job) {
     if (!wildcardPattern.endsWith('*'))
       wildcardPattern += '?(' + (job.ts ? '.ts|' : '') + '.js|.json|.node)';
 
-    if (job.ignoreFn(job.base ? path.relative(job.base, wildcardDirPath + wildcardPattern) : wildcardDirPath + wildcardPattern, id))
+    if (job.ignoreFn(path.relative(job.base, wildcardDirPath + wildcardPattern)))
       return;
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
