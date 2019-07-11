@@ -6,8 +6,8 @@
   "main": "./src/node-file-trace.js",
   "types": "./node-file-trace.d.ts",
   "scripts": {
-    "test": "jest",
-    "test-coverage": "jest --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
+    "test": "jest --runInBand --verbose",
+    "test-coverage": "jest --runInBand --verbose --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
   },
   "files": [
     "node-file-trace.d.ts",
