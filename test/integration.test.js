@@ -13,7 +13,7 @@ const { fork } = require('child_process');
 
 const tmpdir = path.resolve(os.tmpdir(), 'node-file-trace');
 
-jest.setTimeout(100000);
+jest.setTimeout(200000);
 
 for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
