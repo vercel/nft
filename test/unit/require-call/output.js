@@ -1,3 +1,3 @@
 [
-  "require-call/input.js"
+  "test/unit/require-call/input.js"
 ]

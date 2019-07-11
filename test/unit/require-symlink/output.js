@@ -1,5 +1,5 @@
 [
-  "require-symlink/another.js",
-  "require-symlink/input.js",
-  "require-symlink/symlink"
+  "test/unit/require-symlink/another.js",
+  "test/unit/require-symlink/input.js",
+  "test/unit/require-symlink/symlink"
 ]

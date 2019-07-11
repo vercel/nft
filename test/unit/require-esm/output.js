@@ -1,3 +1,3 @@
 [
-  "require-esm/input.js"
+  "test/unit/require-esm/input.js"
 ]

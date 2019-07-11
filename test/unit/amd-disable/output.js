@@ -1,3 +1,3 @@
 [
-  "amd-disable/input.js"
+  "test/unit/amd-disable/input.js"
 ]

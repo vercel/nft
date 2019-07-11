@@ -1,4 +1,4 @@
 [
-  "non-analyzable-requires/dep.js",
-  "non-analyzable-requires/input.js"
+  "test/unit/non-analyzable-requires/dep.js",
+  "test/unit/non-analyzable-requires/input.js"
 ]

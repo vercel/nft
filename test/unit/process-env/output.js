@@ -1,5 +1,5 @@
 [
-  "process-env/a.js",
-  "process-env/b.js",
-  "process-env/input.js"
+  "test/unit/process-env/a.js",
+  "test/unit/process-env/b.js",
+  "test/unit/process-env/input.js"
 ]

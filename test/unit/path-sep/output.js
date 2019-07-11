@@ -1,4 +1,4 @@
 [
-  "path-sep/asset.txt",
-  "path-sep/input.js"
+  "test/unit/path-sep/asset.txt",
+  "test/unit/path-sep/input.js"
 ]

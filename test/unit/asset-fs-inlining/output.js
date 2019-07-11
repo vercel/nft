@@ -1,4 +1,4 @@
 [
-  "asset-fs-inlining/asset.txt",
-  "asset-fs-inlining/input.js"
+  "test/unit/asset-fs-inlining/asset.txt",
+  "test/unit/asset-fs-inlining/input.js"
 ]

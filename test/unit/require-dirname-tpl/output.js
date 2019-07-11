@@ -1,4 +1,4 @@
 [
-  "require-dirname-tpl/dep.js",
-  "require-dirname-tpl/input.js"
+  "test/unit/require-dirname-tpl/dep.js",
+  "test/unit/require-dirname-tpl/input.js"
 ]

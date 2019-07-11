@@ -21,10 +21,9 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
   it(`should correctly trace ${unitTest}`, async () => {
     const unitPath = `${__dirname}/unit/${unitTest}`;
     const { fileList, reasons } = await nodeFileTrace([`${unitPath}/input.js`], {
-      base: `${__dirname}/unit`,
+      base: `${__dirname}/../`,
       ts: true,
       log: true,
-      filterBase: false,
       ignore: '**/actual.js'
     });
     let expected;

@@ -1,3 +1,3 @@
 [
-  "array-holes/input.js"
+  "test/unit/array-holes/input.js"
 ]

@@ -1,5 +1,5 @@
 [
-  "asset-fs-inlining-multi/asset.txt",
-  "asset-fs-inlining-multi/input.js",
-  "asset-fs-inlining-multi/sub/asset.txt"
+  "test/unit/asset-fs-inlining-multi/asset.txt",
+  "test/unit/asset-fs-inlining-multi/input.js",
+  "test/unit/asset-fs-inlining-multi/sub/asset.txt"
 ]

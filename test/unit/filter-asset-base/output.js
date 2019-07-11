@@ -1,4 +1,4 @@
 [
-  "../../package.json",
-  "filter-asset-base/input.js"
+  "package.json",
+  "test/unit/filter-asset-base/input.js"
 ]

@@ -1,4 +1,4 @@
 [
-  "asset-node-require/input.js",
-  "asset-node-require/mock.node"
+  "test/unit/asset-node-require/input.js",
+  "test/unit/asset-node-require/mock.node"
 ]

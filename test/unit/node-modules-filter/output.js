@@ -1,3 +1,3 @@
 [
-  "node-modules-filter/input.js"
+  "test/unit/node-modules-filter/input.js"
 ]

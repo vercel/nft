@@ -1,4 +1,4 @@
 [
-  "wildcard2/assets/asset1.txt",
-  "wildcard2/input.js"
+  "test/unit/wildcard2/assets/asset1.txt",
+  "test/unit/wildcard2/input.js"
 ]

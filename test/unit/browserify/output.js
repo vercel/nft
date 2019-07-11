@@ -1,5 +1,5 @@
 [
-  "browserify/dep1.js",
-  "browserify/dep2.js",
-  "browserify/input.js"
+  "test/unit/browserify/dep1.js",
+  "test/unit/browserify/dep2.js",
+  "test/unit/browserify/input.js"
 ]

@@ -1,5 +1,5 @@
 [
-  "tsx/dep.tsx",
-  "tsx/input.js",
-  "tsx/lib.ts"
+  "test/unit/tsx/dep.tsx",
+  "test/unit/tsx/input.js",
+  "test/unit/tsx/lib.ts"
 ]

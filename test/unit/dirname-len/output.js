@@ -1,3 +1,3 @@
 [
-  "dirname-len/input.js"
+  "test/unit/dirname-len/input.js"
 ]
