@@ -718,14 +718,6 @@ module.exports = async function (id, code, job) {
     // do not emit directories above __dirname
     if (dir.startsWith(assetPath.substr(0, assetPath.length - wildcardSuffix.length) + path.sep))
       return false;
-    // do not emit asset directories higher than the node_modules base if a package
-    if (pkgBase) {
-      const nodeModulesBase = id.substr(0, id.indexOf(path.sep + 'node_modules')) + path.sep + 'node_modules' + path.sep;
-      if (!assetPath.startsWith(nodeModulesBase)) {
-        if (job.log) console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
-        return false;
-      }
-    }
     return true;
   }
 
