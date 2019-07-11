@@ -3,6 +3,11 @@ const resolve = require('../resolve-dependency');
 const { getPackageName } = require('./get-package-base');
 
 const specialCases = {
+  '@generated/photon' ({ id, emitAsset }) {
+    if (id.endsWith('@generated/photon/index.js')) {
+      emitAsset(path.resolve(path.dirname(id), 'runtime/prisma'));
+    }
+  },
   'google-gax' ({ id, ast, emitAssetDirectory }) {
     if (id.endsWith('google-gax/build/src/grpc.js')) {
       // const googleProtoFilesDir = path.normalize(google_proto_files_1.getProtoPath('..'));
