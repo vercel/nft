@@ -25,10 +25,7 @@ jobs:
           name: Installing dependencies
           command: yarn install
       - run:
-          name: Unit & integration tests
-          command: yarn test
-      - run:
-          name: Coverage
+          name: Unit & integration tests + Coverage
           command: yarn test-coverage
 workflows:
   version: 2
