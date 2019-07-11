@@ -1,1 +1,1 @@
-require('generated');
+require('@photon/generated');
