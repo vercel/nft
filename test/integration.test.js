@@ -11,8 +11,6 @@ const readlink = promisify(fs.readlink);
 const symlink = promisify(fs.symlink);
 const { fork } = require('child_process');
 
-const tmpdir = path.resolve(os.tmpdir(), 'node-file-trace');
-
 jest.setTimeout(200000);
 
 for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
@@ -24,6 +22,8 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
       ignore: ['test/integration/**']
     });
     // warnings.forEach(warning => console.warn(warning));
+    const randomTmpId = Math.random().toString().slice(2)
+    const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-${randomTmpId}`);
     rimraf.sync(tmpdir);
     fs.mkdirSync(tmpdir);
     await Promise.all(fileList.map(async file => {
