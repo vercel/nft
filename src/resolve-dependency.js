@@ -14,7 +14,7 @@ module.exports = function resolveDependency (specifier, parent, job) {
   const real = fs.realpathSync(resolved);
   if (resolved !== real) {
     // this is likely a symlink
-    job.emitFile(resolved);
+    job.emitFile(resolved, 'symlink', parent);
   }
   return real;
 };
