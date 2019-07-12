@@ -162,7 +162,7 @@ module.exports = async function (id, code, job) {
     const patternPath = wildcardPath.substr(dirIndex);
     const wildcardPattern = patternPath.replace(wildcardRegEx, (_match, index) => {
       return patternPath[index - 1] === path.sep ? '**/*' : '*';
-    }) || '/**/*';
+    }).replace(/([\/\\]\*\*[\/\\]\*)+/g, '/**/*') || '/**/*';
 
     if (job.ignoreFn(job.base ? path.relative(job.base, assetDirPath + wildcardPattern) : assetDirPath + wildcardPattern, id))
       return;
@@ -323,7 +323,7 @@ module.exports = async function (id, code, job) {
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log)
-        console.log('Globbing ' + assetDirPath + wildcardPattern);
+        console.log('Globbing ' + wildcardDirPath + wildcardPattern);
       const files = (await new Promise((resolve, reject) => 
         glob(wildcardDirPath + wildcardPattern, { mark: true, ignore: wildcardDirPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
       ));
@@ -528,6 +528,7 @@ module.exports = async function (id, code, job) {
                 if (staticChildValue) {
                   staticChildNode = node.arguments[0];
                   backtrack(this, parent);
+                  return this.skip();
                 }
               }
             break;

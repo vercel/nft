@@ -15,8 +15,10 @@ jest.setTimeout(200000);
 
 for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
+    console.log('Tracing and executing ' + integrationTest);
     const fails = integrationTest.endsWith('failure.js');
     const { fileList, reasons, warnings } = await nodeFileTrace([`${__dirname}/integration/${integrationTest}`], {
+      log: true,
       base: path.resolve(__dirname, '..'),
       // ignore other integration tests
       ignore: ['test/integration/**']
