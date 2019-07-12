@@ -1,2 +1,3 @@
 const fs = require('fs');
-fs.readFile('./symlink')
+const { join } = require('path');
+fs.readFile(join(__dirname, 'symlink'));
