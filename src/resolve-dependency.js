@@ -1,4 +1,4 @@
-const { isAbsolute, resolve, sep } = require('path');
+const { isAbsolute, resolve, sep, dirname } = require('path');
 const fs = require('fs');
 
 // node resolver
@@ -11,7 +11,22 @@ module.exports = function resolveDependency (specifier, parent, job) {
   else
     resolved = resolvePackage(specifier, parent, job);
   if (resolved.startsWith('node:')) return resolved;
-  return fs.realpathSync(resolved);
+
+  const real = fs.realpathSync(resolved);
+  const original = resolved;
+  let isLink = false;
+  
+  if (resolved !== real) {
+    while (resolved !== '/') {
+      // walk up the tree to confirm that this is a symlink
+      isLink = fs.lstatSync(resolved).isSymbolicLink();
+      if (isLink) {
+        break;
+      }
+      resolved = dirname(resolved);
+    }
+  }
+  return { real, symlink: isLink ? original : null };
 };
 
 function resolvePath (path, parent, job) {

@@ -164,15 +164,18 @@ class Job {
       }),
       ...[...deps].map(async dep => {
         try {
-          var resolved = await resolveDependency(dep, path, this);
+          var { real, symlink } = await resolveDependency(dep, path, this);
           // ignore builtins
-          if (resolved.startsWith('node:')) return;
+          if (real.startsWith('node:')) return;
         }
         catch (e) {
           this.warnings.add(e);
           return;
         }
-        await this.emitDependency(resolved, path);
+        await this.emitDependency(real, path);
+        if (symlink) {
+          await this.emitDependency(symlink, path);
+        }
       })
     ])
   }
