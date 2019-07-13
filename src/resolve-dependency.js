@@ -1,5 +1,4 @@
 const { isAbsolute, resolve, sep } = require('path');
-const fs = require('fs');
 
 // node resolver
 // custom implementation to emit only needed package.json files for resolver
@@ -10,12 +9,8 @@ module.exports = function resolveDependency (specifier, parent, job) {
     resolved = resolvePath(resolve(parent, '..', specifier), parent, job);
   else
     resolved = resolvePackage(specifier, parent, job);
-  if (resolved.startsWith('node:')) return resolved;
-  const real = fs.realpathSync(resolved);
-  if (resolved !== real) {
-    job.emitFile(resolved, 'symlink', parent);
-  }
-  return real;
+
+  return resolved;
 };
 
 function resolvePath (path, parent, job) {
