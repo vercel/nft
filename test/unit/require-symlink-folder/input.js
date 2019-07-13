@@ -1,0 +1,1 @@
+require('./symlink/another.js')
