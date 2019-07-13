@@ -11,7 +11,11 @@ module.exports = function resolveDependency (specifier, parent, job) {
   else
     resolved = resolvePackage(specifier, parent, job);
   if (resolved.startsWith('node:')) return resolved;
-  return fs.realpathSync(resolved);
+  const real = fs.realpathSync(resolved);
+  if (resolved !== real) {
+    job.emitFile(resolved, 'symlink', parent);
+  }
+  return real;
 };
 
 function resolvePath (path, parent, job) {
