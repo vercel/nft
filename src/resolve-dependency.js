@@ -13,7 +13,6 @@ module.exports = function resolveDependency (specifier, parent, job) {
   if (resolved.startsWith('node:')) return resolved;
   const real = fs.realpathSync(resolved);
   if (resolved !== real) {
-    // this is likely a symlink
     job.emitFile(resolved, 'symlink', parent);
   }
   return real;
