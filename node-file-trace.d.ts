@@ -5,7 +5,8 @@ interface NodeFileTraceOptions {
   ts?: boolean;
   log?: boolean;
   readFile?: (path: string) => Buffer | string | null;
-  isDir?: (path: string) => boolean;
+  stat?: (path: string) => Object | null;
+  readlink?: (path: string) => string | null;
 }
 
 declare function NodeFileTrace (files: string[], opts: NodeFileTraceOptions): Promise<{ fileList: string[], esmFileList: string[] }>;
