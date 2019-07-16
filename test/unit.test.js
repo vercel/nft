@@ -23,6 +23,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
     const { fileList, reasons } = await nodeFileTrace([`${unitPath}/input.js`], {
       base: `${__dirname}/unit`,
       ts: true,
+      log: true,
       filterBase: false,
       ignore: '**/actual.js'
     });
