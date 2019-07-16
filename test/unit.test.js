@@ -3,6 +3,20 @@ const nodeFileTrace = require('../src/node-file-trace');
 
 global._unit = true;
 
+// ensure test/yarn-workspaces/node_modules/x -> test/yarn-workspaces/packages/x
+try {
+  fs.mkdirSync(`${__dirname}/unit/yarn-workspaces/node_modules`);
+}
+catch (e) {
+  if (e.code !== 'EEXIST') throw e;
+}
+try {
+  fs.symlinkSync('../packages/x', `${__dirname}/unit/yarn-workspaces/node_modules/x`);
+}
+catch (e) {
+  if (e.code !== 'EEXIST') throw e;
+}
+
 for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
   it(`should correctly trace ${unitTest}`, async () => {
     const unitPath = `${__dirname}/unit/${unitTest}`;

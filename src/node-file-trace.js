@@ -13,8 +13,10 @@ module.exports = async function (files, opts = {}) {
 
   if (opts.readFile)
     job.readFile = opts.readFile;
-  if (opts.isDir)
-    job.isDir = opts.isDir;
+  if (opts.stat)
+    job.stat = opts.stat;
+  if (opts.readlink)
+    job.readlink = opts.readlink;
 
   job.ts = true;
 
@@ -72,7 +74,8 @@ class Job {
     this.reasons = Object.create(null);
 
     this.fileCache = new Map();
-    this.isDirCache = new Map();
+    this.statCache = new Map();
+    this.symlinkCache = new Map();
 
     this.fileList = new Set();
     this.esmFileList = new Set();
@@ -81,18 +84,38 @@ class Job {
     this.warnings = new Set();
   }
 
-  isDir (path) {
-    const cached = this.isDirCache.get(path);
+  readlink (path) {
+    const cached = this.symlinkCache.get(path);
     if (cached !== undefined) return cached;
     try {
-      const isDir = fs.statSync(path).isDirectory();
-      this.isDirCache.set(path, isDir);
-      return isDir;
+      const link = fs.readlinkSync(path);
+      // also copy stat cache to symlink
+      const stats = this.statCache.get(path);
+      if (stats)
+        this.statCache.set(resolve(path, link), stats);
+      this.symlinkCache.set(path, link);
+      return link;
+    }
+    catch (e) {
+      if (e.code !== 'EINVAL' && e.code !== 'ENOENT')
+        throw e;
+      this.symlinkCache.set(path, null);
+      return null;
+    }
+  }
+
+  stat (path) {
+    const cached = this.statCache.get(path);
+    if (cached) return cached;
+    try {
+      const stats = fs.statSync(path);
+      this.statCache.set(path, stats);
+      return stats;
     }
     catch (e) {
       if (e.code === 'ENOENT') {
-        this.isDirCache.set(path, false);
-        return false;
+        this.statCache.set(path, null);
+        return null;
       }
       throw e;
     }
@@ -174,6 +197,6 @@ class Job {
         }
         await this.emitDependency(resolved, path);
       })
-    ])
+    ]);
   }
 }
