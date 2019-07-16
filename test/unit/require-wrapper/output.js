@@ -1,4 +1,4 @@
 [
-  "require-wrapper/dep.js",
-  "require-wrapper/input.js"
+  "test/unit/require-wrapper/dep.js",
+  "test/unit/require-wrapper/input.js"
 ]

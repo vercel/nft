@@ -1,5 +1,5 @@
 [
-  "array-emission/input.js",
-  "array-emission/renderer/dom.js",
-  "array-emission/renderer/util.js"
+  "test/unit/array-emission/input.js",
+  "test/unit/array-emission/renderer/dom.js",
+  "test/unit/array-emission/renderer/util.js"
 ]

@@ -1,3 +1,3 @@
 [
-  "syntax-err/input.js"
+  "test/unit/syntax-err/input.js"
 ]

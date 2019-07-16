@@ -1,3 +1,3 @@
 [
-  "null-destructure/input.js"
+  "test/unit/null-destructure/input.js"
 ]

@@ -1,4 +1,4 @@
 [
-  "asset-fs-inline-path-enc-es-5/asset.txt",
-  "asset-fs-inline-path-enc-es-5/input.js"
+  "test/unit/asset-fs-inline-path-enc-es-5/asset.txt",
+  "test/unit/asset-fs-inline-path-enc-es-5/input.js"
 ]

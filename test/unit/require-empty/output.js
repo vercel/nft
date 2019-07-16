@@ -1,3 +1,3 @@
 [
-  "require-empty/input.js"
+  "test/unit/require-empty/input.js"
 ]

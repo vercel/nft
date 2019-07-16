@@ -1,5 +1,5 @@
 [
-  "ffmpeg-installer/ffmpeg.exe",
-  "ffmpeg-installer/ffmpeg.js",
-  "ffmpeg-installer/input.js"
+  "test/unit/ffmpeg-installer/ffmpeg.exe",
+  "test/unit/ffmpeg-installer/ffmpeg.js",
+  "test/unit/ffmpeg-installer/input.js"
 ]

@@ -1,5 +1,5 @@
 [
-  "asset-conditional/asset1.txt",
-  "asset-conditional/asset2.txt",
-  "asset-conditional/input.js"
+  "test/unit/asset-conditional/asset1.txt",
+  "test/unit/asset-conditional/asset2.txt",
+  "test/unit/asset-conditional/input.js"
 ]

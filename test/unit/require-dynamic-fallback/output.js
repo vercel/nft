@@ -1,4 +1,4 @@
 [
-  "require-dynamic-fallback/dep.js",
-  "require-dynamic-fallback/input.js"
+  "test/unit/require-dynamic-fallback/dep.js",
+  "test/unit/require-dynamic-fallback/input.js"
 ]

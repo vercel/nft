@@ -1,4 +1,4 @@
 [
-  "module-require/dep.js",
-  "module-require/input.js"
+  "test/unit/module-require/dep.js",
+  "test/unit/module-require/input.js"
 ]

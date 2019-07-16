@@ -37,26 +37,19 @@ module.exports = async function (files, opts = {}) {
 
 class Job {
   constructor ({
-    base,
-    filterBase,
+    base = process.cwd(),
     ignore,
     log = false
   }) {
-    if (base) {
-      if (filterBase !== false) filterBase = true;
-      base = resolve(base);
-    }
-    else {
-      filterBase = false;
-    }
+    base = resolve(base);
     this.ignoreFn = path => {
-      if (filterBase && path.startsWith('..' + sep)) return true;
+      if (path.startsWith('..' + sep)) return true;
       return false;
     };
     if (typeof ignore === 'string') ignore = [ignore];
     if (typeof ignore === 'function') {
       this.ignoreFn = path => {
-        if (filterBase && path.startsWith('..' + sep)) return true;
+        if (path.startsWith('..' + sep)) return true;
         if (ignore(path)) return true;
         return false;
       };
@@ -64,7 +57,7 @@ class Job {
     else if (Array.isArray(ignore)) {
       const resolvedIgnores = ignore.map(ignore => relative(base, resolve(base || process.cwd(), ignore)));
       this.ignoreFn = path => {
-        if (filterBase && path.startsWith('..' + sep)) return true;
+        if (path.startsWith('..' + sep)) return true;
         if (isMatch(path, resolvedIgnores)) return true;
         return false;
       }
@@ -140,11 +133,9 @@ class Job {
 
   emitFile (path, reason, parent) {
     if (this.fileList.has(path)) return;
-    if (this.base) {
-      path = relative(this.base, path);
-      if (parent)
-        parent = relative(this.base, parent);
-    }
+    path = relative(this.base, path);
+    if (parent)
+      parent = relative(this.base, parent);
     const reasonEntry = this.reasons[path] || (this.reasons[path] = {
       type: reason,
       ignored: false,
@@ -175,7 +166,7 @@ class Job {
 
     const { deps, assets, isESM } = await analyze(path, source, this);
     if (isESM)
-      this.esmFileList.add(this.base ? relative(this.base, path) : path);
+      this.esmFileList.add(relative(this.base, path));
     await Promise.all([
       ...[...assets].map(async asset => {
         const ext = extname(asset);

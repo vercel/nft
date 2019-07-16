@@ -1,4 +1,4 @@
 [
-  "when-wrapper/dep.js",
-  "when-wrapper/input.js"
+  "test/unit/when-wrapper/dep.js",
+  "test/unit/when-wrapper/input.js"
 ]
