@@ -1,12 +1,16 @@
-const { extname, relative, resolve, sep } = require('path');
-const sharedlibEmit = require('./utils/sharedlib-emit');
+const { basename, dirname, extname, relative, resolve, sep } = require('path');
 const fs = require('fs');
 const analyze = require('./analyze');
 const resolveDependency = require('./resolve-dependency');
 const { isMatch } = require('micromatch');
+const sharedlibEmit = require('./utils/sharedlib-emit');
 
 const { gracefulify } = require('graceful-fs');
 gracefulify(fs);
+
+function inPath (path, parent) {
+  return path.startsWith(parent) && path[parent.length] === sep;
+}
 
 module.exports = async function (files, opts = {}) {
   const job = new Job(opts);
@@ -22,7 +26,7 @@ module.exports = async function (files, opts = {}) {
 
   await Promise.all(files.map(file => {
     const path = resolve(file);
-    job.emitFile(path, 'initial');
+    job.emitFile(job.realpath(path), 'initial');
     if (path.endsWith('.js') || path.endsWith('.node') || job.ts && path.endsWith('.ts'))
       return job.emitDependency(path);
   }));
@@ -145,6 +149,25 @@ class Job {
     }
   }
 
+  realpath (path, parent, seen = new Set()) {
+    if (seen.has(path)) throw new Error('Recursive symlink detected resolving ' + path);
+    seen.add(path);
+    const symlink = this.readlink(path);
+    // emit direct symlink paths only
+    if (symlink) {
+      const parentPath = dirname(path);
+      const resolved = resolve(parentPath, symlink);
+      const realParent = this.realpath(parentPath, parent);
+      if (inPath(path, realParent))
+        this.emitFile(path, 'resolve', parent);
+      return this.realpath(resolved, parent, seen);
+    }
+    // keep backtracking for realpath, emitting folder symlinks within base
+    if (!inPath(path, this.base))
+      return path;
+    return this.realpath(dirname(path), parent, seen) + sep + basename(path);
+  }
+
   emitFile (path, reason, parent) {
     if (this.fileList.has(path)) return;
     path = relative(this.base, path);
@@ -188,7 +211,7 @@ class Job {
             this.ts && ext === '.ts' && asset.startsWith(this.base) && asset.substr(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
           await this.emitDependency(asset, path);
         else
-          this.emitFile(asset, 'asset', path);
+          this.emitFile(this.realpath(asset, path), 'asset', path);
       }),
       ...[...deps].map(async dep => {
         try {
