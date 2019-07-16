@@ -145,6 +145,8 @@ function isAbsolutePathStr (str) {
 
 const BOUND_REQUIRE = Symbol();
 
+const repeatGlobRegEx = /([\/\\]\*\*[\/\\]\*)+/g
+
 module.exports = async function (id, code, job) {
   const assets = new Set();
   const deps = new Set();
@@ -162,7 +164,7 @@ module.exports = async function (id, code, job) {
     const patternPath = wildcardPath.substr(dirIndex);
     const wildcardPattern = patternPath.replace(wildcardRegEx, (_match, index) => {
       return patternPath[index - 1] === path.sep ? '**/*' : '*';
-    }).replace(/([\/\\]\*\*[\/\\]\*)+/g, '/**/*') || '/**/*';
+    }).replace(repeatGlobRegEx, '/**/*') || '/**/*';
 
     if (job.ignoreFn(job.base ? path.relative(job.base, assetDirPath + wildcardPattern) : assetDirPath + wildcardPattern, id))
       return;
