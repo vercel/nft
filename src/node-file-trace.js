@@ -97,6 +97,20 @@ class Job {
     }
   }
 
+  isFile (path) {
+    const stats = this.stat(path);
+    if (stats)
+      return stats.isFile();
+    return false;
+  }
+
+  isDir (path) {
+    const stats = this.stat(path);
+    if (stats)
+      return stats.isDirectory();
+    return false;
+  }
+
   stat (path) {
     const cached = this.statCache.get(path);
     if (cached) return cached;

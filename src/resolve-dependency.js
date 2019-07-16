@@ -42,18 +42,18 @@ function resolvePath (path, parent, job) {
 
 function resolveFile (path, job) {
   if (path.endsWith('/')) return;
-  if (job.readFile(path) !== null) return path;
-  if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.readFile(path + '.ts') !== null) return path + '.ts';
-  if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.readFile(path + '.tsx') !== null) return path + '.tsx';
-  if (job.readFile(path + '.js') !== null) return path + '.js';
-  if (job.readFile(path + '.json') !== null) return path + '.json';
-  if (job.readFile(path + '.node') !== null) return path + '.node';
+  if (job.isFile(path)) return path;
+  if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.isFile(path + '.ts')) return path + '.ts';
+  if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.isFile(path + '.tsx')) return path + '.tsx';
+  if (job.isFile(path + '.js')) return path + '.js';
+  if (job.isFile(path + '.json')) return path + '.json';
+  if (job.isFile(path + '.node')) return path + '.node';
 }
 
 function resolveDir (path, parent, job) {
-  const stat = job.stat(path);
-  if (!stat || !stat.isDirectory()) return;
-  const pjsonSource = job.readFile(path + '/package.json');
+  if (!job.isDir(path)) return;
+  const realPjsonPath = realpath(path + '/package.json', parent, job);
+  const pjsonSource = job.readFile(realPjsonPath);
   if (pjsonSource) {
     try {
       var pjson = JSON.parse(pjsonSource);
@@ -62,7 +62,7 @@ function resolveDir (path, parent, job) {
     if (pjson && typeof pjson.main === 'string') {
       const resolved = resolveFile(resolve(path, pjson.main), job) || resolveFile(resolve(path, pjson.main, 'index'), job);
       if (resolved) {
-        job.emitFile(realpath(path + '/package.json', parent, job), 'resolve', parent);
+        job.emitFile(realPjsonPath, 'resolve', parent);
         return resolved;
       }
     }
