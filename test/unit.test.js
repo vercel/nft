@@ -3,6 +3,15 @@ const nodeFileTrace = require('../src/node-file-trace');
 
 global._unit = true;
 
+function tryCreateSymlink (target, path) {
+  try {
+    fs.symlinkSync(target, path);
+  }
+  catch (e) {
+    if (e.code !== 'EEXIST') throw e;
+  }
+}
+
 // ensure test/yarn-workspaces/node_modules/x -> test/yarn-workspaces/packages/x
 try {
   fs.mkdirSync(`${__dirname}/unit/yarn-workspaces/node_modules`);
@@ -10,12 +19,8 @@ try {
 catch (e) {
   if (e.code !== 'EEXIST') throw e;
 }
-try {
-  fs.symlinkSync('../packages/x', `${__dirname}/unit/yarn-workspaces/node_modules/x`);
-}
-catch (e) {
-  if (e.code !== 'EEXIST') throw e;
-}
+tryCreateSymlink('../packages/x', `${__dirname}/unit/yarn-workspaces/node_modules/x`);
+tryCreateSymlink('./asset1.txt', `${__dirname}/unit/asset-symlink/asset.txt`);
 
 for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
   it(`should correctly trace ${unitTest}`, async () => {
