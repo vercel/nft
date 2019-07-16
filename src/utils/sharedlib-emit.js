@@ -24,5 +24,5 @@ module.exports = async function (path, job) {
   const files = await new Promise((resolve, reject) =>
     glob(pkgPath + sharedlibGlob, { ignore: pkgPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
   );
-  files.forEach(file => job.emitFile(file, 'sharedlib'));
+  files.forEach(file => job.emitFile(job.realpath(file, path), 'sharedlib', path));
 };
