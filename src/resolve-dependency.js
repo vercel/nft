@@ -14,10 +14,11 @@ module.exports = function resolveDependency (specifier, parent, job) {
 };
 
 function resolvePath (path, parent, job) {
-  return resolveFile(path, job) || resolveDir(path, parent, job) || notFound(path, parent);
+  return resolveFile(path, parent, job) || resolveDir(path, parent, job) || notFound(path, parent);
 }
 
-function resolveFile (path, job) {
+function resolveFile (path, parent, job) {
+  path = job.realpath(path, parent);
   if (path.endsWith('/')) return;
   if (job.isFile(path)) return path;
   if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.isFile(path + '.ts')) return path + '.ts';
@@ -37,14 +38,14 @@ function resolveDir (path, parent, job) {
     }
     catch (e) {}
     if (pjson && typeof pjson.main === 'string') {
-      const resolved = resolveFile(resolve(path, pjson.main), job) || resolveFile(resolve(path, pjson.main, 'index'), job);
+      const resolved = resolveFile(resolve(path, pjson.main), parent, job) || resolveFile(resolve(path, pjson.main, 'index'), parent, job);
       if (resolved) {
         job.emitFile(realPjsonPath, 'resolve', parent);
         return resolved;
       }
     }
   }
-  return resolveFile(resolve(path, 'index'), job);
+  return resolveFile(resolve(path, 'index'), parent, job);
 }
 
 function notFound (specifier, parent) {
@@ -65,7 +66,7 @@ function resolvePackage (name, parent, job) {
     const nodeModulesDir = packageParent + '/node_modules';
     const stat = job.stat(nodeModulesDir);
     if (!stat || !stat.isDirectory()) continue;
-    const resolved = resolveFile(nodeModulesDir + '/' + name, job) || resolveDir(nodeModulesDir + '/' + name, parent, job);
+    const resolved = resolveFile(nodeModulesDir + '/' + name, parent, job) || resolveDir(nodeModulesDir + '/' + name, parent, job);
     if (resolved) return resolved;
   }
   notFound(name, parent);
