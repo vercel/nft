@@ -29,6 +29,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
       base: `${__dirname}/../`,
       ts: true,
       log: true,
+      mixedModules: true,
       ignore: '**/actual.js'
     });
     let expected;

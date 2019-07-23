@@ -3,6 +3,7 @@ interface NodeFileTraceOptions {
   ignore?: string | string[] | ((path: string) => boolean);
   ts?: boolean;
   log?: boolean;
+  mixedModules?: boolean;
   readFile?: (path: string) => Buffer | string | null;
   stat?: (path: string) => Object | null;
   readlink?: (path: string) => string | null;

@@ -43,7 +43,8 @@ class Job {
   constructor ({
     base = process.cwd(),
     ignore,
-    log = false
+    log = false,
+    mixedModules = false,
   }) {
     base = resolve(base);
     this.ignoreFn = path => {
@@ -68,6 +69,7 @@ class Job {
     }
     this.base = base;
     this.log = log;
+    this.mixedModules = mixedModules;
     this.reasons = Object.create(null);
 
     this.fileCache = new Map();
