@@ -222,7 +222,7 @@ module.exports = async function (id, code, job) {
     }
   });
 
-  if (!isESM) {
+  if (!isESM || job.mixedModules) {
     knownBindings.require = {
       shadowDepth: 0,
       value: {
@@ -261,7 +261,7 @@ module.exports = async function (id, code, job) {
     return binding && binding.shadowDepth === 0;
   }
 
-  if (isESM) {
+  if (isESM || job.mixedModules) {
     for (const decl of ast.body) {
       if (decl.type === 'ImportDeclaration') {
         const source = decl.source.value;
@@ -424,13 +424,13 @@ module.exports = async function (id, code, job) {
       // - nodegyp()
       // - etc.
       else if (node.type === 'CallExpression') {
-        if (!isESM && node.callee.type === 'Identifier' && node.arguments.length) {
+        if ((!isESM || job.mixedModules) && node.callee.type === 'Identifier' && node.arguments.length) {
           if (node.callee.name === 'require' && knownBindings.require.shadowDepth === 0) {
             processRequireArg(node.arguments[0]);
             return;
           }
         }
-        else if (!isESM &&
+        else if ((!isESM || job.mixedModules) &&
             node.callee.type === 'MemberExpression' &&
             node.callee.object.type === 'Identifier' &&
             node.callee.object.name === 'module' &&
@@ -615,7 +615,7 @@ module.exports = async function (id, code, job) {
         }
       }
       // Support require wrappers like function p (x) { ...; var y = require(x); ...; return y;  }
-      else if (!isESM &&
+      else if ((!isESM || job.mixedModules) &&
                (node.type === 'FunctionDeclaration' || node.type === 'FunctionExpression' || node.type === 'ArrowFunctionExpression') &&
                (node.arguments || node.params)[0] && (node.arguments || node.params)[0].type === 'Identifier') {
         let fnName, args;
