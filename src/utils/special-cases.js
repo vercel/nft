@@ -3,9 +3,9 @@ const resolve = require('../resolve-dependency');
 const { getPackageName } = require('./get-package-base');
 
 const specialCases = {
-  '@generated/photon' ({ id, emitAsset }) {
+  '@generated/photon' ({ id, emitAssetDirectory }) {
     if (id.endsWith('@generated/photon/index.js')) {
-      emitAsset(path.resolve(path.dirname(id), 'runtime/prisma'));
+      emitAssetDirectory(path.resolve(path.dirname(id), 'runtime/'));
     }
   },
   'google-gax' ({ id, ast, emitAssetDirectory }) {
