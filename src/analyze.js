@@ -278,7 +278,7 @@ module.exports = async function (id, code, job) {
           }
         }
       }
-      else if (decl.type === 'ExportNamedDeclaration') {
+      else if (decl.type === 'ExportNamedDeclaration' || decl.type === 'ExportAllDeclaration') {
         if (decl.source) deps.add(decl.source.value);
       }
     }
