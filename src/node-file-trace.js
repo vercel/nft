@@ -96,7 +96,7 @@ class Job {
       return link;
     }
     catch (e) {
-      if (e.code !== 'EINVAL' && e.code !== 'ENOENT')
+      if (e.code !== 'EINVAL' && e.code !== 'ENOENT' && e.code !== 'UNKNOWN')
         throw e;
       this.symlinkCache.set(path, null);
       return null;
