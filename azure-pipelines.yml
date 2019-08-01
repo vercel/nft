@@ -20,4 +20,4 @@ steps:
     node azure-prepare.js
     yarn install
     yarn test
-  displayName: 'yarn install and test'
+  displayName: 'Install Dependencies & Test'
