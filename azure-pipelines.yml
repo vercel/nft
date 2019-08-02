@@ -16,8 +16,5 @@ steps:
     versionSpec: '10.x'
   displayName: 'Install Node.js'
 
-- script: |
-    node azure-prepare.js
-    yarn install
-    yarn test
+- script: node azure-prepare.js && yarn install && yarn test
   displayName: 'Install Dependencies & Test'
