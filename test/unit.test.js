@@ -46,7 +46,7 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
     }
     catch (e) {
       console.warn(reasons);
-      fs.writeFileSync(join(unitpath, 'actual.js'), JSON.stringify(fileList, null, 2));
+      fs.writeFileSync(join(unitPath, 'actual.js'), JSON.stringify(fileList, null, 2));
       throw e;
     }
   });
