@@ -23,16 +23,12 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
       // ignore other integration tests
       ignore: ['test/integration/**']
     });
-    console.log('trace complete');
     // warnings.forEach(warning => console.warn(warning));
     const randomTmpId = Math.random().toString().slice(2)
     const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-${randomTmpId}`);
-    console.log('removing dir ' + tmpdir);
     rimraf.sync(tmpdir);
-    console.log('making dir ' + tmpdir);
     fs.mkdirSync(tmpdir);
     await Promise.all(fileList.map(async file => {
-      console.log('making file ' + file);
       const inPath = path.resolve(__dirname, '..', file);
       const outPath = path.resolve(tmpdir, file);
       try {
@@ -49,7 +45,8 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
         await writeFile(outPath, await readFile(inPath), { mode: 0o777 });
       }
     }));
-    const ps = fork(`${tmpdir}/test/integration/${integrationTest}`, {
+    console.log('forking ' + file)
+    const ps = fork(join(tmpdir, 'test', 'integration', integrationTest), {
       stdio: fails ? 'pipe' : 'inherit'
     });
     const code = await new Promise(resolve => ps.on('close', resolve));
