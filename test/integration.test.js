@@ -45,7 +45,7 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
         await writeFile(outPath, await readFile(inPath), { mode: 0o777 });
       }
     }));
-    console.log('forking ' + file)
+    console.log('forking ' + tmpdir)
     const ps = fork(join(tmpdir, 'test', 'integration', integrationTest), {
       stdio: fails ? 'pipe' : 'inherit'
     });
