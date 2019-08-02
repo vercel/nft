@@ -45,11 +45,14 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
         await writeFile(outPath, await readFile(inPath), { mode: 0o777 });
       }
     }));
-    console.log('forking ' + tmpdir)
-    const ps = fork(path.join(tmpdir, 'test', 'integration', integrationTest), {
+    const testFile = path.join(tmpdir, 'test', 'integration', integrationTest);
+    console.log('forking ' + testFile);
+    const ps = fork(testFile, {
       stdio: fails ? 'pipe' : 'inherit'
     });
+    console.log('ps ' + typeof ps);
     const code = await new Promise(resolve => ps.on('close', resolve));
+    console.log('code ' + typeof code);
     expect(code).toBe(fails ? 1 : 0);
     rimraf.sync(tmpdir);
   });
