@@ -35,7 +35,7 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
         var symlinkPath = await readlink(inPath);
       }
       catch (e) {
-        if (e.code !== 'EINVAL') throw e;
+        if (e.code !== 'EINVAL' && e.code !== 'UNKNOWN') throw e;
       }
       mkdirp.sync(path.dirname(outPath));
       if (symlinkPath) {

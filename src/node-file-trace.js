@@ -154,7 +154,7 @@ class Job {
   realpath (path, parent, seen = new Set()) {
     if (seen.has(path)) throw new Error('Recursive symlink detected resolving ' + path);
     seen.add(path);
-    const symlink = process.platform === 'win32' ? null : this.readlink(path);
+    const symlink = this.readlink(path);
     // emit direct symlink paths only
     if (symlink) {
       const parentPath = dirname(path);
