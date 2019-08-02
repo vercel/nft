@@ -15,7 +15,7 @@ function tryCreateSymlink (target, path) {
 
 // ensure test/yarn-workspaces/node_modules/x -> test/yarn-workspaces/packages/x
 try {
-  fs.mkdirSync(join(__dirname, 'unit', 'yarn-workspaces', 'node_modules');
+  fs.mkdirSync(join(__dirname, 'unit', 'yarn-workspaces', 'node_modules'));
 }
 catch (e) {
   if (e.code !== 'EEXIST' && e.code !== 'UNKNOWN') throw e;
