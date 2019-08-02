@@ -46,7 +46,7 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
       }
     }));
     console.log('forking ' + tmpdir)
-    const ps = fork(join(tmpdir, 'test', 'integration', integrationTest), {
+    const ps = fork(path.join(tmpdir, 'test', 'integration', integrationTest), {
       stdio: fails ? 'pipe' : 'inherit'
     });
     const code = await new Promise(resolve => ps.on('close', resolve));
