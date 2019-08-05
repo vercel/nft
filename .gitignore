@@ -2,3 +2,4 @@ node_modules
 dist
 coverage
 test/**/dist
+test/**/actual.js
