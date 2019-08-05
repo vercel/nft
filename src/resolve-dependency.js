@@ -19,7 +19,7 @@ function resolvePath (path, parent, job) {
 
 function resolveFile (path, parent, job) {
   path = job.realpath(path, parent);
-  if (path.endsWith('/')) return;
+  if (path.endsWith(sep)) return;
   if (job.isFile(path)) return path;
   if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.isFile(path + '.ts')) return path + '.ts';
   if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.isFile(path + '.tsx')) return path + '.tsx';
@@ -30,7 +30,7 @@ function resolveFile (path, parent, job) {
 
 function resolveDir (path, parent, job) {
   if (!job.isDir(path)) return;
-  const realPjsonPath = job.realpath(path + '/package.json', parent);
+  const realPjsonPath = job.realpath(path + sep + 'package.json', parent);
   const pjsonSource = job.readFile(realPjsonPath);
   if (pjsonSource) {
     try {
@@ -60,13 +60,13 @@ function resolvePackage (name, parent, job) {
   let packageParent = parent;
   if (nodeBuiltins.has(name)) return 'node:' + name;
   let separatorIndex;
-  const rootSeparatorIndex = packageParent.indexOf('/');
-  while ((separatorIndex = packageParent.lastIndexOf('/')) > rootSeparatorIndex) {
+  const rootSeparatorIndex = packageParent.indexOf(sep);
+  while ((separatorIndex = packageParent.lastIndexOf(sep)) > rootSeparatorIndex) {
     packageParent = packageParent.substr(0, separatorIndex);
-    const nodeModulesDir = packageParent + '/node_modules';
+    const nodeModulesDir = packageParent + sep + 'node_modules';
     const stat = job.stat(nodeModulesDir);
     if (!stat || !stat.isDirectory()) continue;
-    const resolved = resolveFile(nodeModulesDir + '/' + name, parent, job) || resolveDir(nodeModulesDir + '/' + name, parent, job);
+    const resolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
     if (resolved) return resolved;
   }
   notFound(name, parent);
