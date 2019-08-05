@@ -36,6 +36,8 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
     let expected;
     try {
       expected = JSON.parse(fs.readFileSync(join(unitPath, 'output.js')).toString());
+      // When using Windows, the expected output should use backslash
+      expected = expected.map(str => str.replace(/\//g, '\\'));
     }
     catch (e) {
       console.warn(e);
