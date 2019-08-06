@@ -1,10 +1,17 @@
 const { spawn } = require('child_process');
-const path = require('path');
-
 const tsc = require.resolve('typescript/bin/tsc');
-console.log('path to tsc is ' + tsc);
+const tscjs = require.resolve('typescript/lib/tsc.js');
+const cwd = __dirname;
 
-const child = spawn(tsc, { cwd: path.resolve(__dirname, '..', 'fixtures') });
+if (!tsc.endsWith('tsc')) {
+  throw new Error('Expected tsc cli but found ' + tsc);
+}
+
+if (!tscjs.endsWith('tsc.js')) {
+  throw new Error('Expected tsc.js but found ' + tscjs);
+}
+
+const child = spawn('node', [tscjs, '--version'], { cwd });
 child.stdout.on('data', data => {
   console.error(data.toString());
   throw new Error('Unexpected output.');
