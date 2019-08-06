@@ -13,10 +13,10 @@ if (!tscjs.endsWith('tsc.js')) {
 
 const child = spawn('node', [tscjs, '--version'], { cwd });
 child.stdout.on('data', data => {
-  console.error(data.toString());
-  throw new Error('Unexpected output.');
+  if (!data || data.toString().length === 0) {
+    throw new Error('Expected stdout output but found none');
+  }
 });
 child.stderr.on('data', data => {
-  console.error(data.toString());
-  throw new Error('Unexpected output.')
+  throw new Error('Unexpected stderr output: ' + data.toString());
 });
