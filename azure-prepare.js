@@ -2,11 +2,6 @@ const { unlinkSync, readFileSync, writeFileSync } = require('fs');
 const { join } = require('path');
 
 if (process.platform === 'win32') {
-  // Delete the unit tests that will never work in Windows
-  // because they test symbolic links
-  unlinkSync(join(__dirname, 'test', 'unit', 'asset-symlink'));
-  unlinkSync(join(__dirname, 'test', 'unit', 'yarn-workspaces'));
-
   // Delete the integration tests that will never work in Windows
   // because those packages were designed for Linux.
   const pkgJson = readFileSync(join(__dirname, 'package.json'), 'utf8');

@@ -5,6 +5,10 @@ const nodeFileTrace = require('../src/node-file-trace');
 global._unit = true;
 
 function tryCreateSymlink (target, path) {
+  if (process.platform === 'win32') {
+    console.log('skipping create symlink on Windows');
+    return;
+  }
   try {
     fs.symlinkSync(target, path);
   }
@@ -24,6 +28,9 @@ tryCreateSymlink('../packages/x', join(__dirname, 'unit', 'yarn-workspaces', 'no
 tryCreateSymlink('./asset1.txt',  join(__dirname, 'unit', 'asset-symlink', 'asset.txt'));
 
 for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
+  if (process.platform === 'win32' && ['yarn-workspaces', 'asset-symlink'].includes(unitTest)) {
+    console.log('skipping symlink test on Windows');
+  }
   it(`should correctly trace ${unitTest}`, async () => {
     const unitPath = join(__dirname, 'unit', unitTest);
     const { fileList, reasons } = await nodeFileTrace([join(unitPath, 'input.js')], {
