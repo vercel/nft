@@ -29,7 +29,8 @@ tryCreateSymlink('./asset1.txt',  join(__dirname, 'unit', 'asset-symlink', 'asse
 
 for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
   if (process.platform === 'win32' && ['yarn-workspaces', 'asset-symlink'].includes(unitTest)) {
-    console.log('skipping symlink test on Windows');
+    console.log('skipping symlink test on Windows: ' + unitTest);
+    continue;
   }
   it(`should correctly trace ${unitTest}`, async () => {
     const unitPath = join(__dirname, 'unit', unitTest);
