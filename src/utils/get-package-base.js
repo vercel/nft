@@ -18,7 +18,9 @@ module.exports.getPackageName = function (id) {
       (id[pkgIndex - 1] === '/' || id[pkgIndex - 1] === '\\') &&
       (id[pkgIndex + 12] === '/' || id[pkgIndex + 12] === '\\')) {
     const pkgNameMatch = id.substr(pkgIndex + 13).match(pkgNameRegEx);
-    if (pkgNameMatch) return pkgNameMatch[0];
+    if (pkgNameMatch && pkgNameMatch.length > 0) {
+      return pkgNameMatch[0].replace(/\\/g,  '/');
+    }
   }
 };
 

@@ -164,5 +164,6 @@ const specialCases = {
 module.exports = function ({ id, ast, emitAsset, emitAssetDirectory, job }) {
   const pkgName = getPackageName(id);
   const specialCase = specialCases[pkgName];
+  id = id.replace(/\\/g,  '/');
   if (specialCase) specialCase({ id, ast, emitAsset, emitAssetDirectory, job });
 };

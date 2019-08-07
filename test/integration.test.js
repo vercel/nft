@@ -35,7 +35,7 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
         var symlinkPath = await readlink(inPath);
       }
       catch (e) {
-        if (e.code !== 'EINVAL') throw e;
+        if (e.code !== 'EINVAL' && e.code !== 'UNKNOWN') throw e;
       }
       mkdirp.sync(path.dirname(outPath));
       if (symlinkPath) {
@@ -45,7 +45,8 @@ for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
         await writeFile(outPath, await readFile(inPath), { mode: 0o777 });
       }
     }));
-    const ps = fork(`${tmpdir}/test/integration/${integrationTest}`, {
+    const testFile = path.join(tmpdir, 'test', 'integration', integrationTest);
+    const ps = fork(testFile, {
       stdio: fails ? 'pipe' : 'inherit'
     });
     const code = await new Promise(resolve => ps.on('close', resolve));

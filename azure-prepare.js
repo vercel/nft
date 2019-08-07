@@ -11,6 +11,7 @@ if (process.platform === 'win32') {
   unlinkSync(join(__dirname, 'test', 'integration', 'highlights.js'));
   unlinkSync(join(__dirname, 'test', 'integration', 'hot-shots.js'));
   unlinkSync(join(__dirname, 'test', 'integration', 'yoga-layout.js'));
+  unlinkSync(join(__dirname, 'test', 'integration', 'loopback.js'));
   delete pkg.devDependencies['@tensorflow/tfjs-node'];
   delete pkg.devDependencies['highlights'];
   delete pkg.devDependencies['hot-shots'];
