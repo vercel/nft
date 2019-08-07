@@ -8,6 +8,11 @@ const specialCases = {
       emitAssetDirectory(path.resolve(path.dirname(id), 'runtime/'));
     }
   },
+  'bull' ({ id, emitAssetDirectory }) {
+    if (id.endsWith('bull/lib/commands/index.js')) {
+      emitAssetDirectory(path.resolve(path.dirname(id)));
+    }
+  },
   'google-gax' ({ id, ast, emitAssetDirectory }) {
     if (id.endsWith('google-gax/build/src/grpc.js')) {
       // const googleProtoFilesDir = path.normalize(google_proto_files_1.getProtoPath('..'));
