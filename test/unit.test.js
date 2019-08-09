@@ -32,6 +32,48 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
     console.log('skipping symlink test on Windows: ' + unitTest);
     continue;
   }
+  if (unitTest === 'tsx2') {
+    it(`should correctly trace and read .tsx files`, async () => {
+      const unitPath = join(__dirname, 'unit', unitTest);
+      // We mock readFile because when node-file-trace is integrated into @now/node
+      // this is the hook that triggers TypeScript compilation. So if this doesn't
+      // get called, the TypeScript files won't get compiled:
+      const readFileMock = jest.fn(function() {
+        return this.constructor.prototype.readFile.apply(this, arguments);
+      });
+      const { fileList, reasons } = await nodeFileTrace([join(unitPath, 'input.tsx')], {
+        base: `${__dirname}/../`,
+        ts: true,
+        log: true,
+        mixedModules: true,
+        ignore: '**/actual.js',
+        readFile: readFileMock
+      });
+      let expected;
+      try {
+        expected = JSON.parse(fs.readFileSync(join(unitPath, 'output.js')).toString());
+        if (process.platform === 'win32') {
+          // When using Windows, the expected output should use backslash
+          expected = expected.map(str => str.replace(/\//g, '\\'));
+        }
+      }
+      catch (e) {
+        console.warn(e);
+        expected = [];
+      }
+      try {
+        expect(fileList).toEqual(expected);
+      }
+      catch (e) {
+        console.warn(reasons);
+        fs.writeFileSync(join(unitPath, 'actual.js'), JSON.stringify(fileList, null, 2));
+        throw e;
+      }
+
+      expect(readFileMock.mock.calls.length).toBe(2);
+    });
+    continue;
+  }
   it(`should correctly trace ${unitTest}`, async () => {
     const unitPath = join(__dirname, 'unit', unitTest);
     const { fileList, reasons } = await nodeFileTrace([join(unitPath, 'input.js')], {

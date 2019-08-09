@@ -210,7 +210,7 @@ class Job {
       ...[...assets].map(async asset => {
         const ext = extname(asset);
         if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '' ||
-            this.ts && ext === '.ts' && asset.startsWith(this.base) && asset.substr(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
+            this.ts && (ext === '.ts' || ext === '.tsx') && asset.startsWith(this.base) && asset.substr(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
           await this.emitDependency(asset, path);
         else
           this.emitFile(this.realpath(asset, path), 'asset', path);
