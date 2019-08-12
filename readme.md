@@ -1,9 +1,11 @@
 # Node File Trace
 
-[![Build Status](https://circleci.com/gh/zeit/node-file-trace.svg?&style=shield)](https://circleci.com/gh/zeit/workflows/node-file-trace)
-[![codecov](https://codecov.io/gh/zeit/node-file-trace/branch/master/graph/badge.svg)](https://codecov.io/gh/zeit/node-file-trace)
+[![Build Status](https://badgen.net/circleci/github/zeit/node-file-trace)](https://circleci.com/gh/zeit/workflows/node-file-trace)
+[![Code Coverage](https://badgen.net/codecov/c/github/zeit/node-file-trace)](https://codecov.io/gh/zeit/node-file-trace)
 
-Node file tracer used in now-node to determine exactly which files (including from node_modules) are necessary for the application runtime.
+This package is used in [@now/node](https://npmjs.com/package/@now/node) and [@now/next](https://npmjs.com/package/@now/next) to determine exactly which files (including `node_modules`) are necessary for the application runtime.
+
+This is similar to [@zeit/ncc](https://npmjs.com/package/@zeit/ncc) except there is no bundling performed and therefore no reliance on webpack. This achieves the same tree-shaking benefits without moving any assets or binaries.
 
 ## Usage
 
@@ -38,7 +40,19 @@ const { fileList } = await nodeFileTrace(files, {
 }
 ```
 
-Any files below the `base` are ignored in the listing and analysis.
+Any files/folders above the `base` are ignored in the listing and analysis.
+
+#### TypeScript
+
+Both JavaScript and TypeScript source files can be traced.
+
+By default, TypeScript is disabled. Use the `ts` flag to enable.
+
+```js
+const { fileList } = await nodeFileTrace(['index.ts'], {
+  ts: true
+}
+```
 
 #### Ignore
 
