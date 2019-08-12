@@ -318,7 +318,7 @@ module.exports = async function (id, code, job) {
     }) || '/**/*';
 
     if (!wildcardPattern.endsWith('*'))
-      wildcardPattern += '?(' + (job.ts ? '.ts|' : '') + '.js|.json|.node)';
+      wildcardPattern += '?(' + (job.ts ? '.ts|.tsx|' : '') + '.js|.json|.node)';
 
     if (job.ignoreFn(path.relative(job.base, wildcardDirPath + wildcardPattern)))
       return;

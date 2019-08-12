@@ -27,7 +27,7 @@ module.exports = async function (files, opts = {}) {
   await Promise.all(files.map(file => {
     const path = resolve(file);
     job.emitFile(job.realpath(path), 'initial');
-    if (path.endsWith('.js') || path.endsWith('.node') || job.ts && path.endsWith('.ts'))
+    if (path.endsWith('.js') || path.endsWith('.node') || job.ts && (path.endsWith('.ts') || path.endsWith('.tsx')))
       return job.emitDependency(path);
   }));
 
@@ -210,7 +210,7 @@ class Job {
       ...[...assets].map(async asset => {
         const ext = extname(asset);
         if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '' ||
-            this.ts && ext === '.ts' && asset.startsWith(this.base) && asset.substr(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
+            this.ts && (ext === '.ts' || ext === '.tsx') && asset.startsWith(this.base) && asset.substr(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
           await this.emitDependency(asset, path);
         else
           this.emitFile(this.realpath(asset, path), 'asset', path);
