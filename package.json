@@ -95,6 +95,7 @@
     "tiny-json-http": "^7.1.2",
     "twilio": "^3.33.0",
     "typescript": "^3.5.2",
+    "uglify-js": "^3.6.0",
     "vm2": "^3.8.2",
     "vue": "^2.6.10",
     "vue-server-renderer": "^2.6.10",

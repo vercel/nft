@@ -149,18 +149,9 @@ const specialCases = {
       emitAsset(path.resolve(id, '../exports.js'));
     }
   },
-  'uglify-js' ({ id, emitAsset }) {
+  'uglify-js' ({ id, emitAsset, emitAssetDirectory }) {
     if (id.endsWith('uglify-js/tools/node.js')) {
-      emitAsset(path.resolve(id, '../../lib/utils.js'));
-      emitAsset(path.resolve(id, '../../lib/ast.js'));
-      emitAsset(path.resolve(id, '../../lib/parse.js'));
-      emitAsset(path.resolve(id, '../../lib/transform.js'));
-      emitAsset(path.resolve(id, '../../lib/scope.js'));
-      emitAsset(path.resolve(id, '../../lib/output.js'));
-      emitAsset(path.resolve(id, '../../lib/compress.js'));
-      emitAsset(path.resolve(id, '../../lib/sourcemap.js'));
-      emitAsset(path.resolve(id, '../../lib/mozilla-ast.js'));
-      emitAsset(path.resolve(id, '../../lib/propmangle.js'));
+      emitAssetDirectory(path.resolve(id, '../../lib'));
       emitAsset(path.resolve(id, '../exports.js'));
     }
   }
