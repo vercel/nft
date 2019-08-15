@@ -57,6 +57,11 @@ const specialCases = {
       }
     }
   },
+  'phantomjs-prebuilt' ({ id, emitAssetDirectory }) {
+    if (id.endsWith('phantomjs-prebuilt/lib/phantomjs.js')) {
+      emitAssetDirectory(path.resolve(path.dirname(id), '..', 'bin'));
+    }
+  },
   'socket.io' ({ id, ast }) {
     if (id.endsWith('socket.io/lib/index.js')) {
       function replaceResolvePathStatement (statement) {
