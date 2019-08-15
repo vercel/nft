@@ -80,6 +80,7 @@
     "pdf2json": "^1.1.8",
     "pdfkit": "^0.10.0",
     "pg": "^7.11.0",
+    "phantomjs-prebuilt": "^2.1.16",
     "pug": "^2.0.4",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
