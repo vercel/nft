@@ -7,6 +7,8 @@
   "types": "./node-file-trace.d.ts",
   "scripts": {
     "test": "jest --verbose",
+    "test-verbose": "jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\"",
+    "codecov": "codecov",
     "test-coverage": "jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
   },
   "files": [
