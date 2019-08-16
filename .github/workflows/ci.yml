@@ -18,6 +18,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Print Node Version
       run: node --version
+    - name: Prepare Windows (if applicable)
+      run: node azure-prepare.js
     - name: Install Dependencies
       run: yarn install
     - name: Run Tests
