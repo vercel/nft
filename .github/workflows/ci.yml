@@ -4,12 +4,9 @@ on:
   push:
     branches:
     - master
-  pull_request:
-    paths:
-    - *
 
 jobs:
-  build:
+  test:
     name: Test on node ${{ matrix.node }} and ${{ matrix.os }}
     strategy:
       matrix:
