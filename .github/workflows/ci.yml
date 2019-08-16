@@ -20,5 +20,7 @@ jobs:
       run: node --version
     - name: Install Dependencies
       run: yarn install
-    - name: Test Coverage
-      run: yarn test-coverage
+    - name: Run Tests
+      env:
+        BULL_REDIS_CONNECTION: ${{ secrets.BULL_REDIS_CONNECTION }}
+      run: yarn test
