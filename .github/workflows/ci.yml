@@ -7,8 +7,8 @@ jobs:
     name: Test on node ${{ matrix.node-version }} and ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        node-version: [8, 10, 12]
+        os: [ubuntu-latest, windows-latest]
+        node-version: [10]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v1
