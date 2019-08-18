@@ -357,7 +357,7 @@ module.exports = async function (id, code, job) {
     if (typeof computed.value === 'string') {
       if (!computed.wildcards)
         deps.add(computed.value);
-      else if (computed.wildcards.length === 1)
+      else if (computed.wildcards.length >= 1)
         emitWildcardRequire(computed.value);
     }
     else {
