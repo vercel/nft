@@ -152,7 +152,11 @@ const visitors = {
     if (typeof fn === 'object' && fn !== null) fn = fn[FUNCTION];
     if (typeof fn !== 'function') return;
 
-    const ctx = node.callee.object && walk(node.callee.object).value || null;
+    let ctx = null
+    if (node.callee.object) {
+      ctx = walk(node.callee.object)
+      ctx = ctx && ctx.value ? ctx.value : null
+    }
 
     // we allow one conditional argument to create a conditional expression
     let predicate;
