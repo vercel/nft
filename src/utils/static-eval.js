@@ -260,7 +260,17 @@ const visitors = {
     if (node.property.type === 'Identifier') {
       if (typeof obj.value === 'object' && obj.value !== null) {
         if (node.computed) {
-          return { value: WILDCARD, wildcards: [node] };
+          // See if we can compute the computed property
+          const computedProp = walk(node.property);
+          if (computedProp && computedProp.value) {
+            const val = obj.value[computedProp.value];
+            if (val === UNKNOWN) return;
+            return { value: v };
+          }
+          // Special case for empty object
+          if (!obj.value[UNKNOWN] && Object.keys(obj).length === 0) {
+            return { value: undefined };
+          }
         }
         else if (node.property.name in obj.value) {
           const val = obj.value[node.property.name];
