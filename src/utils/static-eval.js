@@ -265,7 +265,7 @@ const visitors = {
           if (computedProp && computedProp.value) {
             const val = obj.value[computedProp.value];
             if (val === UNKNOWN) return;
-            return { value: v };
+            return { value: val };
           }
           // Special case for empty object
           if (!obj.value[UNKNOWN] && Object.keys(obj).length === 0) {
