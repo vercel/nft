@@ -26,7 +26,7 @@ jobs:
       run: node --version
     - name: Prepare Windows (if applicable)
       if: matrix.os == 'windows-latest'
-      run: node azure-prepare.js
+      run: node windows-prepare.js
     - name: Install Dependencies
       run: yarn install
     - name: Run Tests
