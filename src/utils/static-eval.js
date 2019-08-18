@@ -69,7 +69,7 @@ const visitors = {
       }
       // A || UNKNOWN -> A if A is truthy
       if (!('test' in l) && op === '||' && l.value)
-        return node.right;
+        return l;
       return;
     }
 
@@ -142,7 +142,7 @@ const visitors = {
       if (op === '^') return { value: l.value ^ r.value };
       if (op === '&&') return { value: l.value && r.value };
       if (op === '||') return { value: l.value || r.value };
-    }      
+    }
     return;
   },
   CallExpression (node, walk) {
@@ -151,8 +151,12 @@ const visitors = {
     let fn = callee.value;
     if (typeof fn === 'object' && fn !== null) fn = fn[FUNCTION];
     if (typeof fn !== 'function') return;
-    
-    const ctx = node.callee.object && walk(node.callee.object).value || null;
+
+    let ctx = null
+    if (node.callee.object) {
+      ctx = walk(node.callee.object)
+      ctx = ctx && ctx.value ? ctx.value : null
+    }
 
     // we allow one conditional argument to create a conditional expression
     let predicate;
@@ -250,12 +254,25 @@ const visitors = {
   },
   MemberExpression (node, walk) {
     const obj = walk(node.object);
-    // do not allow access to methods on Function 
+    // do not allow access to methods on Function
     if (!obj || 'test' in obj || typeof obj.value === 'function')
       return;
     if (node.property.type === 'Identifier') {
       if (typeof obj.value === 'object' && obj.value !== null) {
-        if (node.property.name in obj.value) {
+        if (node.computed) {
+          // See if we can compute the computed property
+          const computedProp = walk(node.property);
+          if (computedProp && computedProp.value) {
+            const val = obj.value[computedProp.value];
+            if (val === UNKNOWN) return;
+            return { value: val };
+          }
+          // Special case for empty object
+          if (!obj.value[UNKNOWN] && Object.keys(obj).length === 0) {
+            return { value: undefined };
+          }
+        }
+        else if (node.property.name in obj.value) {
           const val = obj.value[node.property.name];
           if (val === UNKNOWN)
             return;
@@ -297,7 +314,7 @@ const visitors = {
       if (value.value === UNKNOWN) return;
       obj[keyValue.value] = value.value;
     }
-    return obj;
+    return { value: obj };
   },
   TemplateLiteral (node, walk) {
     let val = { value: '' };

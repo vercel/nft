@@ -172,11 +172,11 @@ module.exports = async function (id, code, job) {
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log)
         console.log('Globbing ' + assetDirPath + wildcardPattern);
-      const files = (await new Promise((resolve, reject) => 
+      const files = (await new Promise((resolve, reject) =>
         glob(assetDirPath + wildcardPattern, { mark: true, ignore: assetDirPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
       ));
       files
-      .filter(name => 
+      .filter(name =>
         !excludeAssetExtensions.has(path.extname(name)) &&
         !excludeAssetFiles.has(path.basename(name)) &&
         !name.endsWith('/')
@@ -306,9 +306,9 @@ module.exports = async function (id, code, job) {
 
   function emitWildcardRequire (wildcardRequire) {
     if (!wildcardRequire.startsWith('./') && !wildcardRequire.startsWith('../')) return;
-    
+
     wildcardRequire = path.resolve(dir, wildcardRequire);
-    
+
     const wildcardIndex = wildcardRequire.indexOf(WILDCARD);
     const dirIndex = wildcardIndex === -1 ? wildcardRequire.length : wildcardRequire.lastIndexOf(path.sep, wildcardIndex);
     const wildcardDirPath = wildcardRequire.substr(0, dirIndex);
@@ -326,7 +326,7 @@ module.exports = async function (id, code, job) {
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log)
         console.log('Globbing ' + wildcardDirPath + wildcardPattern);
-      const files = (await new Promise((resolve, reject) => 
+      const files = (await new Promise((resolve, reject) =>
         glob(wildcardDirPath + wildcardPattern, { mark: true, ignore: wildcardDirPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
       ));
       files
@@ -348,16 +348,16 @@ module.exports = async function (id, code, job) {
     if (expression.type === 'LogicalExpression') {
       processRequireArg(expression.left);
       processRequireArg(expression.right);
-      return;      
+      return;
     }
 
     let computed = computePureStaticValue(expression, true);
     if (!computed) return;
-    
+
     if (typeof computed.value === 'string') {
       if (!computed.wildcards)
         deps.add(computed.value);
-      else if (computed.wildcards.length === 1)
+      else if (computed.wildcards.length >= 1)
         emitWildcardRequire(computed.value);
     }
     else {
