@@ -937,6 +937,13 @@
   dependencies:
     core-js "^2.5.7"
 
+"@phc/format@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@phc/format/-/format-0.5.0.tgz#a99d27a83d78b3100a191412adda04315e2e3aba"
+  integrity sha512-JWtZ5P1bfXU0bAtTzCpOLYHDXuxSVdtL/oqz4+xa97h8w9E5IlVN333wugXVFv8vZ1hbXObKQf1ptXmFFcMByg==
+  dependencies:
+    safe-buffer "^5.1.2"
+
 "@protobufjs/aspromise@^1.1.1", "@protobufjs/aspromise@^1.1.2":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@protobufjs/aspromise/-/aspromise-1.1.2.tgz#9b8b0cc663d669a7d8f6f5d0893a14d348f30fbf"
@@ -1851,6 +1858,15 @@ are-we-there-yet@~1.1.2:
   dependencies:
     delegates "^1.0.0"
     readable-stream "^2.0.6"
+
+argon2@^0.24.0:
+  version "0.24.0"
+  resolved "https://registry.yarnpkg.com/argon2/-/argon2-0.24.0.tgz#60a7d7e7ce2a0a3b93d4455446153546f01ca3aa"
+  integrity sha512-796movQU1LIW4egM+FH2mrgaTBtIhjEvuTx3sfw0W+Ijbk29IvKOh/i1IDAKCS9s6Y+2GdlPVU5q/gQZ3lyp5w==
+  dependencies:
+    "@phc/format" "^0.5.0"
+    node-addon-api "^1.6.3"
+    node-gyp-build "^4.1.0"
 
 argparse@^1.0.7:
   version "1.0.10"
@@ -8979,6 +8995,11 @@ node-abi@^2.7.0:
   dependencies:
     semver "^5.4.1"
 
+node-addon-api@^1.6.3:
+  version "1.7.1"
+  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-1.7.1.tgz#cf813cd69bb8d9100f6bdca6755fc268f54ac492"
+  integrity sha512-2+DuKodWvwRTrCfKOeR24KIc5unKjOh8mz17NCzVnHWfjAdDqbfbjqh7gUT+BkXBRQM52+xCHciKWonJ3CbJMQ==
+
 node-fetch-npm@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/node-fetch-npm/-/node-fetch-npm-2.0.2.tgz#7258c9046182dca345b4208eda918daf33697ff7"
@@ -9015,6 +9036,11 @@ node-forge@^0.8.0, node-forge@^0.8.1:
   version "0.8.5"
   resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-0.8.5.tgz#57906f07614dc72762c84cef442f427c0e1b86ee"
   integrity sha512-vFMQIWt+J/7FLNyKouZ9TazT74PRV3wgv9UT4cRjC8BffxFbKXkgIWR42URCPSnHm/QDz6BOlb2Q0U4+VQT67Q==
+
+node-gyp-build@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.1.0.tgz#3bc3dd7dd4aafecaf64a2e3729e785bc3cdea565"
+  integrity sha512-rGLv++nK20BG8gc0MzzcYe1Nl3p3mtwJ74Q2QD0HTEDKZ6NvOFSelY6s2QBPWIHRR8h7hpad0LiwajfClBJfNg==
 
 node-gyp@^3.6.2, node-gyp@^3.8.0:
   version "3.8.0"
