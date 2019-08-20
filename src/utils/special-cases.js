@@ -11,6 +11,7 @@ const specialCases = {
   'argon2' ({ id, emitAssetDirectory }) {
     if (id.endsWith('argon2/argon2.js')) {
       emitAssetDirectory(path.resolve(path.dirname(id), 'build', 'Release'));
+      emitAssetDirectory(path.resolve(path.dirname(id), 'prebuilds'));
     }
   },
   'bull' ({ id, emitAssetDirectory }) {
