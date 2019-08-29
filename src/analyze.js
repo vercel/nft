@@ -197,8 +197,8 @@ module.exports = async function (id, code, job) {
   }
   catch (e) {
     const isModule = e && e.message && e.message.includes('sourceType: module');
-    if (job.log && !isModule) {
-      console.log(`Failed to parse ${id} as script:\n${e && e.message}`);
+    if (!isModule) {
+      job.warnings.add(new Error(`Failed to parse ${id} as script:\n${e && e.message}`));
     }
   }
   if (!ast) {
@@ -207,9 +207,7 @@ module.exports = async function (id, code, job) {
       isESM = true;
     }
     catch (e) {
-      if (job.log) {
-        console.log(`Failed to parse ${id} as module:\n${e && e.message}`);
-      }
+      job.warnings.add(new Error(`Failed to parse ${id} as module:\n${e && e.message}`));
       // Parser errors just skip analysis
       return { assets, deps, isESM: false };
     }
