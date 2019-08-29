@@ -190,15 +190,14 @@ module.exports = async function (id, code, job) {
   // remove shebang
   code = code.replace(/^#![^\n\r]*[\r\n]/, '');
 
-  let ast, isESM, parserError;
+  let ast, isESM;
   try {
     ast = acorn.parse(code, { allowReturnOutsideFunction: true });
     isESM = false;
   }
   catch (e) {
-    parserError = e;
     if (job.log) {
-      console.log(`Failed to parse ${id} as script:\n${e.message}`);
+      console.log(`Failed to parse ${id} as script:\n${e && e.message}`);
     }
   }
   if (!ast) {
@@ -207,16 +206,12 @@ module.exports = async function (id, code, job) {
       isESM = true;
     }
     catch (e) {
-      parserError = e;
       if (job.log) {
-        console.log(`Failed to parse ${id} as module:\n${e.message}`);
+        console.log(`Failed to parse ${id} as module:\n${e && e.message}`);
       }
+      // Parser errors just skip analysis
+      return { assets, deps, isESM: false };
     }
-  }
-
-  if (parserError) {
-    // Parser errors just skip analysis
-    return { assets, deps, isESM: false };
   }
 
   const knownBindings = Object.assign(Object.create(null), {
