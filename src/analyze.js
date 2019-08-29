@@ -196,7 +196,8 @@ module.exports = async function (id, code, job) {
     isESM = false;
   }
   catch (e) {
-    if (job.log) {
+    const isModule = e && e.message && e.message.includes('sourceType: module');
+    if (job.log && !isModule) {
       console.log(`Failed to parse ${id} as script:\n${e && e.message}`);
     }
   }
