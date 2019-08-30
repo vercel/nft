@@ -51,7 +51,7 @@ export interface NodeFileTraceResult {
   reasons: NodeFileTraceReasons;
 }
 
-export = function NodeFileTrace(
+export default function NodeFileTrace(
   files: string[],
   opts: NodeFileTraceOptions
 ): Promise<NodeFileTraceResult>;
