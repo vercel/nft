@@ -49,6 +49,7 @@ export interface NodeFileTraceResult {
   fileList: string[];
   esmFileList: string[];
   reasons: NodeFileTraceReasons;
+  warnings: Error[];
 }
 
 export default function NodeFileTrace(
