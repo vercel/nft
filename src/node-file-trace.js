@@ -222,7 +222,7 @@ class Job {
           if (resolved.startsWith('node:')) return;
         }
         catch (e) {
-          this.warnings.add(e);
+          this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
           return;
         }
         await this.emitDependency(resolved, path);

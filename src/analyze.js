@@ -195,13 +195,19 @@ module.exports = async function (id, code, job) {
     ast = acorn.parse(code, { allowReturnOutsideFunction: true });
     isESM = false;
   }
-  catch (e) {}
+  catch (e) {
+    const isModule = e && e.message && e.message.includes('sourceType: module');
+    if (!isModule) {
+      job.warnings.add(new Error(`Failed to parse ${id} as script:\n${e && e.message}`));
+    }
+  }
   if (!ast) {
     try {
       ast = acorn.parse(code, { sourceType: 'module' });
       isESM = true;
     }
     catch (e) {
+      job.warnings.add(new Error(`Failed to parse ${id} as module:\n${e && e.message}`));
       // Parser errors just skip analysis
       return { assets, deps, isESM: false };
     }
