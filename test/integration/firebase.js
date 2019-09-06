@@ -1,5 +1,6 @@
 const firebase = require('firebase/app')
 require('firebase/firestore')
+require('firebase/database')
 
 firebase.initializeApp({ projectId: 'noop' })
 const store = firebase.firestore()
