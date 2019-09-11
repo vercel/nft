@@ -7,18 +7,19 @@ const rimraf = require('rimraf');
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 
+const randomTmpId = Math.random().toString().slice(2);
+const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-ecmascript${randomTmpId}`);
+rimraf.sync(tmpdir);
+fs.mkdirSync(tmpdir);
+console.log('created directory ' + tmpdir);
+
 async function runTests(importPath) {
   const { tests } = require(importPath);
-  const randomTmpId = Math.random().toString().slice(2);
-  const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-ecmascript${randomTmpId}`);
-  rimraf.sync(tmpdir);
-  fs.mkdirSync(tmpdir);
-  console.log('created directory ' + tmpdir);
-
   for (const t in tests) {
     for (const st in tests[t].subtests) {
-      const { name, exec } = tests[t].subtests[st];
-      it(`should correctly trace ${importPath} "${name}"`, async () => {
+      const category = tests[t];
+      const { name, exec } = category.subtests[st];
+      it(`should correctly trace ${importPath} "${category.name}" "${name}"`, async () => {
         
         let str = exec.toString().replace('/*', '').replace('*/', '');
         str = `var obj = { exec: ${str} }`;
@@ -45,3 +46,5 @@ async function runTests(importPath) {
 runTests('./ecmascript/data-es5');
 runTests('./ecmascript/data-es6');
 runTests('./ecmascript/data-es2016plus');
+//runTests('./ecmascript/data-esnext');
+runTests('./ecmascript/data-esintl');
