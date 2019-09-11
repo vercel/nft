@@ -1,4 +1,6 @@
-var sparseNote = 'nope';
+var common = require('./data-common');
+
+var sparseNote = common.sparseNote;
 
 exports.name = 'ES5';
 exports.target_file = 'es5/index.html';
