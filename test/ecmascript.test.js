@@ -44,3 +44,4 @@ async function runTests(importPath) {
 
 runTests('./ecmascript/data-es5');
 runTests('./ecmascript/data-es6');
+runTests('./ecmascript/data-es2016plus');
