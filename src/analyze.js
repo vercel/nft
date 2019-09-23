@@ -436,6 +436,10 @@ module.exports = async function (id, code, job) {
             return;
           }
         }
+        else if ((isESM || job.mixedModules) && node.callee.type === 'Import' && node.arguments.length) {
+          processRequireArg(node.arguments[0]);
+          return;
+        }
         else if ((!isESM || job.mixedModules) &&
             node.callee.type === 'MemberExpression' &&
             node.callee.object.type === 'Identifier' &&
