@@ -26,7 +26,7 @@
     "mkdirp": "^0.5.1",
     "node-pre-gyp": "^0.13.0",
     "resolve-from": "^5.0.0",
-    "rollup-pluginutils": "^2.3.3"
+    "rollup-pluginutils": "^2.8.2"
   },
   "devDependencies": {
     "@azure/cosmos": "^2.1.7",

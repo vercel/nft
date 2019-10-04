@@ -15,7 +15,6 @@ console.log('created directory ' + tmpdir);
 
  // These are tests known to fail so we skip them
 const ignoreCategories = new Set([
-  'optional catch binding',
   'bind (::) operator',
   'additional meta properties',
   'syntactic tail calls',
