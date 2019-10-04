@@ -192,7 +192,7 @@ module.exports = async function (id, code, job) {
 
   let ast, isESM;
   try {
-    ast = acorn.parse(code, { allowReturnOutsideFunction: true });
+    ast = acorn.parse(code, { ecmaVersion: 2019, allowReturnOutsideFunction: true });
     isESM = false;
   }
   catch (e) {
@@ -203,7 +203,7 @@ module.exports = async function (id, code, job) {
   }
   if (!ast) {
     try {
-      ast = acorn.parse(code, { sourceType: 'module' });
+      ast = acorn.parse(code, { ecmaVersion: 2019, sourceType: 'module' });
       isESM = true;
     }
     catch (e) {
