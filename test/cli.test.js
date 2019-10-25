@@ -10,7 +10,7 @@ const outputjs = 'unit/wildcard/assets/asset1.txt';
 function normalizeOutput(output) {
   if (process.platform === 'win32') {
     // When using Windows, the expected output should use backslash
-    output = output.map(str => str.replace(/\//g, '\\'));
+    output = output.replace(/\//g, '\\');
   }
   return output;
 }
