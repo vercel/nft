@@ -5,12 +5,14 @@ const fs = require('fs');
 const { promisify } = require('util');
 const copyFile = promisify(fs.copyFile);
 const mkdir = promisify(fs.mkdir);
+const rimraf = require('rimraf');
 const trace = require('./node-file-trace');
 
 async function cli(
   action = process.argv[2],
   files = process.argv.slice(3),
   outputDir = 'dist',
+  cwd = process.cwd()
   ) {
   const opts = {
     ts: true,
@@ -31,6 +33,7 @@ async function cli(
       stdout.push(...warnings);
     }
   } else if (action === 'build') {
+    rimraf.sync(join(cwd, outputDir));
     for (const f of allFiles) {
       const src = join(cwd, f);
       const dest = join(cwd, outputDir, f);
@@ -39,7 +42,7 @@ async function cli(
       await copyFile(src, dest);
     }
   } else {
-    stdout.push('Provide an action like `nft build` or `nft print`.');
+    stdout.push('△ nft - provide an action such as `nft build` or `nft print`.');
   }
   return stdout.join('\n');
 }
