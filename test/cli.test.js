@@ -9,7 +9,7 @@ const outputjs = 'unit/wildcard/assets/asset1.txt';
 
 function normalizeOutput(output) {
   if (process.platform === 'win32') {
-  // When using Windows, the expected output should use backslash
+    // When using Windows, the expected output should use backslash
     output = output.map(str => str.replace(/\//g, '\\'));
   }
   return output;
@@ -48,7 +48,6 @@ it('[codecov] should correctly print trace from required cli', async () => {
   expect(normalizeOutput(stdout)).toMatch(outputjs);
 });
 
-
 it('[codecov] should correctly build dist from required cli', async () => {
   // This test is only here to satisfy code coverage
   const cli = require('../src/cli.js')
@@ -59,6 +58,7 @@ it('[codecov] should correctly build dist from required cli', async () => {
 });
 
 it('[codecov] should correctly print help when unknown action is used', async () => {
+  // This test is only here to satisfy code coverage
   const cli = require('../src/cli.js')
   const files = [join(__dirname, inputjs)];
   await cli('unknown', files);
