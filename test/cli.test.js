@@ -20,7 +20,7 @@ it('should correctly print trace from cli', async () => {
   if (stderr) {
     throw new Error(stderr);
   }
-  expect(normalizeOutput(stdout)).toMatch(outputjs);
+  expect(stdout).toMatch(normalizeOutput(outputjs));
 });
 
 it('should correctly build dist from cli', async () => {
@@ -37,7 +37,7 @@ it('should correctly print help when unknown action is used', async () => {
   if (stderr) {
     throw new Error(stderr);
   }
-  expect(normalizeOutput(stdout)).toMatch('provide an action');
+  expect(stdout).toMatch('provide an action');
 });
 
 it('[codecov] should correctly print trace from required cli', async () => {
@@ -45,7 +45,7 @@ it('[codecov] should correctly print trace from required cli', async () => {
   const cli = require('../src/cli.js')
   const files = [join(__dirname, inputjs)];
   const stdout = await cli('print', files);
-  expect(normalizeOutput(stdout)).toMatch(outputjs);
+  expect(stdout).toMatch(normalizeOutput(outputjs));
 });
 
 it('[codecov] should correctly build dist from required cli', async () => {
@@ -62,5 +62,5 @@ it('[codecov] should correctly print help when unknown action is used', async ()
   const cli = require('../src/cli.js')
   const files = [join(__dirname, inputjs)];
   const stdout = await cli('unknown', files);
-  expect(normalizeOutput(stdout)).toMatch('provide an action');
+  expect(stdout).toMatch('provide an action');
 });
