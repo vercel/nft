@@ -5,6 +5,9 @@
   "license": "MIT",
   "main": "./src/node-file-trace.js",
   "types": "./node-file-trace.d.ts",
+  "bin": {
+    "nft": "./src/cli.js"
+  },
   "scripts": {
     "test": "jest --verbose",
     "test-verbose": "jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\"",
