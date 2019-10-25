@@ -7,27 +7,28 @@ const copyFile = promisify(fs.copyFile);
 const mkdir = promisify(fs.mkdir);
 const trace = require('./node-file-trace');
 
-async function main() {
-  const cwd = process.cwd();
-  const action = process.argv[2];
-  const files = process.argv.slice(3);
-  const outputDir = 'dist';
-
-  const { fileList, esmFileList } = await trace(files, {
+async function cli(
+  action = process.argv[2],
+  files = process.argv.slice(3),
+  outputDir = 'dist',
+  ) {
+  const opts = {
     ts: true,
     mixedModules: true,
     log: true
-  });
+  };
 
+  const { fileList, esmFileList, warnings } = await trace(files, opts);
   const allFiles = fileList.concat(esmFileList);
+  const stdout = [];
 
   if (action === 'print') {
-    console.log('FILELIST:')
-    console.log(allFiles.join('\n'));
-    console.log('\n');
-    if (o.warnings.length > 0) {
-      console.log('WARNINGS:');
-      console.log(o.warnings);
+    stdout.push('FILELIST:')
+    stdout.push(...allFiles);
+    stdout.push('\n');
+    if (warnings.length > 0) {
+      stdout.push('WARNINGS:');
+      stdout.push(...warnings);
     }
   } else if (action === 'build') {
     for (const f of allFiles) {
@@ -38,8 +39,13 @@ async function main() {
       await copyFile(src, dest);
     }
   } else {
-    console.log('Provide an action like `nft build` or `nft print`.');
+    stdout.push('Provide an action like `nft build` or `nft print`.');
   }
+  return stdout.join('\n');
 }
 
-main().then(() => console.log('Done')).catch(e => console.error(e));
+if (require.main === module) {
+  cli().then(console.log).catch(console.error);
+}
+
+module.exports = cli;
