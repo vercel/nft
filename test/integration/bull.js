@@ -1,6 +1,12 @@
 const Queue = require('bull');
-// Create free tier on https://redislabs.com and assign redis://:password@hostname:port
-const pdfQueue = new Queue('pdf transcoding', process.env.BULL_REDIS_CONNECTION);
+const { BULL_REDIS_CONNECTION } = process.env;
+
+if (!BULL_REDIS_CONNECTION) {
+  console.log('Skipping bull integration test');
+  console.log('Create cache on redislabs.com and export BULL_REDIS_CONNECTION="redis://:password@hostname:port"');
+}
+
+const pdfQueue = new Queue('pdf transcoding', BULL_REDIS_CONNECTION);
 
 pdfQueue.process(function(job, done) {
   job.progress(42);
