@@ -27,6 +27,9 @@ jobs:
     - name: Prepare Windows (if applicable)
       if: matrix.os == 'windows-latest'
       run: node windows-prepare.js
+    - name: Prepare Node12 (if applicable)
+      if: matrix.node == 12
+      run: node node-12-prepare.js
     - name: Install Dependencies
       run: yarn install
     - name: Run Tests
