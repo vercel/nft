@@ -33,7 +33,7 @@ jobs:
         BULL_REDIS_CONNECTION: ${{ secrets.BULL_REDIS_CONNECTION }}
       run: yarn test-verbose
     - name: Submit Code Coverage
-      if: matrix.os == 'ubuntu-latest' && matrix.node == 12 # only run once
+      if: matrix.os == 'ubuntu-latest' && matrix.node == 10 # only run once
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: yarn codecov
