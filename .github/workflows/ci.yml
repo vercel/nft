@@ -21,7 +21,7 @@ jobs:
     - name: Use Node.js ${{ matrix.node }}
       uses: actions/setup-node@v1
       with:
-        node: ${{ matrix.node }}
+        node-version: ${{ matrix.node }}
     - name: Print Node Version
       run: node --version
     - name: Prepare Windows (if applicable)
