@@ -9,6 +9,7 @@ const { isIdentifierRead, isLoop, isVarLoop } = require('./utils/ast-helpers');
 const glob = require('glob');
 const getPackageBase = require('./utils/get-package-base');
 const { pregyp, nbind } = require('./utils/binary-locators');
+const interopRequire = require('./utils/interop-require');
 const handleSpecialCases = require('./utils/special-cases');
 const resolve = require('./resolve-dependency.js');
 const stage3 = require('acorn-stage3');
@@ -106,6 +107,12 @@ const staticModules = Object.assign(Object.create(null), {
   }
 });
 const globalBindings = {
+  // Support for require calls generated from `import` statements by babel
+  _interopRequireDefault: interopRequire.normalizeDefaultRequire,
+  _interopRequireWildcard: interopRequire.normalizeWildcardRequire,
+  // Support for require calls generated from `import` statements by tsc
+  __importDefault: interopRequire.normalizeDefaultRequire,
+  __importStar: interopRequire.normalizeWildcardRequire,
   MONGOOSE_DRIVER_PATH: undefined
 };
 globalBindings.global = globalBindings.GLOBAL = globalBindings.globalThis = globalBindings;
