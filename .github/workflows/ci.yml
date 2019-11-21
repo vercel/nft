@@ -14,19 +14,18 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [10]
+        node: [10, 12]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v1
     - name: Use Node.js ${{ matrix.node }}
       uses: actions/setup-node@v1
       with:
-        node: ${{ matrix.node }}
+        node-version: ${{ matrix.node }}
     - name: Print Node Version
       run: node --version
-    - name: Prepare Windows (if applicable)
-      if: matrix.os == 'windows-latest'
-      run: node windows-prepare.js
+    - name: Prepare Install (if applicable)
+      run: node prepare-install.js
     - name: Install Dependencies
       run: yarn install
     - name: Run Tests
@@ -34,7 +33,7 @@ jobs:
         BULL_REDIS_CONNECTION: ${{ secrets.BULL_REDIS_CONNECTION }}
       run: yarn test-verbose
     - name: Submit Code Coverage
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-latest' && matrix.node == 10 # only run once
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: yarn codecov
