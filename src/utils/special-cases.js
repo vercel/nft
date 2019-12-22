@@ -68,6 +68,12 @@ const specialCases = {
       emitAssetDirectory(path.resolve(path.dirname(id), '..', 'bin'));
     }
   },
+  'semver' ({ id, emitAsset }) {
+    if (id.endsWith('semver/index.js')) {
+      // See https://github.com/npm/node-semver/blob/master/CHANGELOG.md#710
+      emitAsset(path.resolve(id.replace('index.js', 'preload.js')));
+    }
+  },
   'socket.io' ({ id, ast }) {
     if (id.endsWith('socket.io/lib/index.js')) {
       function replaceResolvePathStatement (statement) {
