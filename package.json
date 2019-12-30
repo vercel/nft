@@ -93,6 +93,7 @@
     "redis": "^2.8.0",
     "rxjs": "^6.5.2",
     "saslprep": "^1.0.3",
+    "semver": "^7.1.1",
     "sequelize": "^5.9.3",
     "sharp": "^0.22.1",
     "socket.io": "^2.2.0",
