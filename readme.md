@@ -68,6 +68,21 @@ Ignore will also accept a function or globs.
 
 Note that the path provided to ignore is relative to `base`.
 
+#### Cache
+
+To persist the file cache between builds, pass an empty `cache` object:
+
+```js
+const cache = Object.create(null);
+const { fileList } = await nodeFileTrace(['index.ts'], { cache });
+// later:
+{
+  const { fileList } = await nodeFileTrace(['index.ts'], { cache });
+}
+```
+
+Note that cache invalidations are not supported so the assumption is that the file system is not changed between runs.
+
 #### Reasons
 
 To get the underlying reasons for individual files being included, a `reasons` object is also provided by the output:

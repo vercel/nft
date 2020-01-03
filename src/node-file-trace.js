@@ -45,6 +45,7 @@ class Job {
     ignore,
     log = false,
     mixedModules = false,
+    cache,
   }) {
     base = resolve(base);
     this.ignoreFn = path => {
@@ -72,9 +73,15 @@ class Job {
     this.mixedModules = mixedModules;
     this.reasons = Object.create(null);
 
-    this.fileCache = new Map();
-    this.statCache = new Map();
-    this.symlinkCache = new Map();
+    this.fileCache = cache && cache.fileCache || new Map();
+    this.statCache = cache && cache.statCache || new Map();
+    this.symlinkCache = cache && cache.symlinkCache || new Map();
+
+    if (cache) {
+      cache.fileCache = this.fileCache;
+      cache.statCache = this.statCache;
+      cache.symlinkCache = this.symlinkCache;
+    }
 
     this.fileList = new Set();
     this.esmFileList = new Set();
