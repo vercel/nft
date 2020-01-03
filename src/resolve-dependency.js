@@ -5,7 +5,7 @@ const { isAbsolute, resolve, sep } = require('path');
 // (package.json files are emitted as they are hit)
 module.exports = function resolveDependency (specifier, parent, job) {
   let resolved;
-  if (isAbsolute(specifier) || specifier === '.' || specifier.startsWith('./') || specifier.startsWith('../'))
+  if (isAbsolute(specifier) || specifier === '.' || specifier === '..' || specifier.startsWith('./') || specifier.startsWith('../'))
     resolved = resolvePath(resolve(parent, '..', specifier), parent, job);
   else
     resolved = resolvePackage(specifier, parent, job);
