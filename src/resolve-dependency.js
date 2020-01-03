@@ -58,6 +58,13 @@ const nodeBuiltins = new Set([...require("repl")._builtinLibs, "constants", "mod
 
 function resolvePackage (name, parent, job) {
   let packageParent = parent;
+  if (Object.hasOwnProperty.call(job.paths, name)) {
+    return job.paths[name];
+  }
+  for (const path of Object.keys(job.paths)) {
+    if (path.endsWith('/') && name.startsWith(path))
+      return job.paths[path] + name.slice(path.length);
+  }
   if (nodeBuiltins.has(name)) return 'node:' + name;
   let separatorIndex;
   const rootSeparatorIndex = packageParent.indexOf(sep);
