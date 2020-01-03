@@ -58,15 +58,6 @@ const nodeBuiltins = new Set([...require("repl")._builtinLibs, "constants", "mod
 
 function resolvePackage (name, parent, job) {
   let packageParent = parent;
-  if (Object.hasOwnProperty.call(job.paths, name)) {
-    return job.paths[name];
-  }
-  for (const path of Object.keys(job.paths)) {
-    if (path.endsWith('/') && name.startsWith(path)) {
-      const pathTarget = job.paths[path] + name.slice(path.length);
-      return resolveFile(pathTarget, parent, job) || resolveDir(pathTarget, parent, job);
-    }
-  }
   if (nodeBuiltins.has(name)) return 'node:' + name;
   let separatorIndex;
   const rootSeparatorIndex = packageParent.indexOf(sep);
@@ -77,6 +68,15 @@ function resolvePackage (name, parent, job) {
     if (!stat || !stat.isDirectory()) continue;
     const resolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
     if (resolved) return resolved;
+  }
+  if (Object.hasOwnProperty.call(job.paths, name)) {
+    return job.paths[name];
+  }
+  for (const path of Object.keys(job.paths)) {
+    if (path.endsWith('/') && name.startsWith(path)) {
+      const pathTarget = job.paths[path] + name.slice(path.length);
+      return resolveFile(pathTarget, parent, job) || resolveDir(pathTarget, parent, job);
+    }
   }
   notFound(name, parent);
 }
