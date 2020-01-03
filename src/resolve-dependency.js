@@ -62,8 +62,10 @@ function resolvePackage (name, parent, job) {
     return job.paths[name];
   }
   for (const path of Object.keys(job.paths)) {
-    if (path.endsWith('/') && name.startsWith(path))
-      return job.paths[path] + name.slice(path.length);
+    if (path.endsWith('/') && name.startsWith(path)) {
+      const pathTarget = job.paths[path] + name.slice(path.length);
+      return resolveFile(pathTarget, parent, job) || resolveDir(pathTarget, parent, job);
+    }
   }
   if (nodeBuiltins.has(name)) return 'node:' + name;
   let separatorIndex;
