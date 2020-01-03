@@ -437,7 +437,7 @@ module.exports = async function (id, code, job) {
       // - bindings()(...)
       // - nodegyp()
       // - etc.
-      else if (node.type === 'CallExpression' && job.analysis.evaluatePureExpressions) {
+      else if (node.type === 'CallExpression') {
         if ((!isESM || job.mixedModules) && node.callee.type === 'Identifier' && node.arguments.length) {
           if (node.callee.name === 'require' && knownBindings.require.shadowDepth === 0) {
             processRequireArg(node.arguments[0]);
@@ -461,7 +461,7 @@ module.exports = async function (id, code, job) {
           return;
         }
 
-        const calleeValue = computePureStaticValue(node.callee, false);
+        const calleeValue = job.analysis.evaluatePureExpressions && computePureStaticValue(node.callee, false);
         // if we have a direct pure static function,
         // and that function has a [TRIGGER] symbol -> trigger asset emission from it
         if (calleeValue && typeof calleeValue.value === 'function' && calleeValue.value[TRIGGER] && job.analysis.computeFileReferences) {
