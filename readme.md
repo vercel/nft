@@ -54,6 +54,30 @@ const { fileList } = await nodeFileTrace(['index.ts'], {
 }
 ```
 
+#### Analysis
+
+Analysis options allow customizing how much analysis should be performed to exactly work out the dependency list.
+
+By default as much analysis as possible is done to ensure no possibly needed files are left out of the trace.
+
+To disable all analysis, set `analysis: false`. Alternatively, individual analysis options can be customized via:
+
+```js
+const { fileList } = await nodeFileTrace(files, {
+  // default
+  analysis: {
+    // whether to glob any analysis like __dirname + '/dir/' or require('x/' + y)
+    // that might output any file in a directory
+    emitGlobs: true,
+    // whether __filename and __dirname style
+    // expressions should be analyzed as file references
+    computeFileReferences: true,
+    // evaluate known bindings to assist with glob and file reference analysis
+    evaluatePureExpressions: true,
+  }
+});
+```
+
 #### Ignore
 
 Custom ignores can be provided to skip file inclusion (and consequently analysis of the file for references in turn as well).

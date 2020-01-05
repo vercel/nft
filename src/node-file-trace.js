@@ -45,6 +45,7 @@ class Job {
     ignore,
     log = false,
     mixedModules = false,
+    analysis = {},
     cache,
   }) {
     base = resolve(base);
@@ -72,6 +73,20 @@ class Job {
     this.log = log;
     this.mixedModules = mixedModules;
     this.reasons = Object.create(null);
+
+    this.analysis = {};
+    if (analysis !== false) {
+      Object.assign(this.analysis, {
+        // whether to glob any analysis like __dirname + '/dir/' or require('x/' + y)
+        // that might output any file in a directory
+        emitGlobs: true,
+        // whether __filename and __dirname style
+        // expressions should be analyzed as file references
+        computeFileReferences: true,
+        // evaluate known bindings to assist with glob and file reference analysis
+        evaluatePureExpressions: true,
+      }, analysis === true ? {} : analysis);
+    }
 
     this.fileCache = cache && cache.fileCache || new Map();
     this.statCache = cache && cache.statCache || new Map();
