@@ -51,6 +51,10 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
 
     const { fileList, reasons } = await nodeFileTrace([join(unitPath, inputFileName)], {
       base: `${__dirname}/../`,
+      paths: {
+        dep: 'test/unit/esm-paths/esm-dep.js',
+        'dep/': 'test/unit/esm-paths-trailer/'
+      },
       ts: true,
       log: true,
       // disable analysis for basic-analysis unit tests

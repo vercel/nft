@@ -69,5 +69,14 @@ function resolvePackage (name, parent, job) {
     const resolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
     if (resolved) return resolved;
   }
+  if (Object.hasOwnProperty.call(job.paths, name)) {
+    return job.paths[name];
+  }
+  for (const path of Object.keys(job.paths)) {
+    if (path.endsWith('/') && name.startsWith(path)) {
+      const pathTarget = job.paths[path] + name.slice(path.length);
+      return resolveFile(pathTarget, parent, job) || resolveDir(pathTarget, parent, job);
+    }
+  }
   notFound(name, parent);
 }

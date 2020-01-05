@@ -42,6 +42,20 @@ const { fileList } = await nodeFileTrace(files, {
 
 Any files/folders above the `base` are ignored in the listing and analysis.
 
+#### Paths
+
+Custom resolution path definitions to use.
+
+```js
+const { fileList } = await nodeFileTrace(files, {
+  paths: {
+    'utils/': '/path/to/utils/'
+  }
+});
+```
+
+Trailing slashes map directories, exact paths map exact only.
+
 #### TypeScript
 
 Both JavaScript and TypeScript source files can be traced.

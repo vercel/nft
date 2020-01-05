@@ -42,6 +42,7 @@ module.exports = async function (files, opts = {}) {
 class Job {
   constructor ({
     base = process.cwd(),
+    paths = {},
     ignore,
     log = false,
     mixedModules = false,
@@ -70,6 +71,13 @@ class Job {
       }
     }
     this.base = base;
+    const resolvedPaths = {};
+    for (const path of Object.keys(paths)) {
+      const trailer = paths[path].endsWith('/');
+      const resolvedPath = resolve(base, paths[path]);
+      resolvedPaths[path] = resolvedPath + (trailer ? '/' : '');
+    }
+    this.paths = resolvedPaths;
     this.log = log;
     this.mixedModules = mixedModules;
     this.reasons = Object.create(null);
