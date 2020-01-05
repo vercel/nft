@@ -54,7 +54,7 @@ function notFound (specifier, parent) {
   throw e;
 }
 
-const nodeBuiltins = new Set([...require("repl")._builtinLibs, "constants", "module", "timers", "console", "_stream_writable", "_stream_readable", "_stream_duplex"]);
+const nodeBuiltins = new Set([...require("repl")._builtinLibs, "constants", "module", "timers", "console", "_stream_writable", "_stream_readable", "_stream_duplex", "process", "sys"]);
 
 function resolvePackage (name, parent, job) {
   let packageParent = parent;

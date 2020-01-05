@@ -46,6 +46,8 @@ class Job {
     ignore,
     log = false,
     mixedModules = false,
+    analysis = {},
+    cache,
   }) {
     base = resolve(base);
     this.ignoreFn = path => {
@@ -80,9 +82,31 @@ class Job {
     this.mixedModules = mixedModules;
     this.reasons = Object.create(null);
 
-    this.fileCache = new Map();
-    this.statCache = new Map();
-    this.symlinkCache = new Map();
+    this.analysis = {};
+    if (analysis !== false) {
+      Object.assign(this.analysis, {
+        // whether to glob any analysis like __dirname + '/dir/' or require('x/' + y)
+        // that might output any file in a directory
+        emitGlobs: true,
+        // whether __filename and __dirname style
+        // expressions should be analyzed as file references
+        computeFileReferences: true,
+        // evaluate known bindings to assist with glob and file reference analysis
+        evaluatePureExpressions: true,
+      }, analysis === true ? {} : analysis);
+    }
+
+    this.fileCache = cache && cache.fileCache || new Map();
+    this.statCache = cache && cache.statCache || new Map();
+    this.symlinkCache = cache && cache.symlinkCache || new Map();
+    this.analysisCache = cache && cache.analysisCache || new Map();
+
+    if (cache) {
+      cache.fileCache = this.fileCache;
+      cache.statCache = this.statCache;
+      cache.symlinkCache = this.symlinkCache;
+      cache.analysisCache = this.analysisCache;
+    }
 
     this.fileList = new Set();
     this.esmFileList = new Set();
@@ -204,14 +228,22 @@ class Job {
 
     const emitted = this.emitFile(path, 'dependency', parent);
     if (!emitted) return;
-  
     if (path.endsWith('.json')) return;
     if (path.endsWith('.node')) return await sharedlibEmit(path, this);
 
-    const source = this.readFile(path);
-    if (source === null) throw new Error('File ' + path + ' does not exist.');
+    let deps, assets, isESM;
 
-    const { deps, assets, isESM } = await analyze(path, source, this);
+    const cachedAnalysis = this.analysisCache.get(path);
+    if (cachedAnalysis) {
+      ({ deps, assets, isESM } = cachedAnalysis);
+    }
+    else {
+      const source = this.readFile(path);
+      if (source === null) throw new Error('File ' + path + ' does not exist.');
+      ({ deps, assets, isESM } = await analyze(path, source, this));
+      this.analysisCache.set(path, { deps, assets, isESM });
+    }
+
     if (isESM)
       this.esmFileList.add(relative(this.base, path));
     await Promise.all([

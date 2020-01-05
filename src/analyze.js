@@ -165,6 +165,7 @@ module.exports = async function (id, code, job) {
   const pkgBase = getPackageBase(id);
 
   const emitAssetDirectory = (wildcardPath) => {
+    if (!job.analysis.emitGlobs) return;
     const wildcardIndex = wildcardPath.indexOf(WILDCARD);
     const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardIndex);
     const assetDirPath = wildcardPath.substr(0, dirIndex);
@@ -318,7 +319,7 @@ module.exports = async function (id, code, job) {
   let definedExpressEngines = false;
 
   function emitWildcardRequire (wildcardRequire) {
-    if (!wildcardRequire.startsWith('./') && !wildcardRequire.startsWith('../')) return;
+    if (!job.analysis.emitGlobs || !wildcardRequire.startsWith('./') && !wildcardRequire.startsWith('../')) return;
 
     wildcardRequire = path.resolve(dir, wildcardRequire);
 
@@ -417,7 +418,7 @@ module.exports = async function (id, code, job) {
       if (staticChildNode) return;
 
       if (node.type === 'Identifier') {
-        if (isIdentifierRead(node, parent)) {
+        if (isIdentifierRead(node, parent) && job.analysis.computeFileReferences) {
           let binding;
           // detect asset leaf expression triggers (if not already)
           // __dirname,  __filename
@@ -460,10 +461,10 @@ module.exports = async function (id, code, job) {
           return;
         }
 
-        const calleeValue = computePureStaticValue(node.callee, false);
+        const calleeValue = job.analysis.evaluatePureExpressions && computePureStaticValue(node.callee, false);
         // if we have a direct pure static function,
         // and that function has a [TRIGGER] symbol -> trigger asset emission from it
-        if (calleeValue && typeof calleeValue.value === 'function' && calleeValue.value[TRIGGER]) {
+        if (calleeValue && typeof calleeValue.value === 'function' && calleeValue.value[TRIGGER] && job.analysis.computeFileReferences) {
           staticChildValue = computePureStaticValue(node, true);
           // if it computes, then we start backtracking
           if (staticChildValue) {
@@ -541,7 +542,7 @@ module.exports = async function (id, code, job) {
               definedExpressEngines = true;
             break;
             case FS_FN:
-              if (node.arguments[0]) {
+              if (node.arguments[0] && job.analysis.computeFileReferences) {
                 staticChildValue = computePureStaticValue(node.arguments[0], true);
                 // if it computes, then we start backtracking
                 if (staticChildValue) {
@@ -572,7 +573,7 @@ module.exports = async function (id, code, job) {
           }
         }
       }
-      else if (node.type === 'VariableDeclaration' && !isVarLoop(parent)) {
+      else if (node.type === 'VariableDeclaration' && !isVarLoop(parent) && job.analysis.evaluatePureExpressions) {
         for (const decl of node.declarations) {
           if (!decl.init) continue;
           const computed = computePureStaticValue(decl.init, false);
@@ -602,7 +603,7 @@ module.exports = async function (id, code, job) {
           }
         }
       }
-      else if (node.type === 'AssignmentExpression' && !isLoop(parent)) {
+      else if (node.type === 'AssignmentExpression' && !isLoop(parent) && job.analysis.evaluatePureExpressions) {
         if (!hasKnownBindingValue(node.left.name)) {
           const computed = computePureStaticValue(node.right, false);
           if (computed && 'value' in computed) {

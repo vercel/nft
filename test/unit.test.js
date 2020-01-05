@@ -57,6 +57,8 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
       },
       ts: true,
       log: true,
+      // disable analysis for basic-analysis unit tests
+      analysis: !unitTest.startsWith('basic-analysis'),
       mixedModules: true,
       ignore: '**/actual.js',
       readFile: readFileMock
