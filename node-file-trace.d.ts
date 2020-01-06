@@ -30,9 +30,9 @@ export interface NodeFileTraceOptions {
   base?: string;
   ignore?: string | string[] | ((path: string) => boolean);
   analysis?: boolean | {
-    emitGlobs: boolean;
-    computeFileReferences: boolean;
-    evaluatePureExpressions: boolean;
+    emitGlobs?: boolean;
+    computeFileReferences?: boolean;
+    evaluatePureExpressions?: boolean;
   };
   cache?: any;
   paths?: Record<string, string>;
