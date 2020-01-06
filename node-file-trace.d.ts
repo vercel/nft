@@ -29,6 +29,13 @@ interface Stats {
 export interface NodeFileTraceOptions {
   base?: string;
   ignore?: string | string[] | ((path: string) => boolean);
+  analysis?: boolean | {
+    emitGlobs?: boolean;
+    computeFileReferences?: boolean;
+    evaluatePureExpressions?: boolean;
+  };
+  cache?: any;
+  paths?: Record<string, string>;
   ts?: boolean;
   log?: boolean;
   mixedModules?: boolean;
