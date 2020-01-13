@@ -566,7 +566,7 @@ module.exports = async function (id, code, job) {
               let pjsonPath = path.resolve(id, '../package.json');
               const rootPjson = path.resolve('/package.json');
               while (pjsonPath !== rootPjson && !existsSync(pjsonPath))
-                pjsonPath = path.resolve(pjsonPath, '../package.json');
+                pjsonPath = path.resolve(pjsonPath, '../../package.json');
               if (pjsonPath !== rootPjson)
                 assets.add(pjsonPath);
             break;
