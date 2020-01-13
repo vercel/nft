@@ -44,6 +44,8 @@ Any files/folders above the `base` are ignored in the listing and analysis.
 
 #### Paths
 
+> Status: Experimental. May change at any time.
+
 Custom resolution path definitions to use.
 
 ```js
