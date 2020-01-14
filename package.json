@@ -28,6 +28,7 @@
     "micromatch": "^4.0.2",
     "mkdirp": "^0.5.1",
     "node-pre-gyp": "^0.13.0",
+    "passport-trakt": "^1.0.4",
     "resolve-from": "^5.0.0",
     "rollup-pluginutils": "^2.8.2"
   },
