@@ -20,7 +20,8 @@ acorn = acorn.Parser.extend(
   require("acorn-bigint"),
   require("acorn-class-fields"),
   require("acorn-private-methods"),
-  require("acorn-export-ns-from")
+  require("acorn-export-ns-from"),
+  require("./utils/acorn-static-class-features")
 );
 const os = require('os');
 const handleWrappers = require('./utils/wrappers.js');
