@@ -12,8 +12,17 @@ const { pregyp, nbind } = require('./utils/binary-locators');
 const interopRequire = require('./utils/interop-require');
 const handleSpecialCases = require('./utils/special-cases');
 const resolve = require('./resolve-dependency.js');
-const stage3 = require('acorn-stage3');
-acorn = acorn.Parser.extend(stage3);
+
+// Note: these should be deprecated over time as they ship in Acorn core
+acorn = acorn.Parser.extend(
+  require("acorn-dynamic-import").default,
+  require("acorn-import-meta"),
+  require("acorn-bigint"),
+  require("acorn-class-fields"),
+  require("acorn-private-methods"),
+  require("acorn-export-ns-from"),
+  require("./utils/acorn-static-class-features")
+);
 const os = require('os');
 const handleWrappers = require('./utils/wrappers.js');
 const resolveFrom = require('resolve-from');
