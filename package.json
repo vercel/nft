@@ -62,6 +62,7 @@
     "cowsay": "^1.4.0",
     "esm": "^3.2.25",
     "express": "^4.17.1",
+    "fast-glob": "^3.1.1",
     "fetch-h2": "^2.2.0",
     "firebase": "^6.2.4",
     "firebase-admin": "^8.2.0",
