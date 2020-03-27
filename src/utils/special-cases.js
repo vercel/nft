@@ -1,6 +1,7 @@
 const path = require('path');
 const resolve = require('../resolve-dependency');
 const { getPackageName } = require('./get-package-base');
+const fs = require('fs');
 
 const specialCases = {
   '@generated/photon' ({ id, emitAssetDirectory }) {
@@ -57,7 +58,9 @@ const specialCases = {
             statement.body.body[0].block.body[0].expression.right.arguments[0].property.type === 'Identifier' &&
             statement.body.body[0].block.body[0].expression.right.arguments[0].property.name === 'i') {
           statement.body.body[0].block.body[0].expression.right.arguments = [{ type: 'Literal', value: '_' }];
-          const binaryName = 'oracledb-abi' + process.versions.modules + '-' + process.platform + '-' + process.arch + '.node';
+          const version = global._unit ? '3.0.0' : JSON.parse(fs.readFileSync(id.slice(0, -15) + 'package.json')).version;
+          const useVersion = Number(version.slice(0, version.indexOf('.'))) >= 4;
+          const binaryName = 'oracledb-' + (useVersion ? version : 'abi' + process.versions.modules) + '-' + process.platform + '-' + process.arch + '.node';
           emitAsset(path.resolve(id, '../../build/Release/' + binaryName));
         }
       }
