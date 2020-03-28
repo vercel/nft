@@ -12,6 +12,7 @@ const { pregyp, nbind } = require('./utils/binary-locators');
 const interopRequire = require('./utils/interop-require');
 const handleSpecialCases = require('./utils/special-cases');
 const resolve = require('./resolve-dependency.js');
+const nodeGypBuild = require('node-gyp-build');
 
 // Note: these should be deprecated over time as they ship in Acorn core
 acorn = acorn.Parser.extend(
@@ -48,6 +49,7 @@ const SET_ROOT_DIR = Symbol();
 const PKG_INFO = Symbol();
 const FS_FN = Symbol();
 const BINDINGS = Symbol();
+const NODE_GYP_BUILD = Symbol();
 const fsSymbols = {
   access: FS_FN,
   accessSync: FS_FN,
@@ -96,6 +98,9 @@ const staticModules = Object.assign(Object.create(null), {
   'node-pre-gyp': pregyp,
   'node-pre-gyp/lib/pre-binding': pregyp,
   'node-pre-gyp/lib/pre-binding.js': pregyp,
+  'node-gyp-build': {
+    default: NODE_GYP_BUILD
+  },
   'nbind': {
     init: NBIND_INIT,
     default: {
@@ -519,6 +524,22 @@ module.exports = async function (id, code, job) {
                     staticChildNode = node;
                     emitStaticChildAsset(staticBindingsInstance);
                   }
+                }
+              }
+            break;
+            case NODE_GYP_BUILD:
+              if (node.arguments.length === 1 && node.arguments[0].type === 'Identifier' &&
+                  node.arguments[0].name === '__dirname' && knownBindings.__dirname.shadowDepth === 0) {
+                transformed = true;
+                let resolved;
+                try {
+                  resolved = nodeGypBuild.path(dir);
+                }
+                catch (e) {}
+                if (resolved) {
+                  staticChildValue = { value: resolved };
+                  staticChildNode = node;
+                  emitStaticChildAsset(path);
                 }
               }
             break;
