@@ -58,17 +58,21 @@ const { fileList } = await nodeFileTrace(files, {
 
 Trailing slashes map directories, exact paths map exact only.
 
+#### Hooks
+
+The following FS functions can be hooked by passing them as options:
+
+* `readFile(path): Promise<string>`
+* `stat(path): Promise<FS.Stats>`
+* `readlink(path): Promise<string>`
+
 #### TypeScript
 
-Both JavaScript and TypeScript source files can be traced.
+The internal resolution supports resolving `.ts` files in traces by default.
 
-By default, TypeScript is disabled. Use the `ts` flag to enable.
-
-```js
-const { fileList } = await nodeFileTrace(['index.ts'], {
-  ts: true
-}
-```
+By its nature of integrating into existing build systems, the TypeScript
+compiler is not included in this project - rather the TypeScript transform
+layer requires separate integration into the `readFile` hook.
 
 #### Analysis
 
