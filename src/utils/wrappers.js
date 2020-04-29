@@ -1,30 +1,4 @@
-// Wrapper detections for require extraction handles:
-// 
-// When.js-style AMD wrapper:
-//   (function (define) { 'use strict' define(function (require) { ... }) })
-//   (typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(require); })
-// ->
-//   (function (define) { 'use strict' define(function () { ... }) })
-//   (typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(require); })
-//
-// Browserify-style wrapper
-//   (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bugsnag = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({
-//   1:[function(require,module,exports){
-//     ...code...
-//   },{"external":undefined}], 2: ...
-//   },{},[24])(24)
-//   });
-// ->
-//   (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bugsnag = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({
-//   1:[function(require,module,exports){
-//     ...code...
-//   },{"external":undefined}], 2: ...
-//   },{
-//     "external": { exports: require('external') }
-//   },[24])(24)
-//   });
-//
-
+// Wrapper detection pretransforms to enable static analysis
 function handleWrappers (ast) {
   // UglifyJS will convert function wrappers into !function(){}
   let arg;
@@ -45,7 +19,12 @@ function handleWrappers (ast) {
     arg = ast.body[0].expression.arguments[0];
 
   if (arg) {
-    // When.js wrapper
+    // When.js-style AMD wrapper:
+    //   (function (define) { 'use strict' define(function (require) { ... }) })
+    //   (typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(require); })
+    // ->
+    //   (function (define) { 'use strict' define(function () { ... }) })
+    //   (typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(require); })
     if (arg.type === 'ConditionalExpression' && 
         arg.test.type === 'LogicalExpression' &&
         arg.test.operator === '&&' &&
@@ -99,7 +78,22 @@ function handleWrappers (ast) {
         iifeBody[0].expression.arguments[0].params = [];
       }
     }
-    // browserify wrapper
+    // Browserify-style wrapper
+    //   (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bugsnag = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({
+    //   1:[function(require,module,exports){
+    //     ...code...
+    //   },{"external":undefined}], 2: ...
+    //   },{},[24])(24)
+    //   });
+    // ->
+    //   (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bugsnag = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({
+    //   1:[function(require,module,exports){
+    //     ...code...
+    //   },{"external":undefined}], 2: ...
+    //   },{
+    //     "external": { exports: require('external') }
+    //   },[24])(24)
+    //   });
     else if (arg.type === 'FunctionExpression' &&
         arg.params.length === 0 &&
         (arg.body.body.length === 1 ||
@@ -182,6 +176,82 @@ function handleWrappers (ast) {
             };
           });
         }
+      }
+    }
+    // UMD wrapper
+    //    (function (factory) {
+    //      if (typeof module === "object" && typeof module.exports === "object") {
+    //         var v = factory(require, exports);
+    //         if (v !== undefined) module.exports = v;
+    //     }
+    //     else if (typeof define === "function" && define.amd) {
+    //         define(["require", "exports", "./impl/format", "./impl/edit", "./impl/scanner", "./impl/parser"], factory);
+    //     }
+    //   })(function (require, exports) {
+    //     // ...
+    //   }
+    // ->
+    //   (function (factory) {
+    //     if (typeof module === "object" && typeof module.exports === "object") {
+    //         var v = factory(require, exports);
+    //         if (v !== undefined) module.exports = v;
+    //     }
+    //     else if (typeof define === "function" && define.amd) {
+    //         define(["require", "exports", "./impl/format", "./impl/edit", "./impl/scanner", "./impl/parser"], factory);
+    //     }
+    //   })(function () {
+    //     // ...
+    //   }
+    else if (arg.type === 'FunctionExpression' &&
+        arg.params.length === 2 &&
+        arg.params[0].type === 'Identifier' &&
+        arg.params[1].type === 'Identifier' &&
+        ast.body[0].expression.callee.body.body.length === 1) {
+      const statement = ast.body[0].expression.callee.body.body[0];
+      if (statement.type === 'IfStatement' &&
+          statement.test.type === 'LogicalExpression' &&
+          statement.test.operator === '&&' &&
+          statement.test.left.type === 'BinaryExpression' &&
+          statement.test.left.left.type === 'UnaryExpression' &&
+          statement.test.left.left.operator === 'typeof' &&
+          statement.test.left.left.argument.type === 'Identifier' &&
+          statement.test.left.left.argument.name === 'module' &&
+          statement.test.left.right.type === 'Literal' &&
+          statement.test.left.right.value === 'object' &&
+          statement.test.right.type === 'BinaryExpression' &&
+          statement.test.right.left.type === 'UnaryExpression' &&
+          statement.test.right.left.operator === 'typeof' &&
+          statement.test.right.left.argument.type === 'MemberExpression' &&
+          statement.test.right.left.argument.object.type === 'Identifier' &&
+          statement.test.right.left.argument.object.name === 'module' &&
+          statement.test.right.left.argument.property.type === 'Identifier' &&
+          statement.test.right.left.argument.property.name === 'exports' &&
+          statement.test.right.right.type === 'Literal' &&
+          statement.test.right.right.value === 'object' &&
+          statement.consequent.type === 'BlockStatement' &&
+          statement.consequent.body.length > 0) {
+          let callSite;
+          if (statement.consequent.body[0].type === 'VariableDeclaration' &&
+              statement.consequent.body[0].declarations[0].init &&
+              statement.consequent.body[0].declarations[0].init.type === 'CallExpression')
+            callSite = statement.consequent.body[0].declarations[0].init;
+          else if (statement.consequent.body[0].type === 'ExpressionStatement' &&
+              statement.consequent.body[0].expression.type === 'CallExpression')
+            callSite = statement.consequent.body[0].expression;
+          else if (statement.consequent.body[0].type === 'ExpressionStatement' &&
+              statement.consequent.body[0].expression.type === 'AssignmentExpression' &&
+              statement.consequent.body[0].expression.right.type === 'CallExpression')
+            callSite = statement.consequent.body[0].expression.right;
+          if (callSite &&
+              callSite.callee.type === 'Identifier' &&
+              callSite.callee.name === ast.body[0].expression.callee.params[0].name &&
+              callSite.arguments.length === 2 &&
+              callSite.arguments[0].type === 'Identifier' &&
+              callSite.arguments[0].name === 'require' &&
+              callSite.arguments[1].type === 'Identifier' &&
+              callSite.arguments[1].name === 'exports') {
+            ast.body[0].expression.arguments[0].params = [];
+          }
       }
     }
   }
