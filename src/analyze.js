@@ -16,13 +16,11 @@ const nodeGypBuild = require('node-gyp-build');
 
 // Note: these should be deprecated over time as they ship in Acorn core
 acorn = acorn.Parser.extend(
-  require("acorn-dynamic-import").default,
-  require("acorn-import-meta"),
-  require("acorn-bigint"),
   require("acorn-class-fields"),
-  require("acorn-private-methods"),
   require("acorn-export-ns-from"),
-  require("./utils/acorn-static-class-features")
+  require("acorn-import-meta"),
+  require("acorn-numeric-separator"),
+  require("acorn-static-class-features"),
 );
 const os = require('os');
 const handleWrappers = require('./utils/wrappers.js');
@@ -214,7 +212,7 @@ module.exports = async function (id, code, job) {
 
   let ast, isESM;
   try {
-    ast = acorn.parse(code, { ecmaVersion: 2019, allowReturnOutsideFunction: true });
+    ast = acorn.parse(code, { ecmaVersion: 2020, allowReturnOutsideFunction: true });
     isESM = false;
   }
   catch (e) {
@@ -225,7 +223,7 @@ module.exports = async function (id, code, job) {
   }
   if (!ast) {
     try {
-      ast = acorn.parse(code, { ecmaVersion: 2019, sourceType: 'module' });
+      ast = acorn.parse(code, { ecmaVersion: 2020, sourceType: 'module' });
       isESM = true;
     }
     catch (e) {
@@ -445,6 +443,10 @@ module.exports = async function (id, code, job) {
           }
         }
       }
+      else if ((isESM || job.mixedModules) && node.type === 'ImportExpression') {
+        processRequireArg(node.source);
+        return;
+      }
       // Call expression cases and asset triggers
       // - fs triggers: fs.readFile(...)
       // - require.resolve()
@@ -457,10 +459,6 @@ module.exports = async function (id, code, job) {
             processRequireArg(node.arguments[0]);
             return;
           }
-        }
-        else if ((isESM || job.mixedModules) && node.callee.type === 'Import' && node.arguments.length) {
-          processRequireArg(node.arguments[0]);
-          return;
         }
         else if ((!isESM || job.mixedModules) &&
             node.callee.type === 'MemberExpression' &&
