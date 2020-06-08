@@ -3,7 +3,7 @@
 [![CI Status](https://badgen.net/github/checks/vercel/node-file-trace?label=CI)](https://github.com/vercel/node-file-trace/actions?workflow=CI)
 [![Code Coverage](https://badgen.net/codecov/c/github/vercel/node-file-trace)](https://codecov.io/gh/vercel/node-file-trace)
 
-This package is used in [@now/node](https://npmjs.com/package/@now/node) and [@now/next](https://npmjs.com/package/@now/next) to determine exactly which files (including `node_modules`) are necessary for the application runtime.
+This package is used in [@vercel/node](https://npmjs.com/package/@vercel/node) and [@vercel/next](https://npmjs.com/package/@vercel/next) to determine exactly which files (including `node_modules`) are necessary for the application runtime.
 
 This is similar to [@zeit/ncc](https://npmjs.com/package/@zeit/ncc) except there is no bundling performed and therefore no reliance on webpack. This achieves the same tree-shaking benefits without moving any assets or binaries.
 
