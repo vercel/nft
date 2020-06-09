@@ -309,9 +309,12 @@ function handleWrappers (ast) {
         wrapper.callee.body.body[0].type === 'VariableDeclaration' &&
         wrapper.callee.body.body[0].declarations.length === 1 &&
         wrapper.callee.body.body[0].declarations[0].type === 'VariableDeclarator' &&
-        wrapper.callee.body.body[0].declarations[0].id.type === 'Identifier' &&
-        wrapper.callee.body.body[0].declarations[0].init.type === 'ObjectExpression' &&
-        wrapper.callee.body.body[0].declarations[0].init.properties.length === 0 &&
+        wrapper.callee.body.body[0].declarations[0].id.type === 'Identifier' && (
+          wrapper.callee.body.body[0].declarations[0].init.type === 'ObjectExpression' &&
+          wrapper.callee.body.body[0].declarations[0].init.properties.length === 0 ||
+          wrapper.callee.body.body[0].declarations[0].init.type === 'CallExpression' &&
+          wrapper.callee.body.body[0].declarations[0].init.arguments.length === 1
+        ) &&
         wrapper.callee.body.body[1].type === 'FunctionDeclaration' &&
         wrapper.callee.body.body[1].params.length === 1 &&
         wrapper.callee.body.body[1].body.body.length >= 3 && (

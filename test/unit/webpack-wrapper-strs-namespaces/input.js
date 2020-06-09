@@ -1,7 +1,7 @@
 module.exports =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
-/******/ 	var installedModules = {};
+/******/ 	var installedModules = require('path');
 /******/
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
