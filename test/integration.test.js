@@ -13,7 +13,7 @@ const { fork } = require('child_process');
 
 jest.setTimeout(200000);
 
-const integrationDir = `${__dirname}/integration`;
+const integrationDir = `${__dirname}${path.sep}integration`;
 
 for (const integrationTest of fs.readdirSync(integrationDir)) {
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
