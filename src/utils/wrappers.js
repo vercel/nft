@@ -21,7 +21,7 @@ function handleWrappers (ast) {
     wrapper = ast.body[0].expression;
   else if (ast.body.length === 1 &&
       ast.body[0].type === 'ExpressionStatement' &&
-      ast.body[0].expression.type === 'AssgnmentExpression' &&
+      ast.body[0].expression.type === 'AssignmentExpression' &&
       ast.body[0].expression.left.type === 'MemberExpression' &&
       ast.body[0].expression.left.object.type === 'Identifier' &&
       ast.body[0].expression.left.object.name === 'module' &&
@@ -89,6 +89,7 @@ function handleWrappers (ast) {
           body[0].expression.arguments[0].params.length === 1 &&
           body[0].expression.arguments[0].params[0].type === 'Identifier' &&
           body[0].expression.arguments[0].params[0].name === 'require') {
+        delete body[0].expression.arguments[0].scope.declarations.require;
         body[0].expression.arguments[0].params = [];
       }
     }
@@ -265,13 +266,14 @@ function handleWrappers (ast) {
               callSite.arguments[0].name === 'require' &&
               callSite.arguments[1].type === 'Identifier' &&
               callSite.arguments[1].name === 'exports') {
+            delete wrapper.arguments[0].scope.declarations.require;
+            delete wrapper.arguments[0].scope.declarations.exports;
             wrapper.arguments[0].params = [];
           }
       }
     }
     // Webpack wrapper
     // 
-    // or !(function (){})() | (function () {})() variants
     //   module.exports = (function(e) {
     //     var t = {};
     //     function r(n) { /*...*/ }
@@ -281,6 +283,8 @@ function handleWrappers (ast) {
     //     },
     //     function(e, t, r) {
     //       const n = r(0);
+    //       const ns = r.n(n);
+    //       ns.a.export;
     //     }
     //   ]);
     // ->
@@ -293,8 +297,12 @@ function handleWrappers (ast) {
     //     },
     //     function(e, t, r) {
     //       const n = require("fs");
+    //       const ns = { a: require("fs") };
     //     }
     //   ]);
+    //
+    // OR !(function (){})() | (function () {})() variants
+    // OR { 0: function..., 'some-id': function () ... } registry variants
     else if (wrapper.callee.type === 'FunctionExpression' &&
         wrapper.callee.params.length === 1 &&
         wrapper.callee.body.body.length > 2 &&
@@ -306,13 +314,21 @@ function handleWrappers (ast) {
         wrapper.callee.body.body[0].declarations[0].init.properties.length === 0 &&
         wrapper.callee.body.body[1].type === 'FunctionDeclaration' &&
         wrapper.callee.body.body[1].params.length === 1 &&
-        wrapper.callee.body.body[1].body.body.length === 3 &&
-        wrapper.arguments[0].type === 'ArrayExpression' &&
-        wrapper.arguments[0].elements.length > 0 &&
-        wrapper.arguments[0].elements.every(el => el.type === 'FunctionExpression')) {
+        wrapper.callee.body.body[1].body.body.length >= 3 && (
+          wrapper.arguments[0].type === 'ArrayExpression' &&
+          wrapper.arguments[0].elements.length > 0 &&
+          wrapper.arguments[0].elements.every(el => el.type === 'FunctionExpression') ||
+          wrapper.arguments[0].type === 'ObjectExpression' &&
+          wrapper.arguments[0].properties.length > 0 &&
+          wrapper.arguments[0].properties.every(prop => prop.key.type === 'Literal' && prop.value.type === 'FunctionExpression')
+        )) {
       const externalMap = new Map();
-      for (let i = 0; i < wrapper.arguments[0].elements.length; i++) {
-        const m = wrapper.arguments[0].elements[i];
+      let modules;
+      if (wrapper.arguments[0].type === 'ArrayExpression')
+        modules = wrapper.arguments[0].elements.map((el, i) => [i, el]);
+      else
+        modules = wrapper.arguments[0].properties.map(prop => [prop.key.value, prop.value]);
+      for (const [k, m] of modules) {
         if (m.body.body.length === 1 &&
             m.body.body[0].type === 'ExpressionStatement' &&
             m.body.body[0].expression.type === 'AssignmentExpression' &&
@@ -327,13 +343,13 @@ function handleWrappers (ast) {
             m.body.body[0].expression.right.callee.name === 'require' &&
             m.body.body[0].expression.right.arguments.length === 1 &&
             m.body.body[0].expression.right.arguments[0].type === 'Literal') {
-          externalMap.set(i, m.body.body[0].expression.right.arguments[0].value);
+          externalMap.set(k, m.body.body[0].expression.right.arguments[0].value);
         }
       }
-      for (let i = 0; i < wrapper.arguments[0].elements.length; i++) {
-        const m = wrapper.arguments[0].elements[i];
+      for (const [, m] of modules) {
         if (m.params.length === 3 && m.params[2].type === 'Identifier') {
-          walk(m.body.body, {
+          const assignedVars = new Map();
+          walk(m.body, {
             enter (node, parent) {
               if (node.type === 'FunctionExpression' ||
                   node.type === 'FunctionDeclaration' ||
@@ -361,18 +377,63 @@ function handleWrappers (ast) {
                       value: externalId
                     }]
                   };
-                  if (parent.right === node)
+                  if (parent.right === node) {
                     parent.right = replacement;
-                  else if (parent.left === node)
+                  }
+                  else if (parent.left === node) {
                     parent.left = replacement;
-                  else if (parent.object === node)
+                  }
+                  else if (parent.object === node) {
                     parent.object = replacement;
-                  else if (parent.callee === node)
+                  }
+                  else if (parent.callee === node) {
                     parent.callee = replacement;
-                  else if (parent.arguments && parent.arguments.some(arg => arg === node))
+                  }
+                  else if (parent.arguments && parent.arguments.some(arg => arg === node)) {
+                    delete parent.scope.declarations[node.id];
                     parent.arguments = parent.arguments.map(arg => arg === node ? replacement : arg);
-                  else if (parent.init === node)
+                  }
+                  else if (parent.init === node) {
+                    if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier')
+                      assignedVars.set(parent.id.name, externalId);
                     parent.init = replacement;
+                  }
+                }
+              }
+              else if (node.type === 'CallExpression' &&
+                  node.callee.type === 'MemberExpression' &&
+                  node.callee.object.type === 'Identifier' &&
+                  node.callee.object.name === m.params[2].name &&
+                  node.callee.property.type === 'Identifier' &&
+                  node.callee.property.name === 'n' &&
+                  node.arguments.length === 1 &&
+                  node.arguments[0].type === 'Identifier' &&
+                  assignedVars.get(node.arguments[0].name)) {
+                if (parent.init === node) {
+                  parent.init = {
+                    type: 'ObjectExpression',
+                    properties: [{
+                      type: 'ObjectProperty',
+                      method: false,
+                      computed: false,
+                      shorthand: false,
+                      key: {
+                        type: 'Identifier',
+                        name: 'a'
+                      },
+                      value: {
+                        type: 'CallExpression',
+                        callee: {
+                          type: 'Identifier',
+                          name: 'require'
+                        },
+                        arguments: [{
+                          type: 'Literal',
+                          value: assignedVars.get(node.arguments[0].name)
+                        }]
+                      }
+                    }]
+                  };
                 }
               }
             }
