@@ -173,7 +173,7 @@ module.exports = async function (id, code, job) {
   const dir = path.dirname(id);
   // if (typeof options.production === 'boolean' && staticProcess.env.NODE_ENV === UNKNOWN)
   //  staticProcess.env.NODE_ENV = options.production ? 'production' : 'dev';
-  cwd = job.base;
+  cwd = job.cwd;
   const pkgBase = getPackageBase(id);
 
   const emitAssetDirectory = (wildcardPath) => {

@@ -42,6 +42,21 @@ const { fileList } = await nodeFileTrace(files, {
 
 Any files/folders above the `base` are ignored in the listing and analysis.
 
+#### Process Cwd
+
+When applying analysis certain functions rely on the `process.cwd()` value, such as `path.resolve('./relative')` or even a direct `process.cwd()`
+invocation.
+
+Setting the `processCwd` option allows this analysis to be guided to the right path to ensure that assets are correctly detected.
+
+```js
+const { fileList } = await nodeFileTrace(files, {
+  processCwd: path.resolve(__dirname)
+}
+```
+
+By default `processCwd` is the same as `base`.
+
 #### Paths
 
 > Status: Experimental. May change at any time.
