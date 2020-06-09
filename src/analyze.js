@@ -394,8 +394,8 @@ module.exports = async function (id, code, job) {
     }
   }
 
-  handleWrappers(ast);
   let scope = attachScopes(ast, 'scope');
+  handleWrappers(ast);
   ({ ast = ast, scope = scope } = handleSpecialCases({ id, ast, scope, emitAsset: path => assets.add(path), emitAssetDirectory, job }) || {});
 
   function backtrack (self, parent) {
