@@ -51,6 +51,7 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
 
     const { fileList, reasons } = await nodeFileTrace([join(unitPath, inputFileName)], {
       base: `${__dirname}/../`,
+      processCwd: unitPath,
       paths: {
         dep: 'test/unit/esm-paths/esm-dep.js',
         'dep/': 'test/unit/esm-paths-trailer/'

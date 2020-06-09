@@ -1,7 +1,7 @@
 module.exports =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
-/******/ 	var installedModules = {};
+/******/ 	var installedModules = require('path');
 /******/
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
@@ -114,7 +114,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 function handler(req, res) {
-  const dictionaryPath = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(__dirname, "assets", "dictionary.json");
+  const dictionaryPath = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(process.cwd(), "assets", "dictionary.json");
   const content = fs__WEBPACK_IMPORTED_MODULE_1___default.a.readFileSync(dictionaryPath, "utf-8");
   res.json(content);
 }
