@@ -13,13 +13,16 @@ const { fork } = require('child_process');
 
 jest.setTimeout(200000);
 
-for (const integrationTest of fs.readdirSync(`${__dirname}/integration`)) {
+const integrationDir = `${__dirname}${path.sep}integration`;
+
+for (const integrationTest of fs.readdirSync(integrationDir)) {
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
     console.log('Tracing and executing ' + integrationTest);
     const fails = integrationTest.endsWith('failure.js');
-    const { fileList, reasons, warnings } = await nodeFileTrace([`${__dirname}/integration/${integrationTest}`], {
+    const { fileList, reasons, warnings } = await nodeFileTrace([`${integrationDir}/${integrationTest}`], {
       log: true,
       base: path.resolve(__dirname, '..'),
+      processCwd: integrationDir,
       // ignore other integration tests
       ignore: ['test/integration/**']
     });

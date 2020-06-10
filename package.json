@@ -1,7 +1,7 @@
 {
   "name": "@zeit/node-file-trace",
   "version": "0.6.1",
-  "repository": "zeit/node-file-trace",
+  "repository": "vercel/node-file-trace",
   "license": "MIT",
   "main": "./src/node-file-trace.js",
   "types": "./node-file-trace.d.ts",
@@ -46,7 +46,7 @@
     "@tensorflow/tfjs-node": "^1.2.3",
     "@zeit/ncc": "^0.17.0",
     "analytics-node": "^3.4.0-beta.1",
-    "apollo-server-express": "^2.6.7",
+    "apollo-server-express": "^2.14.2",
     "argon2": "^0.24.0",
     "auth0": "^2.18.0",
     "axios": "^0.19.0",
