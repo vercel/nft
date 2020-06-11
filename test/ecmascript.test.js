@@ -42,6 +42,7 @@ async function runTests(importPath) {
         await writeFile(filename, str, 'utf8');
         const { fileList, warnings } = await nodeFileTrace([filename], {
           base: `${__dirname}/../`,
+          processCwd: path.dirname(filename),
           ts: true,
           log: true,
           mixedModules: true

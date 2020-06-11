@@ -42,6 +42,7 @@ module.exports = async function (files, opts = {}) {
 class Job {
   constructor ({
     base = process.cwd(),
+    processCwd,
     paths = {},
     ignore,
     log = false,
@@ -71,6 +72,7 @@ class Job {
       }
     }
     this.base = base;
+    this.cwd = resolve(processCwd || base);
     const resolvedPaths = {};
     for (const path of Object.keys(paths)) {
       const trailer = paths[path].endsWith('/');
