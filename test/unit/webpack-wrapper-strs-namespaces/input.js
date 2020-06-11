@@ -112,6 +112,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__("mw/K");
 /* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(fs__WEBPACK_IMPORTED_MODULE_1__);
 
+f(__webpack_require__("oyvS"));
+
 
 function handler(req, res) {
   const dictionaryPath = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(process.cwd(), "assets", "dictionary.json");

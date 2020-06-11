@@ -393,7 +393,6 @@ function handleWrappers (ast) {
                     parent.callee = replacement;
                   }
                   else if (parent.arguments && parent.arguments.some(arg => arg === node)) {
-                    delete parent.scope.declarations[node.id];
                     parent.arguments = parent.arguments.map(arg => arg === node ? replacement : arg);
                   }
                   else if (parent.init === node) {
