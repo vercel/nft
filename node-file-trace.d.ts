@@ -28,6 +28,7 @@ interface Stats {
 
 export interface NodeFileTraceOptions {
   base?: string;
+  processCwd?: string;
   ignore?: string | string[] | ((path: string) => boolean);
   analysis?: boolean | {
     emitGlobs?: boolean;
