@@ -10156,7 +10156,7 @@ param-case@^1.1.0:
   dependencies:
     sentence-case "^1.1.2"
 
-paraphrase@^1.8.0:
+paraphrase@1.8.0:
   version "1.8.0"
   resolved "https://registry.yarnpkg.com/paraphrase/-/paraphrase-1.8.0.tgz#7ba038d176f4585674162a4bd825932b8b6ac22c"
   integrity sha512-447jeY7a82JcPtJht+rEEnlSeKFmaZezMpkeQTtWB88n8PtJew/HIGHhmvjxi2QfSiRECeIJ6XkZ9U8w0neCZg==
