@@ -9461,6 +9461,11 @@ normalize-url@2.0.1:
     query-string "^5.0.1"
     sort-keys "^2.0.0"
 
+notate@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/notate/-/notate-1.1.2.tgz#29447d80c3789a4c9f196bdc64b4068618dde9f6"
+  integrity sha512-87c1SbFP7TvHk1gdc1ZRTk+0wr+1VbKC6Nm3cW7xqHjEyU0eY27fOHjJnWmxFkgSkQF/kaLj9PfvtUh13GjHMQ==
+
 npm-audit-report@^1.3.2:
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/npm-audit-report/-/npm-audit-report-1.3.2.tgz#303bc78cd9e4c226415076a4f7e528c89fc77018"
@@ -10150,6 +10155,13 @@ param-case@^1.1.0:
   integrity sha1-3LCRpDwlm5Io8cNB57akTqC/l0M=
   dependencies:
     sentence-case "^1.1.2"
+
+paraphrase@1.8.0:
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/paraphrase/-/paraphrase-1.8.0.tgz#7ba038d176f4585674162a4bd825932b8b6ac22c"
+  integrity sha512-447jeY7a82JcPtJht+rEEnlSeKFmaZezMpkeQTtWB88n8PtJew/HIGHhmvjxi2QfSiRECeIJ6XkZ9U8w0neCZg==
+  dependencies:
+    notate "^1.1.2"
 
 parents@^1.0.0, parents@^1.0.1:
   version "1.0.1"

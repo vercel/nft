@@ -4,7 +4,6 @@ const { walk } = require('estree-walker');
 function handleWrappers (ast) {
   // UglifyJS will convert function wrappers into !function(){}
   let wrapper;
-
   if (ast.body.length === 1 &&
       ast.body[0].type === 'ExpressionStatement' &&
       ast.body[0].expression.type === 'UnaryExpression' &&
@@ -319,12 +318,14 @@ function handleWrappers (ast) {
         wrapper.callee.body.body[1].type === 'FunctionDeclaration' &&
         wrapper.callee.body.body[1].params.length === 1 &&
         wrapper.callee.body.body[1].body.body.length >= 3 && (
+          wrapper.arguments[0] &&
           wrapper.arguments[0].type === 'ArrayExpression' &&
           wrapper.arguments[0].elements.length > 0 &&
-          wrapper.arguments[0].elements.every(el => el.type === 'FunctionExpression') ||
+          wrapper.arguments[0].elements.every(el => el && el.type === 'FunctionExpression') ||
           wrapper.arguments[0].type === 'ObjectExpression' &&
+          wrapper.arguments[0].properties &&
           wrapper.arguments[0].properties.length > 0 &&
-          wrapper.arguments[0].properties.every(prop => prop.key.type === 'Literal' && prop.value.type === 'FunctionExpression')
+          wrapper.arguments[0].properties.every(prop => prop && prop.key && prop.key.type === 'Literal' && prop.value && prop.value.type === 'FunctionExpression')
         )) {
       const externalMap = new Map();
       let modules;
