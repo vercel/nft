@@ -149,7 +149,7 @@ function resolvePackage (name, parent, job, cjsResolve) {
     const pkgCfg = getPkgCfg(nodeModulesDir + sep + pkgName, job);
     if (pkgCfg && job.exports && pkgCfg.exports !== undefined && pkgCfg.exports !== null) {
       let resolved = resolveExportsTarget(nodeModulesDir + sep + pkgName, pkgCfg.exports, '.' + name.slice(pkgName.length), job, cjsResolve);
-      if (cjsResolve && resolved)
+      if (resolved && cjsResolve)
         resolved = resolveFile(resolved, parent, job) || resolveDir(resolved, parent, job);
       if (resolved) {
         job.emitFile(nodeModulesDir + sep + pkgName + sep + 'package.json', 'resolve', parent);
