@@ -143,9 +143,6 @@ function resolvePackage (name, parent, job, cjsResolve) {
     const nodeModulesDir = packageParent + sep + 'node_modules';
     const stat = job.stat(nodeModulesDir);
     if (!stat || !stat.isDirectory()) continue;
-    if (name === 'core-js/features/array/flat') {
-      console.log(nodeModulesDir);
-    }
     const pkgCfg = getPkgCfg(nodeModulesDir + sep + pkgName, job);
     if (pkgCfg && job.exports && pkgCfg.exports !== undefined && pkgCfg.exports !== null) {
       let resolved = resolveExportsTarget(nodeModulesDir + sep + pkgName, pkgCfg.exports, '.' + name.slice(pkgName.length), job, cjsResolve);
