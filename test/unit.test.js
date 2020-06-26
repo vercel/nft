@@ -56,6 +56,7 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
         dep: 'test/unit/esm-paths/esm-dep.js',
         'dep/': 'test/unit/esm-paths-trailer/'
       },
+      exports: unitTest.startsWith('exports'),
       ts: true,
       log: true,
       // disable analysis for basic-analysis unit tests

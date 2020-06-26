@@ -5,5 +5,6 @@
   "node_modules/phantomjs-prebuilt/lib/location.js",
   "node_modules/phantomjs-prebuilt/lib/phantomjs.js",
   "node_modules/phantomjs-prebuilt/package.json",
+  "package.json",
   "test/unit/phantomjs-prebuilt/input.js"
 ]

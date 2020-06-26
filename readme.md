@@ -57,6 +57,29 @@ const { fileList } = await nodeFileTrace(files, {
 
 By default `processCwd` is the same as `base`.
 
+#### Exports
+
+By default tracing of the [Node.js "exports" field](https://nodejs.org/dist/latest-v14.x/docs/api/esm.html#esm_package_entry_points) is not handled, but can be enabled by setting the exports option:
+
+```js
+const { fileList } = await nodeFileTrace(files, {
+  exports: true
+});
+```
+
+By default, the `"node"`, `"require"`, `"import"` and `"default"` conditions will be traced. Any package with an `"exports"` field will have its
+exports traced instead of the `"main"`.
+
+In addition to a boolean value, the specific list of exports conditions to trace can be provided as well:
+
+```js
+const { fileList } = await nodeFileTrace(files, {
+  exports: ['node', 'production']
+});
+```
+
+Only the `"node"` export should be explicitly included (if needed) when specifying the exact export condition list. The `"require"`, `"import"` and `"default"` conditions will always be traced as defined, no matter what custom conditions are set.
+
 #### Paths
 
 > Status: Experimental. May change at any time.
