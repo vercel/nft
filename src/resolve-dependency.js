@@ -143,16 +143,12 @@ function resolvePackage (name, parent, job, cjsResolve) {
     const nodeModulesDir = packageParent + sep + 'node_modules';
     const stat = job.stat(nodeModulesDir);
     if (!stat || !stat.isDirectory()) continue;
+    if (name === 'core-js/features/array/flat') {
+      console.log(nodeModulesDir);
+    }
     const pkgCfg = getPkgCfg(nodeModulesDir + sep + pkgName, job);
     if (pkgCfg && job.exports && pkgCfg.exports !== undefined && pkgCfg.exports !== null) {
       const resolved = resolveExportsTarget(nodeModulesDir + sep + pkgName, pkgCfg.exports, '.' + name.slice(pkgName.length), job, cjsResolve);
-      if (resolved) {
-        job.emitFile(nodeModulesDir + sep + pkgName + sep + 'package.json', 'resolve', parent);
-        return resolved;
-      }
-    }
-    else if (pkgCfg && typeof pkgCfg.main === 'string') {
-      const resolved = resolveFile(resolve(nodeModulesDir + sep + pkgName, pkgCfg.main), parent, job) || resolveFile(resolve(path, pkgCfg.main, 'index'), parent, job);
       if (resolved) {
         job.emitFile(nodeModulesDir + sep + pkgName + sep + 'package.json', 'resolve', parent);
         return resolved;
