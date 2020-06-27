@@ -21,7 +21,7 @@ function resolvePath (path, parent, job) {
 }
 
 function resolveFile (path, parent, job) {
-  if (path[path.length - 1] === '/') return;
+  if (path.endsWith('/')) return;
   path = job.realpath(path, parent);
   if (job.isFile(path)) return path;
   if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.isFile(path + '.ts')) return path + '.ts';
