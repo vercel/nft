@@ -102,7 +102,7 @@ function resolveExportsTarget (pkgPath, exports, subpath, job, cjsResolve) {
       typeof exports === 'object' && !Array.isArray(exports) && Object.keys(exports).length && Object.keys(exports)[0][0] !== '.')
     exports = { '.' : exports };
   if (subpath in exports) {
-    const target = getExportsTarget(exports[subpath], job.exports, cjsResolve);
+    const target = getExportsTarget(exports[subpath], job.exports || ['node'], cjsResolve);
     if (typeof target === 'string' && target.startsWith('./'))
       return pkgPath + target.slice(1);
   }
@@ -110,7 +110,7 @@ function resolveExportsTarget (pkgPath, exports, subpath, job, cjsResolve) {
     if (!match.endsWith('/'))
       continue;
     if (subpath.startsWith(match)) {
-      const target = getExportsTarget(exports[match], job.exports, cjsResolve);
+      const target = getExportsTarget(exports[match], job.exports || ['node'], cjsResolve);
       if (typeof target === 'string' && target.endsWith('/') && target.startsWith('./'))
         return pkgPath + match.slice(2) + subpath.slice(match.length);
     }
@@ -124,7 +124,7 @@ function resolvePackage (name, parent, job, cjsResolve) {
   const pkgName = getPkgName(name);
   
   // package own name resolution
-  if (job.exports) {
+  if (job.exports || true) {
     const pjsonBoundary = job.getPjsonBoundary(parent);
     if (pjsonBoundary) {
       const pkgCfg = getPkgCfg(pjsonBoundary, job);
