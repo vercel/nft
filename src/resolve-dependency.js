@@ -125,7 +125,7 @@ function resolvePackage (name, parent, job, cjsResolve) {
   
   // package own name resolution
   let selfResolved;
-  if (job.exports && job.exportsOnly !== 0) {
+  if (job.exports) {
     const pjsonBoundary = job.getPjsonBoundary(parent);
     if (pjsonBoundary) {
       const pkgCfg = getPkgCfg(pjsonBoundary, job);
@@ -136,6 +136,9 @@ function resolvePackage (name, parent, job, cjsResolve) {
       }
     }
   }
+
+  if (job.exportsOnly === 0)
+    selfResolved = undefined;
 
   let separatorIndex;
   const rootSeparatorIndex = packageParent.indexOf(sep);
