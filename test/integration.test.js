@@ -21,6 +21,7 @@ for (const integrationTest of fs.readdirSync(integrationDir)) {
     const fails = integrationTest.endsWith('failure.js');
     const { fileList, reasons, warnings } = await nodeFileTrace([`${integrationDir}/${integrationTest}`], {
       log: true,
+      exports: false,
       base: path.resolve(__dirname, '..'),
       processCwd: integrationDir,
       // ignore other integration tests
