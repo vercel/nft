@@ -229,8 +229,10 @@ class Job {
   }
 
   getPjsonBoundary (path) {
-    const root = path.slice(0, path.indexOf(sep)) || path.sep;
-    while ((path = dirname(path)) !== root) {
+    const rootSeparatorIndex = path.indexOf(sep);
+    let separatorIndex;
+    while ((separatorIndex = path.lastIndexOf(sep)) > rootSeparatorIndex) {
+      path = path.substr(0, separatorIndex);
       if (this.isFile(path + sep + 'package.json'))
         return path;
     }
