@@ -145,7 +145,7 @@ function resolvePackage (name, parent, job, cjsResolve) {
     const stat = job.stat(nodeModulesDir);
     if (!stat || !stat.isDirectory()) continue;
     const pkgCfg = getPkgCfg(nodeModulesDir + sep + pkgName, job);
-    if (pkgCfg && job.exports && pkgCfg.exports !== undefined && pkgCfg.exports !== null && (!selfResolved || job.exportsOnly === 0)) {
+    if (pkgCfg && job.exports && pkgCfg.exports !== undefined && pkgCfg.exports !== null && !selfResolved) {
       let legacyResolved;
       if (!job.exportsOnly)
         legacyResolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
@@ -164,14 +164,14 @@ function resolvePackage (name, parent, job, cjsResolve) {
     else {
       const resolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
       if (resolved) {
-        // if (job.exportsOnly === 0)
-        //  selfResolved = undefined;
+        if (job.exportsOnly === 0)
+          selfResolved = undefined;
         if (selfResolved && selfResolved !== resolved)
           return [resolved, selfResolved];
         return resolved;
       }
-      // if (job.exportsOnly === 0)
-      //  selfResolved = undefined;
+      if (job.exportsOnly === 0)
+        selfResolved = undefined;
       if (selfResolved) return selfResolved;
     }
   }
