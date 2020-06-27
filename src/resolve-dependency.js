@@ -168,11 +168,9 @@ function resolvePackage (name, parent, job, cjsResolve) {
           return [resolved, selfResolved];
         return resolved;
       }
-      if (job.exportsOnly === 0)
-        selfResolved = undefined;
-      if (selfResolved) return selfResolved;
     }
   }
+  if (selfResolved) return selfResolved;
   if (Object.hasOwnProperty.call(job.paths, name)) {
     return job.paths[name];
   }
