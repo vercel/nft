@@ -159,6 +159,8 @@ function resolvePackage (name, parent, job, cjsResolve) {
           return [resolved, legacyResolved];
         return resolved;
       }
+      if (legacyResolved)
+        return legacyResolved;
     }
     else {
       const resolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
