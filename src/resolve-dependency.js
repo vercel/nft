@@ -102,7 +102,7 @@ function resolveExportsTarget (pkgPath, exports, subpath, job, cjsResolve) {
       typeof exports === 'object' && !Array.isArray(exports) && Object.keys(exports).length && Object.keys(exports)[0][0] !== '.')
     exports = { '.' : exports };
   if (subpath in exports) {
-    const target = getExportsTarget(exports[subpath], job.exports || ['node'], cjsResolve);
+    const target = getExportsTarget(exports[subpath], job.exports, cjsResolve);
     if (typeof target === 'string' && target.startsWith('./'))
       return pkgPath + target.slice(1);
   }
@@ -110,7 +110,7 @@ function resolveExportsTarget (pkgPath, exports, subpath, job, cjsResolve) {
     if (!match.endsWith('/'))
       continue;
     if (subpath.startsWith(match)) {
-      const target = getExportsTarget(exports[match], job.exports || ['node'], cjsResolve);
+      const target = getExportsTarget(exports[match], job.exports, cjsResolve);
       if (typeof target === 'string' && target.endsWith('/') && target.startsWith('./'))
         return pkgPath + match.slice(2) + subpath.slice(match.length);
     }
@@ -124,16 +124,15 @@ function resolvePackage (name, parent, job, cjsResolve) {
   const pkgName = getPkgName(name);
   
   // package own name resolution
-  if (job.exports || true) {
+  let selfResolved;
+  if (job.exports) {
     const pjsonBoundary = job.getPjsonBoundary(parent);
     if (pjsonBoundary) {
       const pkgCfg = getPkgCfg(pjsonBoundary, job);
       if (pkgCfg && pkgCfg.name && pkgCfg.exports !== null && pkgCfg.exports !== undefined) {
-        const resolved = resolveExportsTarget(pjsonBoundary, pkgCfg.exports, '.' + name.slice(pkgName.length), job, cjsResolve);
-        if (resolved) {
+        selfResolved = resolveExportsTarget(pjsonBoundary, pkgCfg.exports, '.' + name.slice(pkgName.length), job, cjsResolve);
+        if (selfResolved)
           job.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', parent);
-          return resolved;
-        }
       }
     }
   }
@@ -146,7 +145,7 @@ function resolvePackage (name, parent, job, cjsResolve) {
     const stat = job.stat(nodeModulesDir);
     if (!stat || !stat.isDirectory()) continue;
     const pkgCfg = getPkgCfg(nodeModulesDir + sep + pkgName, job);
-    if (pkgCfg && job.exports && pkgCfg.exports !== undefined && pkgCfg.exports !== null) {
+    if (pkgCfg && job.exports && pkgCfg.exports !== undefined && pkgCfg.exports !== null && !selfResolved) {
       let legacyResolved;
       if (!job.exportsOnly)
         legacyResolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
@@ -164,7 +163,12 @@ function resolvePackage (name, parent, job, cjsResolve) {
     }
     else {
       const resolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
-      if (resolved) return resolved;
+      if (resolved) {
+        if (selfResolved && selfResolved !== resolved)
+          return [resolved, selfResolved];
+        return resolved;
+      }
+      if (selfResolved) return selfResolved;
     }
   }
   if (Object.hasOwnProperty.call(job.paths, name)) {
