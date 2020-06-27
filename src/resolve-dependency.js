@@ -164,8 +164,6 @@ function resolvePackage (name, parent, job, cjsResolve) {
     else {
       const resolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
       if (resolved) {
-        if (job.exportsOnly === 0)
-          selfResolved = undefined;
         if (selfResolved && selfResolved !== resolved)
           return [resolved, selfResolved];
         return resolved;
