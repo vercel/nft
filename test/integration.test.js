@@ -23,7 +23,6 @@ for (const integrationTest of fs.readdirSync(integrationDir)) {
       log: true,
       base: path.resolve(__dirname, '..'),
       processCwd: integrationDir,
-      exportsOnly: 0,
       // ignore other integration tests
       ignore: ['test/integration/**']
     });
