@@ -109,7 +109,7 @@ function resolveExportsTarget (pkgPath, exports, subpath, job, cjsResolve) {
       continue;
     if (subpath.startsWith(match)) {
       const target = getExportsTarget(exports[match], job.exports, cjsResolve);
-      if (typeof target === 'string' && target[target.length - 1] === '/' && target.startsWith('./'))
+      if (typeof target === 'string' && target.endsWith('/') && target.startsWith('./'))
         return pkgPath + match.slice(2) + subpath.slice(match.length);
     }
   }
