@@ -32,7 +32,7 @@ function resolveFile (path, parent, job) {
 }
 
 function resolveDir (path, parent, job) {
-  if (path[path.length - 1] === '/') path = path.slice(0, -1);
+  if (path.endsWith('/')) path = path.slice(0, -1);
   if (!job.isDir(path)) return;
   const realPjsonPath = job.realpath(path + sep + 'package.json', parent);
   const pjsonSource = job.readFile(realPjsonPath);
