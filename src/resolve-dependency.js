@@ -6,7 +6,7 @@ const { isAbsolute, resolve, sep } = require('path');
 module.exports = function resolveDependency (specifier, parent, job) {
   let resolved;
   if (isAbsolute(specifier) || specifier === '.' || specifier === '..' || specifier.startsWith('./') || specifier.startsWith('../')) {
-    const trailingSlash = specifier.endsWith('/') || specifier.endsWith('\\');
+    const trailingSlash = specifier.endsWith('/');
     resolved = resolvePath(resolve(parent, '..', specifier) + (trailingSlash ? '/' : ''), parent, job);
   }
   else {
