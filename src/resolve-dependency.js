@@ -145,7 +145,7 @@ function resolvePackage (name, parent, job, cjsResolve) {
     const stat = job.stat(nodeModulesDir);
     if (!stat || !stat.isDirectory()) continue;
     const pkgCfg = getPkgCfg(nodeModulesDir + sep + pkgName, job);
-    if (pkgCfg && job.exports && pkgCfg.exports !== undefined && pkgCfg.exports !== null && !selfResolved && job.exportsOnly !== 0) {
+    if (pkgCfg && job.exports && pkgCfg.exports !== undefined && pkgCfg.exports !== null && !selfResolved) {
       let legacyResolved;
       if (!job.exportsOnly)
         legacyResolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
