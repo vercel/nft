@@ -12,7 +12,9 @@ module.exports = function resolveDependency (specifier, parent, job, cjsResolve 
   else {
     resolved = resolvePackage(specifier, parent, job, cjsResolve);
   }
-  if (resolved.startsWith('node:')) return resolved;
+  if (typeof resolved === 'string' && resolved.startsWith('node:')) return resolved;
+  if (Array.isArray(resolved))
+    return resolved.map(resolved => job.realpath(resolved, parent));
   return job.realpath(resolved, parent);
 };
 
@@ -145,11 +147,16 @@ function resolvePackage (name, parent, job, cjsResolve) {
     if (!stat || !stat.isDirectory()) continue;
     const pkgCfg = getPkgCfg(nodeModulesDir + sep + pkgName, job);
     if (pkgCfg && job.exports && pkgCfg.exports !== undefined && pkgCfg.exports !== null) {
+      let legacyResolved;
+      if (!job.exportsOnly)
+        legacyResolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
       let resolved = resolveExportsTarget(nodeModulesDir + sep + pkgName, pkgCfg.exports, '.' + name.slice(pkgName.length), job, cjsResolve);
       if (resolved && cjsResolve)
         resolved = resolveFile(resolved, parent, job) || resolveDir(resolved, parent, job);
       if (resolved) {
         job.emitFile(nodeModulesDir + sep + pkgName + sep + 'package.json', 'resolve', parent);
+        if (legacyResolved && legacyResolved !== resolved)
+          return [resolved, legacyResolved];
         return resolved;
       }
     }

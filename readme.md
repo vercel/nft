@@ -59,18 +59,9 @@ By default `processCwd` is the same as `base`.
 
 #### Exports
 
-By default tracing of the [Node.js "exports" field](https://nodejs.org/dist/latest-v14.x/docs/api/esm.html#esm_package_entry_points) is not handled, but can be enabled by setting the exports option:
+By default tracing of the [Node.js "exports" field](https://nodejs.org/dist/latest-v14.x/docs/api/esm.html#esm_package_entry_points) is supported, with the `"node"`, `"require"`, `"import"` and `"default"` conditions traced as defined.
 
-```js
-const { fileList } = await nodeFileTrace(files, {
-  exports: true
-});
-```
-
-By default, the `"node"`, `"require"`, `"import"` and `"default"` conditions will be traced. Any package with an `"exports"` field will have its
-exports traced instead of the `"main"`.
-
-In addition to a boolean value, the specific list of exports conditions to trace can be provided as well:
+Alternatively the explicit list of exports can be provided:
 
 ```js
 const { fileList } = await nodeFileTrace(files, {
@@ -79,6 +70,20 @@ const { fileList } = await nodeFileTrace(files, {
 ```
 
 Only the `"node"` export should be explicitly included (if needed) when specifying the exact export condition list. The `"require"`, `"import"` and `"default"` conditions will always be traced as defined, no matter what custom conditions are set.
+
+#### Exports Only
+
+When tracing exports the `"main"` / index field will still be traced for Node.js versions without `"exports"` support.
+
+This can be disabled with the `exportsOnly` option:
+
+```js
+const { fileList } = await nodeFileTrace(files, {
+  exportsOnly: true
+});
+```
+
+Any package with `"exports"` will then only have its exports traced, and the main will not be included at all.
 
 #### Paths
 

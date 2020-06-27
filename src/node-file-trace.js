@@ -43,7 +43,8 @@ class Job {
   constructor ({
     base = process.cwd(),
     processCwd,
-    exports = false,
+    exports = ['node'],
+    exportsOnly = false,
     paths = {},
     ignore,
     log = false,
@@ -74,9 +75,8 @@ class Job {
     }
     this.base = base;
     this.cwd = resolve(processCwd || base);
-    if (!Array.isArray(exports) && typeof exports !== 'boolean')
-      exports = false;
-    this.exports = exports === true ? ['node'] : exports;
+    this.exports = exports;
+    this.exportsOnly = exportsOnly;
     const resolvedPaths = {};
     for (const path of Object.keys(paths)) {
       const trailer = paths[path].endsWith('/');
@@ -282,26 +282,44 @@ class Job {
       ...[...deps].map(async dep => {
         try {
           var resolved = await resolveDependency(dep, path, this, !isESM);
-          // ignore builtins
-          if (resolved.startsWith('node:')) return;
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
           return;
         }
-        await this.emitDependency(resolved, path);
+        if (Array.isArray(resolved)) {
+          for (const item of resolved) {
+            // ignore builtins
+            if (item.startsWith('node:')) return;
+            await this.emitDependency(item, path);
+          }
+        }
+        else {
+          // ignore builtins
+          if (resolved.startsWith('node:')) return;
+          await this.emitDependency(resolved, path);
+        }
       }),
       ...[...imports].map(async dep => {
         try {
           var resolved = await resolveDependency(dep, path, this, false);
-          // ignore builtins
-          if (resolved.startsWith('node:')) return;
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
           return;
         }
-        await this.emitDependency(resolved, path);
+        if (Array.isArray(resolved)) {
+          for (const item of resolved) {
+            // ignore builtins
+            if (item.startsWith('node:')) return;
+            await this.emitDependency(item, path);
+          }
+        }
+        else {
+          // ignore builtins
+          if (resolved.startsWith('node:')) return;
+          await this.emitDependency(resolved, path);
+        }
       })
     ]);
   }
