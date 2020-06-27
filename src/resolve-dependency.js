@@ -5,10 +5,13 @@ const { isAbsolute, resolve, sep } = require('path');
 // (package.json files are emitted as they are hit)
 module.exports = function resolveDependency (specifier, parent, job) {
   let resolved;
-  if (isAbsolute(specifier) || specifier === '.' || specifier === '..' || specifier.startsWith('./') || specifier.startsWith('../'))
-    resolved = resolvePath(resolve(parent, '..', specifier), parent, job);
-  else
+  if (isAbsolute(specifier) || specifier === '.' || specifier === '..' || specifier.startsWith('./') || specifier.startsWith('../')) {
+    const trailingSlash = specifier.endsWith('/');
+    resolved = resolvePath(resolve(parent, '..', specifier) + (trailingSlash ? '/' : ''), parent, job);
+  }
+  else {
     resolved = resolvePackage(specifier, parent, job);
+  }
   if (resolved.startsWith('node:')) return resolved;
   return job.realpath(resolved, parent);
 };
@@ -18,8 +21,8 @@ function resolvePath (path, parent, job) {
 }
 
 function resolveFile (path, parent, job) {
+  if (path.endsWith('/')) return;
   path = job.realpath(path, parent);
-  if (path.endsWith(sep)) return;
   if (job.isFile(path)) return path;
   if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.isFile(path + '.ts')) return path + '.ts';
   if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.isFile(path + '.tsx')) return path + '.tsx';
@@ -29,6 +32,7 @@ function resolveFile (path, parent, job) {
 }
 
 function resolveDir (path, parent, job) {
+  if (path.endsWith('/')) path = path.slice(0, -1);
   if (!job.isDir(path)) return;
   const realPjsonPath = job.realpath(path + sep + 'package.json', parent);
   const pjsonSource = job.readFile(realPjsonPath);
