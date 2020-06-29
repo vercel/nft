@@ -26,6 +26,7 @@
     "acorn-numeric-separator": "^0.3.0",
     "acorn-static-class-features": "^0.2.1",
     "bindings": "^1.4.0",
+    "es-get-iterator": "^1.1.0",
     "estree-walker": "^0.6.0",
     "glob": "^7.1.3",
     "graceful-fs": "^4.1.15",
