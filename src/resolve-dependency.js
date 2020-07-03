@@ -79,7 +79,7 @@ function getExportsTarget (exports, conditions, cjsResolve) {
   else if (Array.isArray(exports)) {
     for (const item of exports) {
       const target = getExportsTarget(item, conditions, cjsResolve);
-      if (target !== undefined && (target === null || target.startsWith('./')))
+      if (target === null || typeof target === 'string' && target.startsWith('./'))
         return target;
     }
   }
@@ -90,9 +90,7 @@ function getExportsTarget (exports, conditions, cjsResolve) {
           condition === 'import' && !cjsResolve ||
           conditions.includes(condition)) {
         const target = getExportsTarget(exports[condition], conditions, cjsResolve);
-        if (target === undefined)
-          continue;
-        if (target === null || target.startsWith('./'))
+        if (target !== undefined)
           return target;
       }
     }
