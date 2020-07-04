@@ -27,7 +27,7 @@ module.exports = async function (files, opts = {}) {
   await Promise.all(files.map(file => {
     const path = resolve(file);
     job.emitFile(job.realpath(path), 'initial');
-    if (path.endsWith('.js') || path.endsWith('.node') || job.ts && (path.endsWith('.ts') || path.endsWith('.tsx')))
+    if (path.endsWith('.js') || path.endsWith('.cjs') || path.endsWith('.mjs') || path.endsWith('.node') || job.ts && (path.endsWith('.ts') || path.endsWith('.tsx')))
       return job.emitDependency(path);
   }));
 
@@ -43,6 +43,8 @@ class Job {
   constructor ({
     base = process.cwd(),
     processCwd,
+    exports = ['node'],
+    exportsOnly = false,
     paths = {},
     ignore,
     log = false,
@@ -73,6 +75,8 @@ class Job {
     }
     this.base = base;
     this.cwd = resolve(processCwd || base);
+    this.exports = exports;
+    this.exportsOnly = exportsOnly;
     const resolvedPaths = {};
     for (const path of Object.keys(paths)) {
       const trailer = paths[path].endsWith('/');
@@ -224,6 +228,16 @@ class Job {
     return true;
   }
 
+  getPjsonBoundary (path) {
+    const rootSeparatorIndex = path.indexOf(sep);
+    let separatorIndex;
+    while ((separatorIndex = path.lastIndexOf(sep)) > rootSeparatorIndex) {
+      path = path.substr(0, separatorIndex);
+      if (this.isFile(path + sep + 'package.json'))
+        return path;
+    }
+  }
+
   async emitDependency (path, parent) {
     if (this.processed.has(path)) return;
     this.processed.add(path);
@@ -233,21 +247,29 @@ class Job {
     if (path.endsWith('.json')) return;
     if (path.endsWith('.node')) return await sharedlibEmit(path, this);
 
-    let deps, assets, isESM;
+    // js files require the "type": "module" lookup, so always emit the package.json
+    if (path.endsWith('.js')) {
+      const pjsonBoundary = this.getPjsonBoundary(path);
+      if (pjsonBoundary)
+        this.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
+    }
+
+    let deps, imports, assets, isESM;
 
     const cachedAnalysis = this.analysisCache.get(path);
     if (cachedAnalysis) {
-      ({ deps, assets, isESM } = cachedAnalysis);
+      ({ deps, imports, assets, isESM } = cachedAnalysis);
     }
     else {
       const source = this.readFile(path);
       if (source === null) throw new Error('File ' + path + ' does not exist.');
-      ({ deps, assets, isESM } = await analyze(path, source, this));
-      this.analysisCache.set(path, { deps, assets, isESM });
+      ({ deps, imports, assets, isESM } = await analyze(path, source, this));
+      this.analysisCache.set(path, { deps, imports, assets, isESM });
     }
 
     if (isESM)
       this.esmFileList.add(relative(this.base, path));
+    
     await Promise.all([
       ...[...assets].map(async asset => {
         const ext = extname(asset);
@@ -259,15 +281,45 @@ class Job {
       }),
       ...[...deps].map(async dep => {
         try {
-          var resolved = await resolveDependency(dep, path, this);
-          // ignore builtins
-          if (resolved.startsWith('node:')) return;
+          var resolved = await resolveDependency(dep, path, this, !isESM);
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
           return;
         }
-        await this.emitDependency(resolved, path);
+        if (Array.isArray(resolved)) {
+          for (const item of resolved) {
+            // ignore builtins
+            if (item.startsWith('node:')) return;
+            await this.emitDependency(item, path);
+          }
+        }
+        else {
+          // ignore builtins
+          if (resolved.startsWith('node:')) return;
+          await this.emitDependency(resolved, path);
+        }
+      }),
+      ...[...imports].map(async dep => {
+        try {
+          var resolved = await resolveDependency(dep, path, this, false);
+        }
+        catch (e) {
+          this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
+          return;
+        }
+        if (Array.isArray(resolved)) {
+          for (const item of resolved) {
+            // ignore builtins
+            if (item.startsWith('node:')) return;
+            await this.emitDependency(item, path);
+          }
+        }
+        else {
+          // ignore builtins
+          if (resolved.startsWith('node:')) return;
+          await this.emitDependency(resolved, path);
+        }
       })
     ]);
   }

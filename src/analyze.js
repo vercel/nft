@@ -169,6 +169,7 @@ const repeatGlobRegEx = /([\/\\]\*\*[\/\\]\*)+/g
 module.exports = async function (id, code, job) {
   const assets = new Set();
   const deps = new Set();
+  const imports = new Set();
 
   const dir = path.dirname(id);
   // if (typeof options.production === 'boolean' && staticProcess.env.NODE_ENV === UNKNOWN)
@@ -229,7 +230,7 @@ module.exports = async function (id, code, job) {
     catch (e) {
       job.warnings.add(new Error(`Failed to parse ${id} as module:\n${e && e.message}`));
       // Parser errors just skip analysis
-      return { assets, deps, isESM: false };
+      return { assets, deps, imports, isESM: false };
     }
   }
 
@@ -365,15 +366,15 @@ module.exports = async function (id, code, job) {
     });
   }
 
-  function processRequireArg (expression) {
+  function processRequireArg (expression, isImport) {
     if (expression.type === 'ConditionalExpression') {
-      processRequireArg(expression.consequent);
-      processRequireArg(expression.alternate);
+      processRequireArg(expression.consequent, isImport);
+      processRequireArg(expression.alternate, isImport);
       return;
     }
     if (expression.type === 'LogicalExpression') {
-      processRequireArg(expression.left);
-      processRequireArg(expression.right);
+      processRequireArg(expression.left, isImport);
+      processRequireArg(expression.right, isImport);
       return;
     }
 
@@ -382,15 +383,15 @@ module.exports = async function (id, code, job) {
 
     if (typeof computed.value === 'string') {
       if (!computed.wildcards)
-        deps.add(computed.value);
+        (isImport ? imports : deps).add(computed.value);
       else if (computed.wildcards.length >= 1)
         emitWildcardRequire(computed.value);
     }
     else {
       if (typeof computed.then === 'string')
-        deps.add(computed.then);
+        (isImport ? imports : deps).add(computed.then);
       if (typeof computed.else === 'string')
-        deps.add(computed.else);
+        (isImport ? imports : deps).add(computed.else);
     }
   }
 
@@ -443,8 +444,8 @@ module.exports = async function (id, code, job) {
           }
         }
       }
-      else if ((isESM || job.mixedModules) && node.type === 'ImportExpression') {
-        processRequireArg(node.source);
+      else if (node.type === 'ImportExpression') {
+        processRequireArg(node.source, true);
         return;
       }
       // Call expression cases and asset triggers
@@ -723,7 +724,7 @@ module.exports = async function (id, code, job) {
   });
 
   await assetEmissionPromises;
-  return { assets, deps, isESM };
+  return { assets, deps, imports, isESM };
 
   function emitAssetPath (assetPath) {
     // verify the asset file / directory exists

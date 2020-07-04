@@ -57,6 +57,34 @@ const { fileList } = await nodeFileTrace(files, {
 
 By default `processCwd` is the same as `base`.
 
+#### Exports
+
+By default tracing of the [Node.js "exports" field](https://nodejs.org/dist/latest-v14.x/docs/api/esm.html#esm_package_entry_points) is supported, with the `"node"`, `"require"`, `"import"` and `"default"` conditions traced as defined.
+
+Alternatively the explicit list of exports can be provided:
+
+```js
+const { fileList } = await nodeFileTrace(files, {
+  exports: ['node', 'production']
+});
+```
+
+Only the `"node"` export should be explicitly included (if needed) when specifying the exact export condition list. The `"require"`, `"import"` and `"default"` conditions will always be traced as defined, no matter what custom conditions are set.
+
+#### Exports Only
+
+When tracing exports the `"main"` / index field will still be traced for Node.js versions without `"exports"` support.
+
+This can be disabled with the `exportsOnly` option:
+
+```js
+const { fileList } = await nodeFileTrace(files, {
+  exportsOnly: true
+});
+```
+
+Any package with `"exports"` will then only have its exports traced, and the main will not be included at all. This can reduce the output size when targeting [Node.js 12.17.0)(https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V12.md#12.17.0) or newer.
+
 #### Paths
 
 > Status: Experimental. May change at any time.
