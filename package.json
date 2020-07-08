@@ -9,7 +9,7 @@
     "nft": "./dist/cli.js"
   },
   "scripts": {
-    "tsc": "tsc",
+    "build": "tsc",
     "test": "jest --verbose",
     "test-verbose": "jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\"",
     "codecov": "codecov",
