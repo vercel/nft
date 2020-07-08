@@ -1,9 +1,11 @@
-const path = require('path');
-const resolve = require('../resolve-dependency');
-const { getPackageName } = require('./get-package-base');
-const fs = require('fs');
+import path from 'path';
+import resolve from '../resolve-dependency';
+import { getPackageName } from './get-package-base';
+import fs from 'fs';
+import { Job } from '../node-file-trace';
+import { Node } from 'estree-walker';
 
-const specialCases = {
+const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
   '@generated/photon' ({ id, emitAssetDirectory }) {
     if (id.endsWith('@generated/photon/index.js')) {
       emitAssetDirectory(path.resolve(path.dirname(id), 'runtime/'));
@@ -77,9 +79,9 @@ const specialCases = {
       emitAsset(path.resolve(id.replace('index.js', 'preload.js')));
     }
   },
-  'socket.io' ({ id, ast }) {
+  'socket.io' ({ id, ast, job }) {
     if (id.endsWith('socket.io/lib/index.js')) {
-      function replaceResolvePathStatement (statement) {
+      function replaceResolvePathStatement (statement: Node) {
         if (statement.type === 'ExpressionStatement' &&
             statement.expression.type === 'AssignmentExpression' &&
             statement.expression.operator === '=' &&
@@ -177,9 +179,17 @@ const specialCases = {
   }
 };
 
-module.exports = function ({ id, ast, emitAsset, emitAssetDirectory, job }) {
-  const pkgName = getPackageName(id);
-  const specialCase = specialCases[pkgName];
+interface SpecialCaseOpts {
+  id: string;
+  ast: Node;
+  emitAsset: (filename: string) => void;
+  emitAssetDirectory: (dirname: string) => void;
+  job: Job;
+}
+
+export default function specialCase({ id, ast, emitAsset, emitAssetDirectory, job }: SpecialCaseOpts) {
+  const pkgName = getPackageName(id)
+  const specialCase = specialCases[pkgName || ''];
   id = id.replace(/\\/g,  '/');
   if (specialCase) specialCase({ id, ast, emitAsset, emitAssetDirectory, job });
 };

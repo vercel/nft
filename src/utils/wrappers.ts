@@ -1,7 +1,7 @@
-const { walk } = require('estree-walker');
+import { walk, Node } from 'estree-walker';
 
 // Wrapper detection pretransforms to enable static analysis
-function handleWrappers (ast) {
+export function handleWrappers(ast: Node) {
   // UglifyJS will convert function wrappers into !function(){}
   let wrapper;
   if (ast.body.length === 1 &&
@@ -448,4 +448,3 @@ function handleWrappers (ast) {
   }
 }
 
-module.exports = handleWrappers;

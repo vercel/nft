@@ -1,4 +1,4 @@
-interface Stats {
+export interface Stats {
   isFile(): boolean;
   isDirectory(): boolean;
   isBlockDevice(): boolean;
@@ -29,6 +29,8 @@ interface Stats {
 export interface NodeFileTraceOptions {
   base?: string;
   processCwd?: string;
+  exports?: string[];
+  exportsOnly?: boolean;
   ignore?: string | string[] | ((path: string) => boolean);
   analysis?: boolean | {
     emitGlobs?: boolean;
@@ -60,7 +62,15 @@ export interface NodeFileTraceResult {
   warnings: Error[];
 }
 
-export default function NodeFileTrace(
-  files: string[],
-  opts: NodeFileTraceOptions
-): Promise<NodeFileTraceResult>;
+export interface SingleValue {
+  value: string | string[] | undefined;
+  wildcards?: string[];
+}
+
+export interface ConditionalValue {
+  test: string;
+  then: string;
+  else: string;
+}
+
+export type StaticResult = SingleValue | ConditionalValue | undefined;

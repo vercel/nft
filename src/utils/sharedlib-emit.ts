@@ -1,8 +1,9 @@
-const os = require('os');
-const glob = require('glob');
-const getPackageBase = require('./get-package-base');
+import os from 'os';
+import glob from 'glob';
+import { getPackageBase } from './get-package-base';
+import { Job } from '../node-file-trace';
 
-let sharedlibGlob;
+let sharedlibGlob = '';
 switch (os.platform()) {
   case 'darwin':
     sharedlibGlob = '/**/*.@(dylib|so?(.*))';
@@ -15,13 +16,13 @@ switch (os.platform()) {
 }
 
 // helper for emitting the associated shared libraries when a binary is emitted
-module.exports = async function (path, job) {
+export async function sharedLibEmit(path: string, job: Job) {
   // console.log('Emitting shared libs for ' + path);
   const pkgPath = getPackageBase(path);
   if (!pkgPath)
     return;
 
-  const files = await new Promise((resolve, reject) =>
+  const files = await new Promise<string[]>((resolve, reject) =>
     glob(pkgPath + sharedlibGlob, { ignore: pkgPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
   );
   files.forEach(file => job.emitFile(job.realpath(file, path), 'sharedlib', path));

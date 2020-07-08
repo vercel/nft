@@ -1,4 +1,8 @@
-module.exports = function (ast, vars = {}, computeBranches = true) {
+import { Node } from 'estree-walker';
+import { StaticResult, SingleValue } from '../types';
+type Walk = (node: Node) => StaticResult;
+
+export function evaluate(ast: Node, vars = {}, computeBranches = true): StaticResult {
   const state = {
     computeBranches,
     vars
@@ -9,19 +13,19 @@ module.exports = function (ast, vars = {}, computeBranches = true) {
   // 1. Single known value: { value: value }
   // 2. Conditional value: { test, then, else }
   // 3. Unknown value: undefined
-  function walk (node) {
+  function walk (node: Node) {
     const visitor = visitors[node.type];
     if (visitor)
       return visitor.call(state, node, walk);
   }
 };
 
-const UNKNOWN = module.exports.UNKNOWN = Symbol();
-const FUNCTION = module.exports.FUNCTION = Symbol();
-const WILDCARD = module.exports.WILDCARD = '\x1a';
-const wildcardRegEx = module.exports.wildcardRegEx = /\x1a/g;
+export const UNKNOWN = Symbol();
+export const FUNCTION = Symbol();
+export const WILDCARD = '\x1a';
+export const wildcardRegEx = /\x1a/g;
 
-function countWildcards (str) {
+function countWildcards (str: string) {
   wildcardRegEx.lastIndex = 0;
   let cnt = 0;
   while (wildcardRegEx.exec(str)) cnt++;
@@ -29,7 +33,7 @@ function countWildcards (str) {
 }
 
 const visitors = {
-  ArrayExpression (node, walk) {
+  ArrayExpression (node: Node, walk: Walk) {
     const arr = [];
     for (let i = 0, l = node.elements.length; i < l; i++) {
       if (node.elements[i] === null) {
@@ -39,11 +43,11 @@ const visitors = {
       const x = walk(node.elements[i]);
       if (!x) return;
       if ('value' in x === false) return;
-      arr.push(x.value);
+      arr.push((x as SingleValue).value);
     }
     return { value: arr };
   },
-  BinaryExpression (node, walk) {
+  BinaryExpression (node: Node, walk: Walk) {
     const op = node.operator;
 
     let l = walk(node.left);
@@ -124,7 +128,7 @@ const visitors = {
       if (op === '!=') return { value: l.value != r.value };
       if (op === '!==') return { value: l.value !== r.value };
       if (op === '+') {
-        const val = { value: l.value + r.value };
+        const val: SingleValue = { value: l.value + r.value };
         if (l.wildcards || r.wildcards)
           val.wildcards = [...l.wildcards || [], ...r.wildcards || []];
         return val;
@@ -145,7 +149,7 @@ const visitors = {
     }
     return;
   },
-  CallExpression (node, walk) {
+  CallExpression (node: Node, walk: Walk) {
     const callee = walk(node.callee);
     if (!callee || 'test' in callee) return;
     let fn = callee.value;
@@ -168,7 +172,7 @@ const visitors = {
       let x = walk(node.arguments[i]);
       if (x) {
         allWildcards = false;
-        if (typeof x.value === 'string' && x.wildcards)
+        if ('value' in x && typeof x.value === 'string' && x.wildcards)
           x.wildcards.forEach(w => wildcards.push(w));
       }
       else {
@@ -216,7 +220,7 @@ const visitors = {
       return;
     }
   },
-  ConditionalExpression (node, walk) {
+  ConditionalExpression (node: Node, walk: Walk) {
     const val = walk(node.test);
     if (val && 'value' in val)
       return val.value ? walk(node.consequent) : walk(node.alternate);
@@ -237,10 +241,10 @@ const visitors = {
       else: elseValue.value
     };
   },
-  ExpressionStatement (node, walk) {
+  ExpressionStatement (node: Node, walk: Walk) {
     return walk(node.expression);
   },
-  Identifier (node) {
+  Identifier (node: Node, _walk: Walk) {
     if (Object.hasOwnProperty.call(this.vars, node.name)) {
       const val = this.vars[node.name];
       if (val === UNKNOWN)
@@ -249,10 +253,10 @@ const visitors = {
     }
     return;
   },
-  Literal (node) {
+  Literal (node: Node, _walk: Walk) {
     return { value: node.value };
   },
-  MemberExpression (node, walk) {
+  MemberExpression (node: Node, walk: Walk) {
     const obj = walk(node.object);
     // do not allow access to methods on Function
     if (!obj || 'test' in obj || typeof obj.value === 'function')
@@ -303,7 +307,7 @@ const visitors = {
       return { value: undefined };
     }
   },
-  ObjectExpression (node, walk) {
+  ObjectExpression (node: Node, walk: Walk) {
     const obj = {};
     for (let i = 0; i < node.properties.length; i++) {
       const prop = node.properties[i];
@@ -316,7 +320,7 @@ const visitors = {
     }
     return { value: obj };
   },
-  TemplateLiteral (node, walk) {
+  TemplateLiteral (node: Node, walk: Walk) {
     let val = { value: '' };
     for (var i = 0; i < node.expressions.length; i++) {
       if ('value' in val) {
@@ -369,7 +373,7 @@ const visitors = {
     if (Object.hasOwnProperty.call(this.vars, 'this'))
       return { value: this.vars['this'] };
   },
-  UnaryExpression (node, walk) {
+  UnaryExpression (node: Node, walk: Walk) {
     const val = walk(node.argument);
     if (!val)
       return;

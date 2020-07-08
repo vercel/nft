@@ -1,28 +1,34 @@
-const { isAbsolute, resolve, sep } = require('path');
+import { isAbsolute, resolve, sep } from 'path';
+import { Job } from './node-file-trace';
 
 // node resolver
 // custom implementation to emit only needed package.json files for resolver
 // (package.json files are emitted as they are hit)
-module.exports = function resolveDependency (specifier, parent, job, cjsResolve = true) {
-  let resolved;
+export default function resolveDependency (specifier: string, parent: string, job: Job, cjsResolve = true) {
+  let resolved: string | string[] | undefined;
   if (isAbsolute(specifier) || specifier === '.' || specifier === '..' || specifier.startsWith('./') || specifier.startsWith('../')) {
     const trailingSlash = specifier.endsWith('/');
     resolved = resolvePath(resolve(parent, '..', specifier) + (trailingSlash ? '/' : ''), parent, job);
-  }
-  else {
+  } else {
     resolved = resolvePackage(specifier, parent, job, cjsResolve);
   }
-  if (typeof resolved === 'string' && resolved.startsWith('node:')) return resolved;
-  if (Array.isArray(resolved))
+  if (typeof resolved === 'string' && !resolved.startsWith('node:')) {
+    return job.realpath(resolved, parent);
+  } else if (Array.isArray(resolved)) {
     return resolved.map(resolved => job.realpath(resolved, parent));
-  return job.realpath(resolved, parent);
+  }
+  return resolved;
 };
 
-function resolvePath (path, parent, job) {
-  return resolveFile(path, parent, job) || resolveDir(path, parent, job) || notFound(path, parent);
+function resolvePath (path: string, parent: string, job: Job): string | undefined {
+  const result = resolveFile(path, parent, job) || resolveDir(path, parent, job);
+  if (!result) {
+    notFound(path, parent);
+  }
+  return result;
 }
 
-function resolveFile (path, parent, job) {
+function resolveFile (path: string, parent: string, job: Job) {
   if (path.endsWith('/')) return;
   path = job.realpath(path, parent);
   if (job.isFile(path)) return path;
@@ -33,7 +39,7 @@ function resolveFile (path, parent, job) {
   if (job.isFile(path + '.node')) return path + '.node';
 }
 
-function resolveDir (path, parent, job) {
+function resolveDir (path: string, parent: string, job: Job) {
   if (path.endsWith('/')) path = path.slice(0, -1);
   if (!job.isDir(path)) return;
   const pkgCfg = getPkgCfg(path, job);
@@ -47,22 +53,22 @@ function resolveDir (path, parent, job) {
   return resolveFile(resolve(path, 'index'), parent, job);
 }
 
-function notFound (specifier, parent) {
+function notFound (specifier: string, parent: string) {
   const e = new Error("Cannot find module '" + specifier + "' loaded from " + parent);
-  e.code = 'MODULE_NOT_FOUND';
+  (e as any).code = 'MODULE_NOT_FOUND';
   throw e;
 }
 
 const nodeBuiltins = new Set([...require("repl")._builtinLibs, "constants", "module", "timers", "console", "_stream_writable", "_stream_readable", "_stream_duplex", "process", "sys"]);
 
-function getPkgName (name) {
+function getPkgName (name: string) {
   const segments = name.split('/');
   if (name[0] === '@' && segments.length > 1)
     return segments.length > 1 ? segments.slice(0, 2).join('/') : null;
   return segments.length ? segments[0] : null;
 }
 
-function getPkgCfg (pkgPath, job) {
+function getPkgCfg (pkgPath: string, job: Job) {
   const pjsonSource = job.readFile(pkgPath + sep + 'package.json');
   if (pjsonSource) {
     try {
@@ -72,7 +78,7 @@ function getPkgCfg (pkgPath, job) {
   }
 }
 
-function getExportsTarget (exports, conditions, cjsResolve) {
+function getExportsTarget(exports: string | string[] | Record<string, string> | null, conditions: string[], cjsResolve: boolean): string | null {
   if (typeof exports === 'string') {
     return exports;
   }
@@ -100,7 +106,7 @@ function getExportsTarget (exports, conditions, cjsResolve) {
   }
 }
 
-function resolveExportsTarget (pkgPath, exports, subpath, job, cjsResolve) {
+function resolveExportsTarget (pkgPath, exports, subpath: string, job: Job, cjsResolve: boolean) {
   if (typeof exports === 'string' ||
       typeof exports === 'object' && !Array.isArray(exports) && Object.keys(exports).length && Object.keys(exports)[0][0] !== '.')
     exports = { '.' : exports };
@@ -120,7 +126,7 @@ function resolveExportsTarget (pkgPath, exports, subpath, job, cjsResolve) {
   }
 }
 
-function resolvePackage (name, parent, job, cjsResolve) {
+function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boolean) {
   let packageParent = parent;
   if (nodeBuiltins.has(name)) return 'node:' + name;
 
