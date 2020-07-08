@@ -133,7 +133,7 @@ export function handleWrappers(ast: Node) {
       
       // verify modules is the expected data structure
       // in the process, extract external requires
-      const externals = {};
+      const externals: Record<string, string> = {};
       if (modules.every(m => {
         if (m.type !== 'Property' ||
             m.computed !== false ||

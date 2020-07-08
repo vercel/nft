@@ -27,7 +27,7 @@ const acorn = Parser.extend(
 import os from 'os';
 import { handleWrappers } from './utils/wrappers';
 import resolveFrom from 'resolve-from';
-import { SingleValue, ConditionalValue } from './types';
+import { StaticResult } from './types';
 
 const staticProcess = {
   cwd: () => {
@@ -132,13 +132,13 @@ globalBindings.global = globalBindings.GLOBAL = globalBindings.globalThis = glob
 
 // call expression triggers
 const TRIGGER = Symbol();
-pregyp.find[TRIGGER] = true;
+(pregyp.find as any)[TRIGGER] = true;
 const staticPath = staticModules.path;
 Object.keys(path).forEach(name => {
-  const pathFn = path[name];
+  const pathFn = (path as any)[name];
   if (typeof pathFn === 'function') {
-    const fn = function () {
-      return pathFn.apply(this, arguments);
+    const fn: any = function mockPath() {
+      return pathFn.apply(mockPath, arguments);
     };
     fn[TRIGGER] = true;
     staticPath[name] = staticPath.default[name] = fn;
@@ -231,6 +231,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       job.warnings.add(new Error(`Failed to parse ${id} as script:\n${e && e.message}`));
     }
   }
+  //@ts-ignore
   if (!ast) {
     try {
       ast = acorn.parse(code, { ecmaVersion: 2020, sourceType: 'module' });
@@ -336,7 +337,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   // statically determinable leaves are tracked, and inlined when the
   // greatest parent statically known leaf computation corresponds to an asset path
   let staticChildNode: Node | undefined;
-  let staticChildValue: SingleValue | ConditionalValue;
+  let staticChildValue: StaticResult;
 
   // Express engine opt-out
   let definedExpressEngines = false;
@@ -407,8 +408,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
 
   let scope = attachScopes(ast, 'scope');
   handleWrappers(ast);
-  ({ ast = ast, scope = scope } = handleSpecialCases({ id, ast, scope, emitAsset: path => assets.add(path), emitAssetDirectory, job }) || {});
-
+  handleSpecialCases({ id, ast, emitAsset: path => assets.add(path), emitAssetDirectory, job });
   function backtrack (self: WalkerContext, parent: Node) {
     // computing a static expression outward
     // -> compute and backtrack
@@ -789,6 +789,10 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   }
 
   function emitStaticChildAsset () {
+    if (!staticChildValue) {
+      return;
+    }
+
     if ('value' in staticChildValue && isAbsolutePathStr(staticChildValue.value)) {
       try { 
         const resolved = path.resolve(staticChildValue.value);

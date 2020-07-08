@@ -1,22 +1,25 @@
 import { Node } from 'estree-walker';
 import { StaticResult, SingleValue } from '../types';
-type Walk = (node: Node) => StaticResult;
+type Walk = (node: Node, state: State) => StaticResult;
+type State = {computeBranches: boolean, vars: Record<string, any> };
 
 export function evaluate(ast: Node, vars = {}, computeBranches = true): StaticResult {
-  const state = {
+  const state: State = {
     computeBranches,
     vars
   };
-  return walk(ast);
+  return walk(ast, state);
 
   // walk returns:
   // 1. Single known value: { value: value }
   // 2. Conditional value: { test, then, else }
   // 3. Unknown value: undefined
-  function walk (node: Node) {
+  function walk (node: Node, state: State) {
     const visitor = visitors[node.type];
-    if (visitor)
-      return visitor.call(state, node, walk);
+    if (visitor) {
+      return visitor(node, walk, state);
+    }
+    return undefined;
   }
 };
 
@@ -32,42 +35,42 @@ function countWildcards (str: string) {
   return cnt;
 }
 
-const visitors = {
-  ArrayExpression (node: Node, walk: Walk) {
+const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticResult> = {
+  'ArrayExpression': (node: Node, walk: Walk, state: State) => {
     const arr = [];
     for (let i = 0, l = node.elements.length; i < l; i++) {
       if (node.elements[i] === null) {
         arr.push(null);
         continue;
       }
-      const x = walk(node.elements[i]);
+      const x = walk(node.elements[i], state);
       if (!x) return;
       if ('value' in x === false) return;
       arr.push((x as SingleValue).value);
     }
     return { value: arr };
   },
-  BinaryExpression (node: Node, walk: Walk) {
+  'BinaryExpression': (node: Node, walk: Walk, state: State) => {
     const op = node.operator;
 
-    let l = walk(node.left);
+    let l = walk(node.left, state);
 
     if (!l && op !== '+') return;
 
-    let r = walk(node.right);
+    let r = walk(node.right, state);
 
     if (!l && !r) return;
 
     if (!l) {
       // UNKNOWN + 'str' -> wildcard string value
-      if (this.computeBranches && typeof r.value === 'string')
+      if (state.computeBranches && typeof r.value === 'string')
         return { value: WILDCARD + r.value, wildcards: [node.left, ...r.wildcards || []] };
       return;
     }
 
     if (!r) {
       // 'str' + UKNOWN -> wildcard string value
-      if (this.computeBranches && op === '+') {
+      if (state.computeBranches && op === '+') {
         if (typeof l.value === 'string')
           return { value: l.value + WILDCARD, wildcards: [...l.wildcards || [], node.right] };
       }
@@ -80,7 +83,7 @@ const visitors = {
     if ('test' in l && 'test' in r)
       return;
 
-    if ('test' in l) {
+    if ('test' in l && 'value' in r) {
       r = r.value;
       if (op === '==') return { test: l.test, then: l.then == r, else: l.else == r };
       if (op === '===') return { test: l.test, then: l.then === r, else: l.else === r };
@@ -101,7 +104,7 @@ const visitors = {
       if (op === '&&') return { test: l.test, then: l.then && r, else: l.else && r };
       if (op === '||') return { test: l.test, then: l.then || r, else: l.else || r };
     }
-    else if ('test' in r) {
+    else if ('test' in r && 'value' in l) {
       l = l.value;
       if (op === '==') return { test: r.test, then: l == r.then, else: l == r.else };
       if (op === '===') return { test: r.test, then: l === r.then, else: l === r.else };
@@ -129,8 +132,16 @@ const visitors = {
       if (op === '!==') return { value: l.value !== r.value };
       if (op === '+') {
         const val: SingleValue = { value: l.value + r.value };
-        if (l.wildcards || r.wildcards)
-          val.wildcards = [...l.wildcards || [], ...r.wildcards || []];
+        let wildcards: string[] = [];
+        if ('wildcards' in l && l.wildcards) {
+          wildcards = wildcards.concat(l.wildcards);
+        }
+        if ('wildcards' in r && r.wildcards) {
+          wildcards = wildcards.concat(r.wildcards);
+        }
+        if (wildcards.length > 0) {
+          val.wildcards = wildcards;
+        }
         return val;
       }
       if (op === '-') return { value: l.value - r.value };
@@ -149,17 +160,17 @@ const visitors = {
     }
     return;
   },
-  CallExpression (node: Node, walk: Walk) {
-    const callee = walk(node.callee);
+  'CallExpression': (node: Node, walk: Walk, state: State) => {
+    const callee = walk(node.callee, state);
     if (!callee || 'test' in callee) return;
-    let fn = callee.value;
+    let fn: any = callee.value;
     if (typeof fn === 'object' && fn !== null) fn = fn[FUNCTION];
     if (typeof fn !== 'function') return;
 
     let ctx = null
     if (node.callee.object) {
-      ctx = walk(node.callee.object)
-      ctx = ctx && ctx.value ? ctx.value : null
+      ctx = walk(node.callee.object, state)
+      ctx = ctx && 'value' in ctx && ctx.value ? ctx.value : null
     }
 
     // we allow one conditional argument to create a conditional expression
@@ -169,14 +180,14 @@ const visitors = {
     let allWildcards = node.arguments.length > 0;
     const wildcards = [];
     for (let i = 0, l = node.arguments.length; i < l; i++) {
-      let x = walk(node.arguments[i]);
+      let x = walk(node.arguments[i], state);
       if (x) {
         allWildcards = false;
         if ('value' in x && typeof x.value === 'string' && x.wildcards)
           x.wildcards.forEach(w => wildcards.push(w));
       }
       else {
-        if (!this.computeBranches)
+        if (!state.computeBranches)
           return;
         // this works because provided static functions
         // operate on known string inputs
@@ -220,18 +231,18 @@ const visitors = {
       return;
     }
   },
-  ConditionalExpression (node: Node, walk: Walk) {
-    const val = walk(node.test);
+  'ConditionalExpression': (node: Node, walk: Walk, state: State) => {
+    const val = walk(node.test, state);
     if (val && 'value' in val)
-      return val.value ? walk(node.consequent) : walk(node.alternate);
+      return val.value ? walk(node.consequent, state) : walk(node.alternate, state);
 
-    if (!this.computeBranches)
+    if (!state.computeBranches)
       return;
 
-    const thenValue = walk(node.consequent);
+    const thenValue = walk(node.consequent, state);
     if (!thenValue || 'wildcards' in thenValue || 'test' in thenValue)
       return;
-    const elseValue = walk(node.alternate);
+    const elseValue = walk(node.alternate, state);
     if (!elseValue || 'wildcards' in elseValue || 'test' in elseValue)
       return;
 
@@ -241,34 +252,34 @@ const visitors = {
       else: elseValue.value
     };
   },
-  ExpressionStatement (node: Node, walk: Walk) {
-    return walk(node.expression);
+  'ExpressionStatement': (node: Node, walk: Walk, state: State) => {
+    return walk(node.expression, state);
   },
-  Identifier (node: Node, _walk: Walk) {
-    if (Object.hasOwnProperty.call(this.vars, node.name)) {
-      const val = this.vars[node.name];
+  'Identifier': (node: Node, _walk: Walk, state: State) => {
+    if (Object.hasOwnProperty.call(state.vars, node.name)) {
+      const val = state.vars[node.name];
       if (val === UNKNOWN)
-        return;
+        return undefined;
       return { value: val };
     }
-    return;
+    return undefined;
   },
-  Literal (node: Node, _walk: Walk) {
+  'Literal': (node: Node, _walk: Walk) => {
     return { value: node.value };
   },
-  MemberExpression (node: Node, walk: Walk) {
-    const obj = walk(node.object);
+  'MemberExpression': (node: Node, walk: Walk, state: State) => {
+    const obj = walk(node.object, state);
     // do not allow access to methods on Function
     if (!obj || 'test' in obj || typeof obj.value === 'function')
-      return;
+      return undefined;
     if (node.property.type === 'Identifier') {
       if (typeof obj.value === 'object' && obj.value !== null) {
         if (node.computed) {
           // See if we can compute the computed property
-          const computedProp = walk(node.property);
+          const computedProp = walk(node.property, state);
           if (computedProp && computedProp.value) {
             const val = obj.value[computedProp.value];
-            if (val === UNKNOWN) return;
+            if (val === UNKNOWN) return undefined;
             return { value: val };
           }
           // Special case for empty object
@@ -279,48 +290,53 @@ const visitors = {
         else if (node.property.name in obj.value) {
           const val = obj.value[node.property.name];
           if (val === UNKNOWN)
-            return;
+            return undefined;
           return { value: val };
         }
         else if (obj.value[UNKNOWN])
-          return;
+          return undefined;
       }
       else {
         return { value: undefined };
       }
     }
-    const prop = walk(node.property);
+    const prop = walk(node.property, state);
     if (!prop || 'test' in prop)
-      return;
+      return undefined;
     if (typeof obj.value === 'object' && obj.value !== null) {
+      //@ts-ignore
       if (prop.value in obj.value) {
+        //@ts-ignore
         const val = obj.value[prop.value];
         if (val === UNKNOWN)
-          return;
+          return undefined;
         return { value: val };
       }
+      //@ts-ignore
       else if (obj.value[UNKNOWN]) {
-        return;
+        return undefined;
       }
     }
     else {
       return { value: undefined };
     }
   },
-  ObjectExpression (node: Node, walk: Walk) {
-    const obj = {};
+  'ObjectExpression': (node: Node, walk: Walk, state: State) => {
+    const obj: any = {};
     for (let i = 0; i < node.properties.length; i++) {
       const prop = node.properties[i];
-      const keyValue = prop.computed ? walk(prop.key) : prop.key && { value: prop.key.name || prop.key.value };
+      const keyValue = prop.computed ? walk(prop.key, state) : prop.key && { value: prop.key.name || prop.key.value };
       if (!keyValue || 'test' in keyValue) return;
-      const value = walk(prop.value);
+      const value = walk(prop.value, state);
       if (!value || 'test' in value) return;
+      //@ts-ignore
       if (value.value === UNKNOWN) return;
+      //@ts-ignore
       obj[keyValue.value] = value.value;
     }
     return { value: obj };
   },
-  TemplateLiteral (node: Node, walk: Walk) {
+  'TemplateLiteral': (node: Node, walk: Walk, state: State) => {
     let val = { value: '' };
     for (var i = 0; i < node.expressions.length; i++) {
       if ('value' in val) {
@@ -332,8 +348,8 @@ const visitors = {
       }
       let exprValue = walk(node.expressions[i]);
       if (!exprValue) {
-        if (!this.computeBranches)
-          return;
+        if (!state.computeBranches)
+          return undefined;
         exprValue = { value: WILDCARD, wildcards: [node.expressions[i]] };
       }
       if ('value' in exprValue) {
@@ -369,14 +385,15 @@ const visitors = {
     }
     return val;
   },
-  ThisExpression () {
-    if (Object.hasOwnProperty.call(this.vars, 'this'))
-      return { value: this.vars['this'] };
+  'ThisExpression': (_node: Node, _walk: Walk, state: State) => {
+    if (Object.hasOwnProperty.call(state.vars, 'this'))
+      return { value: state.vars['this'] };
+    return undefined;
   },
-  UnaryExpression (node: Node, walk: Walk) {
-    const val = walk(node.argument);
+  'UnaryExpression': (node: Node, walk: Walk, state: State) => {
+    const val = walk(node.argument, state);
     if (!val)
-      return;
+      return undefined;
     if ('value' in val && 'wildcards' in val === false) {
       if (node.operator === '+') return { value: +val.value };
       if (node.operator === '-') return { value: -val.value };
@@ -389,7 +406,7 @@ const visitors = {
       if (node.operator === '~') return { test: val.test, then: ~val.then, else: ~val.else };
       if (node.operator === '!') return { test: val.test, then: !val.then, else: !val.else };
     }
-    return;
+    return undefined;
   }
 };
 visitors.LogicalExpression = visitors.BinaryExpression;
