@@ -1,5 +1,5 @@
 import { Node } from 'estree-walker';
-import { StaticResult, SingleValue, ConditionalValue } from '../types';
+import { StaticResult, StaticValue, ConditionalValue } from '../types';
 type Walk = (node: Node, state: State) => StaticResult;
 type State = {computeBranches: boolean, vars: Record<string, any> };
 
@@ -46,7 +46,7 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
       const x = walk(node.elements[i], state);
       if (!x) return;
       if ('value' in x === false) return;
-      arr.push((x as SingleValue).value);
+      arr.push((x as StaticValue).value);
     }
     return { value: arr };
   },
@@ -131,7 +131,7 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
       if (op === '!=') return { value: l.value != r.value };
       if (op === '!==') return { value: l.value !== r.value };
       if (op === '+') {
-        const val: SingleValue = { value: l.value + r.value };
+        const val: StaticValue = { value: l.value + r.value };
         let wildcards: string[] = [];
         if ('wildcards' in l && l.wildcards) {
           wildcards = wildcards.concat(l.wildcards);
@@ -339,7 +339,7 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
     return { value: obj };
   },
   'TemplateLiteral': (node: Node, walk: Walk, state: State) => {
-    let val: SingleValue | ConditionalValue = { value: '' };
+    let val: StaticValue | ConditionalValue = { value: '' };
     for (var i = 0; i < node.expressions.length; i++) {
       if ('value' in val) {
         val.value += node.quasis[i].value.cooked;

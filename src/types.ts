@@ -62,7 +62,7 @@ export interface NodeFileTraceResult {
   warnings: Error[];
 }
 
-export interface SingleValue {
+export interface StaticValue {
   value: any;
   wildcards?: string[];
 }
@@ -73,4 +73,4 @@ export interface ConditionalValue {
   else: any;
 }
 
-export type StaticResult = SingleValue | ConditionalValue | undefined;
+export type StaticResult = StaticValue | ConditionalValue | undefined;
