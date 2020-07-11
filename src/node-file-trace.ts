@@ -28,8 +28,10 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
   await Promise.all(files.map(file => {
     const path = resolve(file);
     job.emitFile(job.realpath(path), 'initial');
-    if (path.endsWith('.js') || path.endsWith('.cjs') || path.endsWith('.mjs') || path.endsWith('.node') || job.ts && (path.endsWith('.ts') || path.endsWith('.tsx')))
+    if (path.endsWith('.js') || path.endsWith('.cjs') || path.endsWith('.mjs') || path.endsWith('.node') || job.ts && (path.endsWith('.ts') || path.endsWith('.tsx'))) {
       return job.emitDependency(path);
+    }
+    return undefined;
   }));
 
   return {
@@ -261,7 +263,7 @@ export class Job {
     return undefined;
   }
 
-  async emitDependency (path: string, parent: string) {
+  async emitDependency (path: string, parent?: string) {
     if (this.processed.has(path)) return;
     this.processed.add(path);
 
@@ -317,7 +319,7 @@ export class Job {
             await this.emitDependency(item, path);
           }
         }
-        else {
+        else if (resolved) {
           // ignore builtins
           if (resolved.startsWith('node:')) return;
           await this.emitDependency(resolved, path);
@@ -338,7 +340,7 @@ export class Job {
             await this.emitDependency(item, path);
           }
         }
-        else {
+        else if (resolved) {
           // ignore builtins
           if (resolved.startsWith('node:')) return;
           await this.emitDependency(resolved, path);

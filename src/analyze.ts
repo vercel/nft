@@ -487,7 +487,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         const calleeValue = job.analysis.evaluatePureExpressions && computePureStaticValue(node.callee, false);
         // if we have a direct pure static function,
         // and that function has a [TRIGGER] symbol -> trigger asset emission from it
-        if (calleeValue && 'value' in calleeValue && typeof calleeValue.value === 'function' && calleeValue.value[TRIGGER] && job.analysis.computeFileReferences) {
+        if (calleeValue && 'value' in calleeValue && typeof calleeValue.value === 'function' && (calleeValue.value as any)[TRIGGER] && job.analysis.computeFileReferences) {
           staticChildValue = computePureStaticValue(node, true);
           // if it computes, then we start backtracking
           if (staticChildValue && parent) {
@@ -512,14 +512,12 @@ export default async function analyze(id: string, code: string, job: Job): Promi
               if (node.arguments.length) {
                 const arg = computePureStaticValue(node.arguments[0], false);
                 if (arg && 'value' in arg && arg.value) {
-                  let staticBindingsInstance = false;
-                  let opts;
+                  let opts: any;
                   if (typeof arg.value === 'object')
                     opts = arg.value;
                   else if (typeof arg.value === 'string')
                     opts = { bindings: arg.value };
                   if (!opts.path) {
-                    staticBindingsInstance = true;
                     opts.path = true;
                   }
                   opts.module_root = pkgBase;
@@ -555,7 +553,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             case NBIND_INIT:
               if (node.arguments.length) {
                 const arg = computePureStaticValue(node.arguments[0], false);
-                if (arg && 'value' in arg && !Array.isArray(arg.value)) {
+                if (arg && 'value' in arg && (typeof arg.value === 'string' || typeof arg.value === 'undefined')) {
                   const bindingInfo = nbind(arg.value);
                   if (bindingInfo) {
                     deps.add(path.relative(dir, bindingInfo.path).replace(/\\/g, '/'));
@@ -691,7 +689,9 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           let requireDecl, returned = false;
           for (let i = 0; i < node.body.body.length; i++) {
             if (node.body.body[i].type === 'VariableDeclaration' && !requireDecl) {
-              requireDecl = node.body.body[i].declarations.find(decl =>
+              requireDecl = node.body.body[i].declarations.find((decl: any) =>
+                decl &&
+                decl.id &&
                 decl.id.type === 'Identifier' &&
                 decl.init &&
                 decl.init.type === 'CallExpression' &&

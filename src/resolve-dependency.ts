@@ -23,7 +23,7 @@ export default function resolveDependency (specifier: string, parent: string, jo
 function resolvePath (path: string, parent: string, job: Job): string | undefined {
   const result = resolveFile(path, parent, job) || resolveDir(path, parent, job);
   if (!result) {
-    notFound(path, parent);
+    throw new NotFoundError(path, parent);
   }
   return result;
 }
@@ -54,13 +54,15 @@ function resolveDir (path: string, parent: string, job: Job) {
   return resolveFile(resolve(path, 'index'), parent, job);
 }
 
-function notFound (specifier: string, parent: string) {
-  const e = new Error("Cannot find module '" + specifier + "' loaded from " + parent);
-  (e as any).code = 'MODULE_NOT_FOUND';
-  throw e;
+class NotFoundError extends Error {
+  public code: string;
+  constructor(specifier: string, parent: string) {
+    super("Cannot find module '" + specifier + "' loaded from " + parent);
+    this.code = 'MODULE_NOT_FOUND';
+  }
 }
 
-const nodeBuiltins = new Set([...require("repl")._builtinLibs, "constants", "module", "timers", "console", "_stream_writable", "_stream_readable", "_stream_duplex", "process", "sys"]);
+const nodeBuiltins = new Set<string>([...require("repl")._builtinLibs, "constants", "module", "timers", "console", "_stream_writable", "_stream_readable", "_stream_duplex", "process", "sys"]);
 
 function getPkgName (name: string) {
   const segments = name.split('/');
@@ -79,8 +81,11 @@ function getPkgCfg (pkgPath: string, job: Job) {
   }
 }
 
-function getExportsTarget(exports: string | string[] | Record<string, string> | null, conditions: string[], cjsResolve: boolean): string | null {
+function getExportsTarget(exports: string | string[] | { [key: string]: string } | null, conditions: string[], cjsResolve: boolean): string | null {
   if (typeof exports === 'string') {
+    return exports;
+  }
+  else if (exports === null) {
     return exports;
   }
   else if (Array.isArray(exports)) {
@@ -102,15 +107,19 @@ function getExportsTarget(exports: string | string[] | Record<string, string> | 
       }
     }
   }
-  else if (exports === null) {
-    return exports;
-  }
+
+  return null;
 }
 
-function resolveExportsTarget (pkgPath, exports, subpath: string, job: Job, cjsResolve: boolean) {
-  if (typeof exports === 'string' ||
-      typeof exports === 'object' && !Array.isArray(exports) && Object.keys(exports).length && Object.keys(exports)[0][0] !== '.')
-    exports = { '.' : exports };
+function resolveExportsTarget (pkgPath: string, exp: string | { [key: string]: string }, subpath: string, job: Job, cjsResolve: boolean): string | undefined {
+  let exports: { [key: string]: string };
+  if (typeof exp === 'string' ||
+      typeof exp === 'object' && !Array.isArray(exp) && Object.keys(exp).length && Object.keys(exp)[0][0] !== '.') {
+    exports = { '.' : exp };
+  } else {
+    exports = exp;
+  }
+  
   if (subpath in exports) {
     const target = getExportsTarget(exports[subpath], job.exports, cjsResolve);
     if (typeof target === 'string' && target.startsWith('./'))
@@ -125,16 +134,17 @@ function resolveExportsTarget (pkgPath, exports, subpath: string, job: Job, cjsR
         return pkgPath + match.slice(2) + subpath.slice(match.length);
     }
   }
+  return undefined;
 }
 
 function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boolean) {
   let packageParent = parent;
   if (nodeBuiltins.has(name)) return 'node:' + name;
 
-  const pkgName = getPkgName(name);
+  const pkgName = getPkgName(name) || '';
   
   // package own name resolution
-  let selfResolved;
+  let selfResolved: string | undefined;
   if (job.exports) {
     const pjsonBoundary = job.getPjsonBoundary(parent);
     if (pjsonBoundary) {
@@ -190,5 +200,5 @@ function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boo
       return resolveFile(pathTarget, parent, job) || resolveDir(pathTarget, parent, job);
     }
   }
-  notFound(name, parent);
+  throw new NotFoundError(name, parent);
 }

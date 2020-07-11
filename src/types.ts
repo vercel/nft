@@ -63,7 +63,7 @@ export interface NodeFileTraceResult {
 }
 
 export interface SingleValue {
-  value: string | string[] | undefined;
+  value: unknown;
   wildcards?: string[];
 }
 

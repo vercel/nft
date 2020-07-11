@@ -41,7 +41,9 @@ function makeModulePathList(root: string, name: string) {
     ]
   ]);
 }
-function findCompiledModule(basePath: string, specList) {
+type Spec = { ext: string, name: string, type: string, path?: string };
+
+function findCompiledModule(basePath: string, specList: Spec[]): Spec | null {
   var resolvedList = [];
   var ext = path.extname(basePath);
   for (var _i = 0, specList_1 = specList; _i < specList_1.length; _i++) {
