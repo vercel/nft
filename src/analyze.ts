@@ -441,7 +441,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       if (staticChildNode) return;
 
       if (node.type === 'Identifier') {
-        if (isIdentifierRead(node, parent) && job.analysis.computeFileReferences) {
+        if (isIdentifierRead(node, parent!) && job.analysis.computeFileReferences) {
           let binding;
           // detect asset leaf expression triggers (if not already)
           // __dirname,  __filename
@@ -450,7 +450,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
               binding && (typeof binding === 'function' || typeof binding === 'object') && binding[TRIGGER]) {
             staticChildValue = { value: typeof binding === 'string' ? binding : undefined };
             staticChildNode = node;
-            backtrack(this, parent);
+            backtrack(this, parent!);
           }
         }
       }
@@ -490,7 +490,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         if (calleeValue && 'value' in calleeValue && typeof calleeValue.value === 'function' && calleeValue.value[TRIGGER] && job.analysis.computeFileReferences) {
           staticChildValue = computePureStaticValue(node, true);
           // if it computes, then we start backtracking
-          if (staticChildValue) {
+          if (staticChildValue && parent) {
             staticChildNode = node;
             backtrack(this, parent);
           }
@@ -531,7 +531,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                   if (resolved) {
                     staticChildValue = { value: resolved };
                     staticChildNode = node;
-                    emitStaticChildAsset(staticBindingsInstance);
+                    emitStaticChildAsset();
                   }
                 }
               }
@@ -547,7 +547,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 if (resolved) {
                   staticChildValue = { value: resolved };
                   staticChildNode = node;
-                  emitStaticChildAsset(path);
+                  emitStaticChildAsset();
                 }
               }
             break;
@@ -585,7 +585,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 // if it computes, then we start backtracking
                 if (staticChildValue) {
                   staticChildNode = node.arguments[0];
-                  backtrack(this, parent);
+                  backtrack(this, parent!);
                   return this.skip();
                 }
               }
@@ -594,7 +594,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             case SET_ROOT_DIR:
               if (node.arguments[0]) {
                 const rootDir = computePureStaticValue(node.arguments[0], false);
-                if (rootDir && rootDir.value)
+                if (rootDir && 'value' in rootDir && rootDir.value)
                   emitAssetDirectory(rootDir.value + '/intl');
                 return this.skip();
               }
@@ -611,7 +611,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           }
         }
       }
-      else if (node.type === 'VariableDeclaration' && !isVarLoop(parent) && job.analysis.evaluatePureExpressions) {
+      else if (node.type === 'VariableDeclaration' && parent && !isVarLoop(parent) && job.analysis.evaluatePureExpressions) {
         for (const decl of node.declarations) {
           if (!decl.init) continue;
           const computed = computePureStaticValue(decl.init, false);
@@ -641,7 +641,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           }
         }
       }
-      else if (node.type === 'AssignmentExpression' && !isLoop(parent) && job.analysis.evaluatePureExpressions) {
+      else if (node.type === 'AssignmentExpression' && parent && !isLoop(parent) && job.analysis.evaluatePureExpressions) {
         if (!hasKnownBindingValue(node.left.name)) {
           const computed = computePureStaticValue(node.right, false);
           if (computed && 'value' in computed) {
@@ -674,8 +674,10 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       else if ((!isESM || job.mixedModules) &&
                (node.type === 'FunctionDeclaration' || node.type === 'FunctionExpression' || node.type === 'ArrowFunctionExpression') &&
                (node.arguments || node.params)[0] && (node.arguments || node.params)[0].type === 'Identifier') {
-        let fnName, args;
+        let fnName: any;
+        let args: any[];
         if ((node.type === 'ArrowFunctionExpression' ||  node.type === 'FunctionExpression') &&
+            parent &&
             parent.type === 'VariableDeclarator' &&
             parent.id.type === 'Identifier') {
           fnName = parent.id;
@@ -717,7 +719,9 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     },
     leave (node, parent) {
       if (node.scope) {
-        scope = scope.parent;
+        if (scope.parent) {
+          scope = scope.parent;
+        }
         for (const id in node.scope.declarations) {
           if (id in knownBindings) {
             if (knownBindings[id].shadowDepth > 0)
@@ -728,7 +732,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         }
       }
 
-      if (staticChildNode) backtrack(this, parent);
+      if (staticChildNode && parent) backtrack(this, parent);
     }
   });
 

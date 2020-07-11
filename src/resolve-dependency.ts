@@ -28,8 +28,8 @@ function resolvePath (path: string, parent: string, job: Job): string | undefine
   return result;
 }
 
-function resolveFile (path: string, parent: string, job: Job) {
-  if (path.endsWith('/')) return;
+function resolveFile (path: string, parent: string, job: Job): string | undefined {
+  if (path.endsWith('/')) return undefined;
   path = job.realpath(path, parent);
   if (job.isFile(path)) return path;
   if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.isFile(path + '.ts')) return path + '.ts';
@@ -37,6 +37,7 @@ function resolveFile (path: string, parent: string, job: Job) {
   if (job.isFile(path + '.js')) return path + '.js';
   if (job.isFile(path + '.json')) return path + '.json';
   if (job.isFile(path + '.node')) return path + '.node';
+  return undefined;
 }
 
 function resolveDir (path: string, parent: string, job: Job) {
@@ -72,7 +73,7 @@ function getPkgCfg (pkgPath: string, job: Job) {
   const pjsonSource = job.readFile(pkgPath + sep + 'package.json');
   if (pjsonSource) {
     try {
-      return JSON.parse(pjsonSource);
+      return JSON.parse(pjsonSource.toString());
     }
     catch (e) {}
   }
