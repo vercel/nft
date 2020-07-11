@@ -1,5 +1,5 @@
 import { Node } from 'estree-walker';
-import { StaticResult, SingleValue } from '../types';
+import { StaticResult, SingleValue, ConditionalValue } from '../types';
 type Walk = (node: Node, state: State) => StaticResult;
 type State = {computeBranches: boolean, vars: Record<string, any> };
 
@@ -63,7 +63,7 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
 
     if (!l) {
       // UNKNOWN + 'str' -> wildcard string value
-      if (state.computeBranches && typeof r.value === 'string')
+      if (state.computeBranches && r && 'value' in r && typeof r.value === 'string')
         return { value: WILDCARD + r.value, wildcards: [node.left, ...r.wildcards || []] };
       return;
     }
@@ -71,7 +71,7 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
     if (!r) {
       // 'str' + UKNOWN -> wildcard string value
       if (state.computeBranches && op === '+') {
-        if (typeof l.value === 'string')
+        if (l && 'value' in l && typeof l.value === 'string')
           return { value: l.value + WILDCARD, wildcards: [...l.wildcards || [], node.right] };
       }
       // A || UNKNOWN -> A if A is truthy
@@ -84,46 +84,46 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
       return;
 
     if ('test' in l && 'value' in r) {
-      r = r.value;
-      if (op === '==') return { test: l.test, then: l.then == r, else: l.else == r };
-      if (op === '===') return { test: l.test, then: l.then === r, else: l.else === r };
-      if (op === '!=') return { test: l.test, then: l.then != r, else: l.else != r };
-      if (op === '!==') return { test: l.test, then: l.then !== r, else: l.else !== r };
-      if (op === '+') return { test: l.test, then: l.then + r, else: l.else + r };
-      if (op === '-') return { test: l.test, then: l.then - r, else: l.else - r };
-      if (op === '*') return { test: l.test, then: l.then * r, else: l.else * r };
-      if (op === '/') return { test: l.test, then: l.then / r, else: l.else / r };
-      if (op === '%') return { test: l.test, then: l.then % r, else: l.else % r };
-      if (op === '<') return { test: l.test, then: l.then < r, else: l.else < r };
-      if (op === '<=') return { test: l.test, then: l.then <= r, else: l.else <= r };
-      if (op === '>') return { test: l.test, then: l.then > r, else: l.else > r };
-      if (op === '>=') return { test: l.test, then: l.then >= r, else: l.else >= r };
-      if (op === '|') return { test: l.test, then: l.then | r, else: l.else | r };
-      if (op === '&') return { test: l.test, then: l.then & r, else: l.else & r };
-      if (op === '^') return { test: l.test, then: l.then ^ r, else: l.else ^ r };
-      if (op === '&&') return { test: l.test, then: l.then && r, else: l.else && r };
-      if (op === '||') return { test: l.test, then: l.then || r, else: l.else || r };
+      const v: any = r.value;
+      if (op === '==') return { test: l.test, then: l.then == v, else: l.else == v };
+      if (op === '===') return { test: l.test, then: l.then === v, else: l.else === v };
+      if (op === '!=') return { test: l.test, then: l.then != v, else: l.else != v };
+      if (op === '!==') return { test: l.test, then: l.then !== v, else: l.else !== v };
+      if (op === '+') return { test: l.test, then: l.then + v, else: l.else + v };
+      if (op === '-') return { test: l.test, then: l.then - v, else: l.else - v };
+      if (op === '*') return { test: l.test, then: l.then * v, else: l.else * v };
+      if (op === '/') return { test: l.test, then: l.then / v, else: l.else / v };
+      if (op === '%') return { test: l.test, then: l.then % v, else: l.else % v };
+      if (op === '<') return { test: l.test, then: l.then < v, else: l.else < v };
+      if (op === '<=') return { test: l.test, then: l.then <= v, else: l.else <= v };
+      if (op === '>') return { test: l.test, then: l.then > v, else: l.else > v };
+      if (op === '>=') return { test: l.test, then: l.then >= v, else: l.else >= v };
+      if (op === '|') return { test: l.test, then: l.then | v, else: l.else | v };
+      if (op === '&') return { test: l.test, then: l.then & v, else: l.else & v };
+      if (op === '^') return { test: l.test, then: l.then ^ v, else: l.else ^ v };
+      if (op === '&&') return { test: l.test, then: l.then && v, else: l.else && v };
+      if (op === '||') return { test: l.test, then: l.then || v, else: l.else || v };
     }
     else if ('test' in r && 'value' in l) {
-      l = l.value;
-      if (op === '==') return { test: r.test, then: l == r.then, else: l == r.else };
-      if (op === '===') return { test: r.test, then: l === r.then, else: l === r.else };
-      if (op === '!=') return { test: r.test, then: l != r.then, else: l != r.else };
-      if (op === '!==') return { test: r.test, then: l !== r.then, else: l !== r.else };
-      if (op === '+') return { test: r.test, then: l + r.then, else: l + r.else };
-      if (op === '-') return { test: r.test, then: l - r.then, else: l - r.else };
-      if (op === '*') return { test: r.test, then: l * r.then, else: l * r.else };
-      if (op === '/') return { test: r.test, then: l / r.then, else: l / r.else };
-      if (op === '%') return { test: r.test, then: l % r.then, else: l % r.else };
-      if (op === '<') return { test: r.test, then: l < r.then, else: l < r.else };
-      if (op === '<=') return { test: r.test, then: l <= r.then, else: l <= r.else };
-      if (op === '>') return { test: r.test, then: l > r.then, else: l > r.else };
-      if (op === '>=') return { test: r.test, then: l >= r.then, else: l >= r.else };
-      if (op === '|') return { test: r.test, then: l | r.then, else: l | r.else };
-      if (op === '&') return { test: r.test, then: l & r.then, else: l & r.else };
-      if (op === '^') return { test: r.test, then: l ^ r.then, else: l ^ r.else };
-      if (op === '&&') return { test: r.test, then: l && r.then, else: l && r.else };
-      if (op === '||') return { test: r.test, then: l || r.then, else: l || r.else };
+      const v: any = l.value;
+      if (op === '==') return { test: r.test, then: v == r.then, else: v == r.else };
+      if (op === '===') return { test: r.test, then: v === r.then, else: v === r.else };
+      if (op === '!=') return { test: r.test, then: v != r.then, else: v != r.else };
+      if (op === '!==') return { test: r.test, then: v !== r.then, else: v !== r.else };
+      if (op === '+') return { test: r.test, then: v + r.then, else: v + r.else };
+      if (op === '-') return { test: r.test, then: v - r.then, else: v - r.else };
+      if (op === '*') return { test: r.test, then: v * r.then, else: v * r.else };
+      if (op === '/') return { test: r.test, then: v / r.then, else: v / r.else };
+      if (op === '%') return { test: r.test, then: v % r.then, else: v % r.else };
+      if (op === '<') return { test: r.test, then: v < r.then, else: v < r.else };
+      if (op === '<=') return { test: r.test, then: v <= r.then, else: v <= r.else };
+      if (op === '>') return { test: r.test, then: v > r.then, else: v > r.else };
+      if (op === '>=') return { test: r.test, then: v >= r.then, else: v >= r.else };
+      if (op === '|') return { test: r.test, then: v | r.then, else: v | r.else };
+      if (op === '&') return { test: r.test, then: v & r.then, else: v & r.else };
+      if (op === '^') return { test: r.test, then: v ^ r.then, else: v ^ r.else };
+      if (op === '&&') return { test: r.test, then: v && r.then, else: l && r.else };
+      if (op === '||') return { test: r.test, then: v || r.then, else: l || r.else };
     }
     else {
       if (op === '==') return { value: l.value == r.value };
@@ -178,7 +178,7 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
     let args = [];
     let argsElse;
     let allWildcards = node.arguments.length > 0;
-    const wildcards = [];
+    const wildcards: string[] = [];
     for (let i = 0, l = node.arguments.length; i < l; i++) {
       let x = walk(node.arguments[i], state);
       if (x) {
@@ -270,30 +270,31 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
   'MemberExpression': (node: Node, walk: Walk, state: State) => {
     const obj = walk(node.object, state);
     // do not allow access to methods on Function
-    if (!obj || 'test' in obj || typeof obj.value === 'function')
+    if (!obj || 'test' in obj || typeof obj.value === 'function') {
       return undefined;
+    }
     if (node.property.type === 'Identifier') {
       if (typeof obj.value === 'object' && obj.value !== null) {
+        const objValue = obj.value as any;
         if (node.computed) {
           // See if we can compute the computed property
           const computedProp = walk(node.property, state);
-          if (computedProp && computedProp.value) {
-            const val = obj.value[computedProp.value];
+          if (computedProp && 'value' in computedProp && computedProp.value) {
+            const val = objValue[computedProp.value];
             if (val === UNKNOWN) return undefined;
             return { value: val };
           }
           // Special case for empty object
-          if (!obj.value[UNKNOWN] && Object.keys(obj).length === 0) {
+          if (!objValue[UNKNOWN] && Object.keys(obj).length === 0) {
             return { value: undefined };
           }
         }
-        else if (node.property.name in obj.value) {
-          const val = obj.value[node.property.name];
-          if (val === UNKNOWN)
-            return undefined;
+        else if (node.property.name in objValue) {
+          const val = objValue[node.property.name];
+          if (val === UNKNOWN) return undefined;
           return { value: val };
         }
-        else if (obj.value[UNKNOWN])
+        else if (objValue[UNKNOWN])
           return undefined;
       }
       else {
@@ -320,6 +321,7 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
     else {
       return { value: undefined };
     }
+    return undefined;
   },
   'ObjectExpression': (node: Node, walk: Walk, state: State) => {
     const obj: any = {};
@@ -337,7 +339,7 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
     return { value: obj };
   },
   'TemplateLiteral': (node: Node, walk: Walk, state: State) => {
-    let val = { value: '' };
+    let val: SingleValue | ConditionalValue = { value: '' };
     for (var i = 0; i < node.expressions.length; i++) {
       if ('value' in val) {
         val.value += node.quasis[i].value.cooked;
@@ -346,7 +348,7 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
         val.then += node.quasis[i].value.cooked;
         val.else += node.quasis[i].value.cooked;
       }
-      let exprValue = walk(node.expressions[i]);
+      let exprValue = walk(node.expressions[i], state);
       if (!exprValue) {
         if (!state.computeBranches)
           return undefined;
@@ -365,15 +367,19 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticR
           val.else += exprValue.value;
         }
       }
-      else {
-        // only support a single branch in a template
-        if ('value' in val === false || val.wildcards)
+      else if ('value' in val) {
+        if ('wildcards' in val) {
+          // only support a single branch in a template
           return;
+        }
         val = {
           test: exprValue.test,
           then: val.value + exprValue.then,
           else: val.value + exprValue.else
         };
+      } else {
+        // only support a single branch in a template
+        return;
       }
     }
     if ('value' in val) {

@@ -63,14 +63,14 @@ export interface NodeFileTraceResult {
 }
 
 export interface SingleValue {
-  value: unknown;
+  value: any;
   wildcards?: string[];
 }
 
 export interface ConditionalValue {
   test: string;
-  then: string;
-  else: string;
+  then: any;
+  else: any;
 }
 
 export type StaticResult = SingleValue | ConditionalValue | undefined;

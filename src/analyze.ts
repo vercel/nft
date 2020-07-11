@@ -555,7 +555,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 const arg = computePureStaticValue(node.arguments[0], false);
                 if (arg && 'value' in arg && (typeof arg.value === 'string' || typeof arg.value === 'undefined')) {
                   const bindingInfo = nbind(arg.value);
-                  if (bindingInfo) {
+                  if (bindingInfo && bindingInfo.path) {
                     deps.add(path.relative(dir, bindingInfo.path).replace(/\\/g, '/'));
                     return this.skip();
                   }
