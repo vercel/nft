@@ -27,7 +27,7 @@ const acorn = Parser.extend(
 import os from 'os';
 import { handleWrappers } from './utils/wrappers';
 import resolveFrom from 'resolve-from';
-import { StaticResult } from './types';
+import { EvaluatedValue } from './types';
 
 const staticProcess = {
   cwd: () => {
@@ -337,7 +337,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   // statically determinable leaves are tracked, and inlined when the
   // greatest parent statically known leaf computation corresponds to an asset path
   let staticChildNode: Node | undefined;
-  let staticChildValue: StaticResult;
+  let staticChildValue: EvaluatedValue;
 
   // Express engine opt-out
   let definedExpressEngines = false;

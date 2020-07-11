@@ -1,9 +1,9 @@
 import { Node } from 'estree-walker';
-import { StaticResult, StaticValue, ConditionalValue } from '../types';
-type Walk = (node: Node, state: State) => StaticResult;
+import { EvaluatedValue, StaticValue, ConditionalValue } from '../types';
+type Walk = (node: Node, state: State) => EvaluatedValue;
 type State = {computeBranches: boolean, vars: Record<string, any> };
 
-export function evaluate(ast: Node, vars = {}, computeBranches = true): StaticResult {
+export function evaluate(ast: Node, vars = {}, computeBranches = true): EvaluatedValue {
   const state: State = {
     computeBranches,
     vars
@@ -35,7 +35,7 @@ function countWildcards (str: string) {
   return cnt;
 }
 
-const visitors: Record<string, (node: Node, walk: Walk, state: State) => StaticResult> = {
+const visitors: Record<string, (node: Node, walk: Walk, state: State) => EvaluatedValue> = {
   'ArrayExpression': (node: Node, walk: Walk, state: State) => {
     const arr = [];
     for (let i = 0, l = node.elements.length; i < l; i++) {

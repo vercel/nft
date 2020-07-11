@@ -73,4 +73,4 @@ export interface ConditionalValue {
   else: any;
 }
 
-export type StaticResult = StaticValue | ConditionalValue | undefined;
+export type EvaluatedValue = StaticValue | ConditionalValue | undefined;
