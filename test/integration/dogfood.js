@@ -1,1 +1,1 @@
-require('../../dist/node-file-trace');
+require('../../out/node-file-trace');

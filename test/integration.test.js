@@ -1,6 +1,6 @@
 const { promises, readdirSync, mkdirSync } = require('fs');
 const path = require('path');
-const { nodeFileTrace } = require('../dist/node-file-trace');
+const { nodeFileTrace } = require('../out/node-file-trace');
 const os = require('os');
 const { promisify } = require('util');
 const rimraf = require('rimraf');

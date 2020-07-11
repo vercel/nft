@@ -3,10 +3,10 @@
   "version": "0.6.5",
   "repository": "vercel/node-file-trace",
   "license": "MIT",
-  "main": "./dist/node-file-trace.js",
-  "types": "./dist/node-file-trace.d.ts",
+  "main": "./out/node-file-trace.js",
+  "types": "./out/node-file-trace.d.ts",
   "bin": {
-    "nft": "./dist/cli.js"
+    "nft": "./out/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -16,7 +16,7 @@
     "test-coverage": "jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
   },
   "files": [
-    "dist"
+    "out"
   ],
   "dependencies": {
     "acorn": "^7.1.1",
