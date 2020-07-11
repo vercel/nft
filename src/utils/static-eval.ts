@@ -80,9 +80,6 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => Evaluat
       return;
     }
 
-    if ('test' in l && 'test' in r)
-      return;
-
     if ('test' in l && 'value' in r) {
       const v: any = r.value;
       if (op === '==') return { test: l.test, then: l.then == v, else: l.else == v };
@@ -125,7 +122,7 @@ const visitors: Record<string, (node: Node, walk: Walk, state: State) => Evaluat
       if (op === '&&') return { test: r.test, then: v && r.then, else: l && r.else };
       if (op === '||') return { test: r.test, then: v || r.then, else: l || r.else };
     }
-    else {
+    else if ('value' in l && 'value' in r) {
       if (op === '==') return { value: l.value == r.value };
       if (op === '===') return { value: l.value === r.value };
       if (op === '!=') return { value: l.value != r.value };
