@@ -419,7 +419,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           'then' in curStaticValue && typeof curStaticValue.then !== 'symbol' && typeof curStaticValue.else !== 'symbol') {
         staticChildValue = curStaticValue;
         staticChildNode = parent;
-        if (self && self.skip) self.skip();
+        if (self.skip) self.skip();
         return;
       }
     }
