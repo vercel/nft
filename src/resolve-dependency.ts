@@ -81,7 +81,7 @@ function getPkgCfg (pkgPath: string, job: Job) {
   }
 }
 
-function getExportsTarget(exports: string | string[] | { [key: string]: string } | null, conditions: string[], cjsResolve: boolean): string | null {
+function getExportsTarget(exports: string | string[] | { [key: string]: string } | null, conditions: string[], cjsResolve: boolean): string | null | undefined {
   if (typeof exports === 'string') {
     return exports;
   }
@@ -108,7 +108,7 @@ function getExportsTarget(exports: string | string[] | { [key: string]: string }
     }
   }
 
-  return null;
+  return undefined;
 }
 
 function resolveExportsTarget (pkgPath: string, exp: string | { [key: string]: string }, subpath: string, job: Job, cjsResolve: boolean): string | undefined {
