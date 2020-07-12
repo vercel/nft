@@ -409,9 +409,10 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   let scope = attachScopes(ast, 'scope');
   handleWrappers(ast);
   handleSpecialCases({ id, ast, emitAsset: path => assets.add(path), emitAssetDirectory, job });
-  function backtrack (self: WalkerContext, parent: Node) {
+  function backtrack (parent: Node, context?: WalkerContext) {
     // computing a static expression outward
     // -> compute and backtrack
+    // Note that `context` can be undefined in `leave()`
     if (!staticChildNode) throw new Error('Internal error: No staticChildNode for backtrack.');
     const curStaticValue = computePureStaticValue(parent, true);
     if (curStaticValue) {
@@ -419,7 +420,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           'then' in curStaticValue && typeof curStaticValue.then !== 'symbol' && typeof curStaticValue.else !== 'symbol') {
         staticChildValue = curStaticValue;
         staticChildNode = parent;
-        if (self.skip) self.skip();
+        if (context) context.skip();
         return;
       }
     }
@@ -450,7 +451,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
               binding && (typeof binding === 'function' || typeof binding === 'object') && binding[TRIGGER]) {
             staticChildValue = { value: typeof binding === 'string' ? binding : undefined };
             staticChildNode = node;
-            backtrack(this, parent!);
+            backtrack(parent!, this);
           }
         }
       }
@@ -492,7 +493,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           // if it computes, then we start backtracking
           if (staticChildValue && parent) {
             staticChildNode = node;
-            backtrack(this, parent);
+            backtrack(parent, this);
           }
         }
         // handle well-known function symbol cases
@@ -583,7 +584,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 // if it computes, then we start backtracking
                 if (staticChildValue) {
                   staticChildNode = node.arguments[0];
-                  backtrack(this, parent!);
+                  backtrack(parent!, this);
                   return this.skip();
                 }
               }
@@ -732,7 +733,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         }
       }
 
-      if (staticChildNode && parent) backtrack(this, parent);
+      if (staticChildNode && parent) backtrack(parent, this);
     }
   });
 
