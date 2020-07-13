@@ -1,18 +1,19 @@
-const { basename, dirname, extname, relative, resolve, sep } = require('path');
-const fs = require('fs');
-const analyze = require('./analyze');
-const resolveDependency = require('./resolve-dependency');
-const { isMatch } = require('micromatch');
-const sharedlibEmit = require('./utils/sharedlib-emit');
+import { NodeFileTraceOptions, Stats } from './types';
+import { basename, dirname, extname, relative, resolve, sep } from 'path';
+import fs from 'fs';
+import analyze, { AnalyzeResult } from './analyze';
+import resolveDependency from './resolve-dependency';
+import { isMatch } from 'micromatch';
+import { sharedLibEmit } from './utils/sharedlib-emit';
 
 const { gracefulify } = require('graceful-fs');
 gracefulify(fs);
 
-function inPath (path, parent) {
+function inPath (path: string, parent: string) {
   return path.startsWith(parent) && path[parent.length] === sep;
 }
 
-module.exports = async function (files, opts = {}) {
+export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions = {}) {
   const job = new Job(opts);
 
   if (opts.readFile)
@@ -27,8 +28,10 @@ module.exports = async function (files, opts = {}) {
   await Promise.all(files.map(file => {
     const path = resolve(file);
     job.emitFile(job.realpath(path), 'initial');
-    if (path.endsWith('.js') || path.endsWith('.cjs') || path.endsWith('.mjs') || path.endsWith('.node') || job.ts && (path.endsWith('.ts') || path.endsWith('.tsx')))
+    if (path.endsWith('.js') || path.endsWith('.cjs') || path.endsWith('.mjs') || path.endsWith('.node') || job.ts && (path.endsWith('.ts') || path.endsWith('.tsx'))) {
       return job.emitDependency(path);
+    }
+    return undefined;
   }));
 
   return {
@@ -39,7 +42,27 @@ module.exports = async function (files, opts = {}) {
   };
 };
 
-class Job {
+export class Job {
+  public ts: boolean;
+  public base: string;
+  public cwd: string;
+  public exports: string[];
+  public exportsOnly: boolean;
+  public paths: Record<string, string>;
+  public ignoreFn: (path: string, parent?: string) => boolean;
+  public log: boolean;
+  public mixedModules: boolean;
+  public analysis: { emitGlobs?: boolean, computeFileReferences?: boolean, evaluatePureExpressions?: boolean };
+  private fileCache: Map<string, string | null>;
+  private statCache: Map<string, Stats | null>;
+  private symlinkCache: Map<string, string | null>;
+  private analysisCache: Map<string, AnalyzeResult>;
+  public fileList: Set<string>;
+  public esmFileList: Set<string>;
+  public processed: Set<string>;
+  public warnings: Set<Error>;
+  public reasons = Object.create(null);
+  
   constructor ({
     base = process.cwd(),
     processCwd,
@@ -49,25 +72,28 @@ class Job {
     ignore,
     log = false,
     mixedModules = false,
+    ts = true,
     analysis = {},
     cache,
-  }) {
+  }: NodeFileTraceOptions) {
+    this.ts = ts;
     base = resolve(base);
-    this.ignoreFn = path => {
+    this.ignoreFn = (path: string) => {
       if (path.startsWith('..' + sep)) return true;
       return false;
     };
     if (typeof ignore === 'string') ignore = [ignore];
     if (typeof ignore === 'function') {
-      this.ignoreFn = path => {
+      const ig = ignore;
+      this.ignoreFn = (path: string) => {
         if (path.startsWith('..' + sep)) return true;
-        if (ignore(path)) return true;
+        if (ig(path)) return true;
         return false;
       };
     }
     else if (Array.isArray(ignore)) {
       const resolvedIgnores = ignore.map(ignore => relative(base, resolve(base || process.cwd(), ignore)));
-      this.ignoreFn = path => {
+      this.ignoreFn = (path: string) => {
         if (path.startsWith('..' + sep)) return true;
         if (isMatch(path, resolvedIgnores)) return true;
         return false;
@@ -77,7 +103,7 @@ class Job {
     this.cwd = resolve(processCwd || base);
     this.exports = exports;
     this.exportsOnly = exportsOnly;
-    const resolvedPaths = {};
+    const resolvedPaths: Record<string, string> = {};
     for (const path of Object.keys(paths)) {
       const trailer = paths[path].endsWith('/');
       const resolvedPath = resolve(base, paths[path]);
@@ -86,7 +112,6 @@ class Job {
     this.paths = resolvedPaths;
     this.log = log;
     this.mixedModules = mixedModules;
-    this.reasons = Object.create(null);
 
     this.analysis = {};
     if (analysis !== false) {
@@ -117,11 +142,10 @@ class Job {
     this.fileList = new Set();
     this.esmFileList = new Set();
     this.processed = new Set();
-
     this.warnings = new Set();
   }
 
-  readlink (path) {
+  readlink (path: string) {
     const cached = this.symlinkCache.get(path);
     if (cached !== undefined) return cached;
     try {
@@ -141,21 +165,21 @@ class Job {
     }
   }
 
-  isFile (path) {
+  isFile (path: string) {
     const stats = this.stat(path);
     if (stats)
       return stats.isFile();
     return false;
   }
 
-  isDir (path) {
+  isDir (path: string) {
     const stats = this.stat(path);
     if (stats)
       return stats.isDirectory();
     return false;
   }
 
-  stat (path) {
+  stat (path: string) {
     const cached = this.statCache.get(path);
     if (cached) return cached;
     try {
@@ -172,7 +196,7 @@ class Job {
     }
   }
 
-  readFile (path) {
+  readFile (path: string): string | Buffer | null {
     const cached = this.fileCache.get(path);
     if (cached !== undefined) return cached;
     try {
@@ -189,7 +213,7 @@ class Job {
     }
   }
 
-  realpath (path, parent, seen = new Set()) {
+  realpath (path: string, parent?: string, seen = new Set()): string {
     if (seen.has(path)) throw new Error('Recursive symlink detected resolving ' + path);
     seen.add(path);
     const symlink = this.readlink(path);
@@ -208,7 +232,7 @@ class Job {
     return this.realpath(dirname(path), parent, seen) + sep + basename(path);
   }
 
-  emitFile (path, reason, parent) {
+  emitFile (path: string, reason: string, parent?: string) {
     if (this.fileList.has(path)) return;
     path = relative(this.base, path);
     if (parent)
@@ -228,24 +252,25 @@ class Job {
     return true;
   }
 
-  getPjsonBoundary (path) {
+  getPjsonBoundary (path: string) {
     const rootSeparatorIndex = path.indexOf(sep);
-    let separatorIndex;
+    let separatorIndex: number;
     while ((separatorIndex = path.lastIndexOf(sep)) > rootSeparatorIndex) {
       path = path.substr(0, separatorIndex);
       if (this.isFile(path + sep + 'package.json'))
         return path;
     }
+    return undefined;
   }
 
-  async emitDependency (path, parent) {
+  async emitDependency (path: string, parent?: string) {
     if (this.processed.has(path)) return;
     this.processed.add(path);
 
     const emitted = this.emitFile(path, 'dependency', parent);
     if (!emitted) return;
     if (path.endsWith('.json')) return;
-    if (path.endsWith('.node')) return await sharedlibEmit(path, this);
+    if (path.endsWith('.node')) return await sharedLibEmit(path, this);
 
     // js files require the "type": "module" lookup, so always emit the package.json
     if (path.endsWith('.js')) {
@@ -254,18 +279,20 @@ class Job {
         this.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
     }
 
-    let deps, imports, assets, isESM;
+    let analyzeResult: AnalyzeResult;
 
     const cachedAnalysis = this.analysisCache.get(path);
     if (cachedAnalysis) {
-      ({ deps, imports, assets, isESM } = cachedAnalysis);
+      analyzeResult = cachedAnalysis;
     }
     else {
       const source = this.readFile(path);
       if (source === null) throw new Error('File ' + path + ' does not exist.');
-      ({ deps, imports, assets, isESM } = await analyze(path, source, this));
-      this.analysisCache.set(path, { deps, imports, assets, isESM });
+      analyzeResult = await analyze(path, source.toString(), this);
+      this.analysisCache.set(path, analyzeResult);
     }
+
+    const { deps, imports, assets, isESM } = analyzeResult;
 
     if (isESM)
       this.esmFileList.add(relative(this.base, path));
@@ -281,7 +308,7 @@ class Job {
       }),
       ...[...deps].map(async dep => {
         try {
-          var resolved = await resolveDependency(dep, path, this, !isESM);
+          var resolved = resolveDependency(dep, path, this, !isESM);
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
@@ -302,7 +329,7 @@ class Job {
       }),
       ...[...imports].map(async dep => {
         try {
-          var resolved = await resolveDependency(dep, path, this, false);
+          var resolved = resolveDependency(dep, path, this, false);
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));

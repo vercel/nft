@@ -18,6 +18,10 @@ jobs:
         node: [10, 12]
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Cancel Previous Runs
+      uses: styfle/cancel-workflow-action@0.4.0
+      with:
+        access_token: ${{ github.token }}
     - uses: actions/checkout@v1
     - name: Use Node.js ${{ matrix.node }}
       uses: actions/setup-node@v1
@@ -29,6 +33,8 @@ jobs:
       run: node prepare-install.js
     - name: Install Dependencies
       run: yarn install
+    - name: Build
+      run: yarn build
     - name: Run Tests
       env:
         BULL_REDIS_CONNECTION: ${{ secrets.BULL_REDIS_CONNECTION }}

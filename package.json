@@ -3,20 +3,20 @@
   "version": "0.7.0",
   "repository": "vercel/node-file-trace",
   "license": "MIT",
-  "main": "./src/node-file-trace.js",
-  "types": "./node-file-trace.d.ts",
+  "main": "./out/node-file-trace.js",
+  "types": "./out/node-file-trace.d.ts",
   "bin": {
-    "nft": "./src/cli.js"
+    "nft": "./out/cli.js"
   },
   "scripts": {
+    "build": "tsc",
     "test": "jest --verbose",
     "test-verbose": "jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\"",
     "codecov": "codecov",
     "test-coverage": "jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
   },
   "files": [
-    "node-file-trace.d.ts",
-    "src/*"
+    "out"
   ],
   "dependencies": {
     "acorn": "^7.1.1",
@@ -26,7 +26,7 @@
     "acorn-numeric-separator": "^0.3.0",
     "acorn-static-class-features": "^0.2.1",
     "bindings": "^1.4.0",
-    "estree-walker": "^0.6.0",
+    "estree-walker": "^0.6.1",
     "glob": "^7.1.3",
     "graceful-fs": "^4.1.15",
     "micromatch": "^4.0.2",
@@ -44,6 +44,10 @@
     "@google-cloud/firestore": "^2.2.3",
     "@sentry/node": "^5.5.0",
     "@tensorflow/tfjs-node": "^1.2.3",
+    "@types/bindings": "^1.3.0",
+    "@types/glob": "^7.1.2",
+    "@types/micromatch": "^4.0.1",
+    "@types/node": "^14.0.14",
     "@zeit/ncc": "^0.17.0",
     "analytics-node": "^3.4.0-beta.1",
     "apollo-server-express": "^2.14.2",
@@ -112,7 +116,7 @@
     "swig": "^1.4.2",
     "tiny-json-http": "^7.1.2",
     "twilio": "^3.33.0",
-    "typescript": "^3.5.2",
+    "typescript": "^3.9.6",
     "uglify-js": "^3.6.0",
     "vm2": "^3.8.2",
     "vue": "^2.6.10",

@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 
-const { join, dirname } = require('path');
-const fs = require('fs');
-const { promisify } = require('util');
-const copyFile = promisify(fs.copyFile);
-const mkdir = promisify(fs.mkdir);
+import { join, dirname } from 'path';
+import { promises } from 'fs';
+const { copyFile, mkdir } = promises;
 const rimraf = require('rimraf');
-const trace = require('./node-file-trace');
+import { nodeFileTrace } from './node-file-trace';
 
 async function cli(
   action = process.argv[2],
@@ -20,7 +18,7 @@ async function cli(
     log: true
   };
 
-  const { fileList, esmFileList, warnings } = await trace(files, opts);
+  const { fileList, esmFileList, warnings } = await nodeFileTrace(files, opts);
   const allFiles = fileList.concat(esmFileList);
   const stdout = [];
 

@@ -1,16 +1,14 @@
-const fs = require('fs');
+const { promises, mkdirSync } = require('fs');
 const path = require('path');
-const nodeFileTrace = require('../src/node-file-trace');
+const { nodeFileTrace } = require('../out/node-file-trace');
 const os = require('os');
-const { promisify } = require('util');
 const rimraf = require('rimraf');
-const readFile = promisify(fs.readFile);
-const writeFile = promisify(fs.writeFile);
+const { writeFile } = promises;
 
 const randomTmpId = Math.random().toString().slice(2);
 const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-ecmascript${randomTmpId}`);
 rimraf.sync(tmpdir);
-fs.mkdirSync(tmpdir);
+mkdirSync(tmpdir);
 console.log('created directory ' + tmpdir);
 
  // These are tests known to fail so we skip them

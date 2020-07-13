@@ -1,7 +1,7 @@
-const { walk } = require('estree-walker');
+import { walk, Node } from 'estree-walker';
 
 // Wrapper detection pretransforms to enable static analysis
-function handleWrappers (ast) {
+export function handleWrappers(ast: Node) {
   // UglifyJS will convert function wrappers into !function(){}
   let wrapper;
   if (ast.body.length === 1 &&
@@ -114,13 +114,13 @@ function handleWrappers (ast) {
             wrapper.arguments[0].body.body.length === 2 &&
             wrapper.arguments[0].body.body[0].type === 'VariableDeclaration' &&
             wrapper.arguments[0].body.body[0].declarations.length === 3 &&
-            wrapper.arguments[0].body.body[0].declarations.every(decl => decl.init === null && decl.id.type === 'Identifier')
+            wrapper.arguments[0].body.body[0].declarations.every((decl: any) => decl.init === null && decl.id.type === 'Identifier')
         ) &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].type === 'ReturnStatement' &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.type === 'CallExpression' &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.type === 'CallExpression' &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.arguments.length &&
-        wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.arguments.every(arg => arg.type === 'Literal' && typeof arg.value === 'number') &&
+        wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.arguments.every((arg: any) => arg && arg.type === 'Literal' && typeof arg.value === 'number') &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.type === 'CallExpression' &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.callee.type === 'FunctionExpression' &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.arguments.length === 0 &&
@@ -133,8 +133,8 @@ function handleWrappers (ast) {
       
       // verify modules is the expected data structure
       // in the process, extract external requires
-      const externals = {};
-      if (modules.every(m => {
+      const externals: Record<string, string> = {};
+      if (modules.every((m: any) => {
         if (m.type !== 'Property' ||
             m.computed !== false ||
             m.key.type !== 'Literal' ||
@@ -321,18 +321,18 @@ function handleWrappers (ast) {
           wrapper.arguments[0] &&
           wrapper.arguments[0].type === 'ArrayExpression' &&
           wrapper.arguments[0].elements.length > 0 &&
-          wrapper.arguments[0].elements.every(el => el && el.type === 'FunctionExpression') ||
+          wrapper.arguments[0].elements.every((el: any) => el && el.type === 'FunctionExpression') ||
           wrapper.arguments[0].type === 'ObjectExpression' &&
           wrapper.arguments[0].properties &&
           wrapper.arguments[0].properties.length > 0 &&
-          wrapper.arguments[0].properties.every(prop => prop && prop.key && prop.key.type === 'Literal' && prop.value && prop.value.type === 'FunctionExpression')
+          wrapper.arguments[0].properties.every((prop: any) => prop && prop.key && prop.key.type === 'Literal' && prop.value && prop.value.type === 'FunctionExpression')
         )) {
-      const externalMap = new Map();
-      let modules;
+      const externalMap = new Map<number, any>();
+      let modules: [number, any][];
       if (wrapper.arguments[0].type === 'ArrayExpression')
-        modules = wrapper.arguments[0].elements.map((el, i) => [i, el]);
+        modules = wrapper.arguments[0].elements.map((el: any, i: number) => [i, el]);
       else
-        modules = wrapper.arguments[0].properties.map(prop => [prop.key.value, prop.value]);
+        modules = wrapper.arguments[0].properties.map((prop: any) => [prop.key.value, prop.value]);
       for (const [k, m] of modules) {
         if (m.body.body.length === 1 &&
             m.body.body[0].type === 'ExpressionStatement' &&
@@ -355,13 +355,13 @@ function handleWrappers (ast) {
         if (m.params.length === 3 && m.params[2].type === 'Identifier') {
           const assignedVars = new Map();
           walk(m.body, {
-            enter (node, parent) {
+            enter (node, maybeParent) {
               if (node.type === 'FunctionExpression' ||
                   node.type === 'FunctionDeclaration' ||
                   node.type === 'ArrowFunctionExpression' ||
                   node.type === 'BlockStatement' ||
                   node.type === 'TryStatement') {
-                if (parent)
+                if (maybeParent)
                   return this.skip();
               }
               if (node.type === 'CallExpression' &&
@@ -382,6 +382,7 @@ function handleWrappers (ast) {
                       value: externalId
                     }]
                   };
+                  const parent = maybeParent!;
                   if (parent.right === node) {
                     parent.right = replacement;
                   }
@@ -394,8 +395,8 @@ function handleWrappers (ast) {
                   else if (parent.callee === node) {
                     parent.callee = replacement;
                   }
-                  else if (parent.arguments && parent.arguments.some(arg => arg === node)) {
-                    parent.arguments = parent.arguments.map(arg => arg === node ? replacement : arg);
+                  else if (parent.arguments && parent.arguments.some((arg: any) => arg === node)) {
+                    parent.arguments = parent.arguments.map((arg: any) => arg === node ? replacement : arg);
                   }
                   else if (parent.init === node) {
                     if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier')
@@ -413,8 +414,8 @@ function handleWrappers (ast) {
                   node.arguments.length === 1 &&
                   node.arguments[0].type === 'Identifier' &&
                   assignedVars.get(node.arguments[0].name)) {
-                if (parent.init === node) {
-                  parent.init = {
+                if (maybeParent && maybeParent.init === node) {
+                  maybeParent.init = {
                     type: 'ObjectExpression',
                     properties: [{
                       type: 'ObjectProperty',
@@ -448,4 +449,3 @@ function handleWrappers (ast) {
   }
 }
 
-module.exports = handleWrappers;

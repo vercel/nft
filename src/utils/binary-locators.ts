@@ -1,10 +1,10 @@
-const path = require("path");
-const fs = require("fs");
+import path from 'path';
+import fs from 'fs';
 
 // pregyp
 const versioning = require("node-pre-gyp/lib/util/versioning.js");
 const napi = require("node-pre-gyp/lib/util/napi.js");
-const pregypFind = (package_json_path, opts) => {
+const pregypFind = (package_json_path: string, opts: any) => {
   const package_json = JSON.parse(fs.readFileSync(package_json_path).toString());
   versioning.validate_config(package_json, opts);
   var napi_build_version;
@@ -16,11 +16,11 @@ const pregypFind = (package_json_path, opts) => {
   var meta = versioning.evaluate(package_json,opts,napi_build_version);
   return meta.module;
 };
-exports.pregyp = { default: { find: pregypFind }, find: pregypFind };
+export const pregyp = { default: { find: pregypFind }, find: pregypFind };
 
 // nbind
 // Adapted from nbind.js
-function makeModulePathList(root, name) {
+function makeModulePathList(root: string, name: string) {
   return ([
     [root, name],
     [root, "build", name],
@@ -41,7 +41,9 @@ function makeModulePathList(root, name) {
     ]
   ]);
 }
-function findCompiledModule(basePath, specList) {
+type Spec = { ext: string, name: string, type: string, path?: string };
+
+function findCompiledModule(basePath: string, specList: Spec[]): Spec | null {
   var resolvedList = [];
   var ext = path.extname(basePath);
   for (var _i = 0, specList_1 = specList; _i < specList_1.length; _i++) {
@@ -73,12 +75,11 @@ function findCompiledModule(basePath, specList) {
   }
   return null;
 }
-function find(basePath = process.cwd()) {
+export function nbind(basePath = process.cwd()) {
   const found = findCompiledModule(basePath, [
     { ext: ".node", name: "nbind.node", type: "node" },
     { ext: ".js", name: "nbind.js", type: "emcc" }
   ]);
   return found;
 }
-exports.nbind = find;
 

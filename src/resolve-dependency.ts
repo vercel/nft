@@ -1,10 +1,11 @@
-const { isAbsolute, resolve, sep } = require('path');
+import { isAbsolute, resolve, sep } from 'path';
+import { Job } from './node-file-trace';
 
 // node resolver
 // custom implementation to emit only needed package.json files for resolver
 // (package.json files are emitted as they are hit)
-module.exports = function resolveDependency (specifier, parent, job, cjsResolve = true) {
-  let resolved;
+export default function resolveDependency (specifier: string, parent: string, job: Job, cjsResolve = true) {
+  let resolved: string | string[];
   if (isAbsolute(specifier) || specifier === '.' || specifier === '..' || specifier.startsWith('./') || specifier.startsWith('../')) {
     const trailingSlash = specifier.endsWith('/');
     resolved = resolvePath(resolve(parent, '..', specifier) + (trailingSlash ? '/' : ''), parent, job);
@@ -12,18 +13,26 @@ module.exports = function resolveDependency (specifier, parent, job, cjsResolve 
   else {
     resolved = resolvePackage(specifier, parent, job, cjsResolve);
   }
-  if (typeof resolved === 'string' && resolved.startsWith('node:')) return resolved;
-  if (Array.isArray(resolved))
+
+  if (Array.isArray(resolved)) {
     return resolved.map(resolved => job.realpath(resolved, parent));
-  return job.realpath(resolved, parent);
+  } else if (resolved.startsWith('node:')) {
+    return resolved;
+  } else {
+    return job.realpath(resolved, parent);
+  }
 };
 
-function resolvePath (path, parent, job) {
-  return resolveFile(path, parent, job) || resolveDir(path, parent, job) || notFound(path, parent);
+function resolvePath (path: string, parent: string, job: Job): string {
+  const result = resolveFile(path, parent, job) || resolveDir(path, parent, job);
+  if (!result) {
+    throw new NotFoundError(path, parent);
+  }
+  return result;
 }
 
-function resolveFile (path, parent, job) {
-  if (path.endsWith('/')) return;
+function resolveFile (path: string, parent: string, job: Job): string | undefined {
+  if (path.endsWith('/')) return undefined;
   path = job.realpath(path, parent);
   if (job.isFile(path)) return path;
   if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && job.isFile(path + '.ts')) return path + '.ts';
@@ -31,9 +40,10 @@ function resolveFile (path, parent, job) {
   if (job.isFile(path + '.js')) return path + '.js';
   if (job.isFile(path + '.json')) return path + '.json';
   if (job.isFile(path + '.node')) return path + '.node';
+  return undefined;
 }
 
-function resolveDir (path, parent, job) {
+function resolveDir (path: string, parent: string, job: Job) {
   if (path.endsWith('/')) path = path.slice(0, -1);
   if (!job.isDir(path)) return;
   const pkgCfg = getPkgCfg(path, job);
@@ -47,33 +57,47 @@ function resolveDir (path, parent, job) {
   return resolveFile(resolve(path, 'index'), parent, job);
 }
 
-function notFound (specifier, parent) {
-  const e = new Error("Cannot find module '" + specifier + "' loaded from " + parent);
-  e.code = 'MODULE_NOT_FOUND';
-  throw e;
+class NotFoundError extends Error {
+  public code: string;
+  constructor(specifier: string, parent: string) {
+    super("Cannot find module '" + specifier + "' loaded from " + parent);
+    this.code = 'MODULE_NOT_FOUND';
+  }
 }
 
-const nodeBuiltins = new Set([...require("repl")._builtinLibs, "constants", "module", "timers", "console", "_stream_writable", "_stream_readable", "_stream_duplex", "process", "sys"]);
+const nodeBuiltins = new Set<string>([...require("repl")._builtinLibs, "constants", "module", "timers", "console", "_stream_writable", "_stream_readable", "_stream_duplex", "process", "sys"]);
 
-function getPkgName (name) {
+function getPkgName (name: string) {
   const segments = name.split('/');
   if (name[0] === '@' && segments.length > 1)
     return segments.length > 1 ? segments.slice(0, 2).join('/') : null;
   return segments.length ? segments[0] : null;
 }
 
-function getPkgCfg (pkgPath, job) {
+type Exports = string | string[] | { [key: string]: string } | null | undefined;
+
+interface PkgCfg {
+  name: string | undefined;
+  main: string | undefined;
+  exports: Exports;
+}
+
+function getPkgCfg (pkgPath: string, job: Job): PkgCfg | undefined {
   const pjsonSource = job.readFile(pkgPath + sep + 'package.json');
   if (pjsonSource) {
     try {
-      return JSON.parse(pjsonSource);
+      return JSON.parse(pjsonSource.toString());
     }
     catch (e) {}
   }
+  return undefined;
 }
 
-function getExportsTarget (exports, conditions, cjsResolve) {
+function getExportsTarget(exports: string | string[] | { [key: string]: string } | null, conditions: string[], cjsResolve: boolean): string | null | undefined {
   if (typeof exports === 'string') {
+    return exports;
+  }
+  else if (exports === null) {
     return exports;
   }
   else if (Array.isArray(exports)) {
@@ -95,15 +119,19 @@ function getExportsTarget (exports, conditions, cjsResolve) {
       }
     }
   }
-  else if (exports === null) {
-    return exports;
-  }
+
+  return undefined;
 }
 
-function resolveExportsTarget (pkgPath, exports, subpath, job, cjsResolve) {
-  if (typeof exports === 'string' ||
-      typeof exports === 'object' && !Array.isArray(exports) && Object.keys(exports).length && Object.keys(exports)[0][0] !== '.')
-    exports = { '.' : exports };
+function resolveExportsTarget (pkgPath: string, exp: string | string[] | { [key: string]: string }, subpath: string, job: Job, cjsResolve: boolean): string | undefined {
+  let exports: { [key: string]: string | string[] | { [key: string]: string } };
+  if (typeof exp === 'string' ||
+      typeof exp === 'object' && !Array.isArray(exp) && Object.keys(exp).length && Object.keys(exp)[0][0] !== '.') {
+    exports = { '.' : exp };
+  } else {
+    exports = exp;
+  }
+  
   if (subpath in exports) {
     const target = getExportsTarget(exports[subpath], job.exports, cjsResolve);
     if (typeof target === 'string' && target.startsWith('./'))
@@ -118,29 +146,31 @@ function resolveExportsTarget (pkgPath, exports, subpath, job, cjsResolve) {
         return pkgPath + match.slice(2) + subpath.slice(match.length);
     }
   }
+  return undefined;
 }
 
-function resolvePackage (name, parent, job, cjsResolve) {
+function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boolean): string | string [] {
   let packageParent = parent;
   if (nodeBuiltins.has(name)) return 'node:' + name;
 
-  const pkgName = getPkgName(name);
+  const pkgName = getPkgName(name) || '';
   
   // package own name resolution
-  let selfResolved;
+  let selfResolved: string | undefined;
   if (job.exports) {
     const pjsonBoundary = job.getPjsonBoundary(parent);
     if (pjsonBoundary) {
       const pkgCfg = getPkgCfg(pjsonBoundary, job);
-      if (pkgCfg && pkgCfg.name && pkgCfg.exports !== null && pkgCfg.exports !== undefined) {
-        selfResolved = resolveExportsTarget(pjsonBoundary, pkgCfg.exports, '.' + name.slice(pkgName.length), job, cjsResolve);
+      const { exports: pkgExports } = pkgCfg || {};
+      if (pkgCfg && pkgCfg.name && pkgExports !== null && pkgExports !== undefined) {
+        selfResolved = resolveExportsTarget(pjsonBoundary, pkgExports, '.' + name.slice(pkgName.length), job, cjsResolve);
         if (selfResolved)
           job.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', parent);
       }
     }
   }
 
-  let separatorIndex;
+  let separatorIndex: number;
   const rootSeparatorIndex = packageParent.indexOf(sep);
   while ((separatorIndex = packageParent.lastIndexOf(sep)) > rootSeparatorIndex) {
     packageParent = packageParent.substr(0, separatorIndex);
@@ -148,11 +178,12 @@ function resolvePackage (name, parent, job, cjsResolve) {
     const stat = job.stat(nodeModulesDir);
     if (!stat || !stat.isDirectory()) continue;
     const pkgCfg = getPkgCfg(nodeModulesDir + sep + pkgName, job);
-    if (pkgCfg && job.exports && pkgCfg.exports !== undefined && pkgCfg.exports !== null && !selfResolved) {
+    const { exports: pkgExports } = pkgCfg || {};
+    if (job.exports && pkgExports !== undefined && pkgExports !== null && !selfResolved) {
       let legacyResolved;
       if (!job.exportsOnly)
         legacyResolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
-      let resolved = resolveExportsTarget(nodeModulesDir + sep + pkgName, pkgCfg.exports, '.' + name.slice(pkgName.length), job, cjsResolve);
+      let resolved = resolveExportsTarget(nodeModulesDir + sep + pkgName, pkgExports, '.' + name.slice(pkgName.length), job, cjsResolve);
       if (resolved && cjsResolve)
         resolved = resolveFile(resolved, parent, job) || resolveDir(resolved, parent, job);
       if (resolved) {
@@ -180,8 +211,12 @@ function resolvePackage (name, parent, job, cjsResolve) {
   for (const path of Object.keys(job.paths)) {
     if (path.endsWith('/') && name.startsWith(path)) {
       const pathTarget = job.paths[path] + name.slice(path.length);
-      return resolveFile(pathTarget, parent, job) || resolveDir(pathTarget, parent, job);
+      const resolved = resolveFile(pathTarget, parent, job) || resolveDir(pathTarget, parent, job);
+      if (!resolved) {
+        throw new NotFoundError(name, parent);
+      }
+      return resolved;
     }
   }
-  notFound(name, parent);
+  throw new NotFoundError(name, parent);
 }

@@ -1,4 +1,6 @@
-exports.isIdentifierRead = function (node, parent) {
+import { Node } from 'estree-walker';
+
+export function isIdentifierRead(node: Node, parent: Node) {
   switch (parent.type) {
     case 'ObjectPattern':
     case 'ArrayPattern':
@@ -31,10 +33,10 @@ exports.isIdentifierRead = function (node, parent) {
   }
 }
 
-exports.isVarLoop = function (node) {
+export function isVarLoop(node: Node) {
   return node.type === 'ForStatement' || node.type === 'ForInStatement' || node.type === 'ForOfStatement';
 }
 
-exports.isLoop = function (node) {
+export function isLoop(node: Node) {
   return node.type === 'ForStatement' || node.type === 'ForInStatement' || node.type === 'ForOfStatement' || node.type === 'WhileStatement' || node.type === 'DoWhileStatement';
 }

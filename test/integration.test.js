@@ -1,21 +1,18 @@
-const fs = require('fs');
+const { promises, readdirSync, mkdirSync } = require('fs');
 const path = require('path');
-const nodeFileTrace = require('../src/node-file-trace');
+const { nodeFileTrace } = require('../out/node-file-trace');
 const os = require('os');
 const { promisify } = require('util');
 const rimraf = require('rimraf');
 const mkdirp = promisify(require('mkdirp'));
-const readFile = promisify(fs.readFile);
-const writeFile = promisify(fs.writeFile);
-const readlink = promisify(fs.readlink);
-const symlink = promisify(fs.symlink);
+const { readFile, writeFile, readlink, symlink } = promises;
 const { fork } = require('child_process');
 
 jest.setTimeout(200000);
 
 const integrationDir = `${__dirname}${path.sep}integration`;
 
-for (const integrationTest of fs.readdirSync(integrationDir)) {
+for (const integrationTest of readdirSync(integrationDir)) {
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
     console.log('Tracing and executing ' + integrationTest);
     const fails = integrationTest.endsWith('failure.js');
@@ -30,7 +27,7 @@ for (const integrationTest of fs.readdirSync(integrationDir)) {
     const randomTmpId = Math.random().toString().slice(2)
     const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-${randomTmpId}`);
     rimraf.sync(tmpdir);
-    fs.mkdirSync(tmpdir);
+    mkdirSync(tmpdir);
     await Promise.all(fileList.map(async file => {
       const inPath = path.resolve(__dirname, '..', file);
       const outPath = path.resolve(tmpdir, file);

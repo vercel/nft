@@ -16,7 +16,7 @@ function normalizeOutput(output) {
 }
 
 it('should correctly print trace from cli', async () => {
-  const { stderr, stdout } = await exec(`node ../src/cli.js print ${inputjs}`, { cwd: __dirname });
+  const { stderr, stdout } = await exec(`node ../out/cli.js print ${inputjs}`, { cwd: __dirname });
   if (stderr) {
     throw new Error(stderr);
   }
@@ -24,7 +24,7 @@ it('should correctly print trace from cli', async () => {
 });
 
 it('should correctly build dist from cli', async () => {
-  const { stderr } = await exec(`node ../src/cli.js build ${inputjs}`, { cwd: __dirname });
+  const { stderr } = await exec(`node ../out/cli.js build ${inputjs}`, { cwd: __dirname });
   if (stderr) {
     throw new Error(stderr);
   }
@@ -33,7 +33,7 @@ it('should correctly build dist from cli', async () => {
 });
 
 it('should correctly print help when unknown action is used', async () => {
-  const { stderr, stdout } = await exec(`node ../src/cli.js unknown ${inputjs}`, { cwd: __dirname });
+  const { stderr, stdout } = await exec(`node ../out/cli.js unknown ${inputjs}`, { cwd: __dirname });
   if (stderr) {
     throw new Error(stderr);
   }
@@ -42,7 +42,7 @@ it('should correctly print help when unknown action is used', async () => {
 
 it('[codecov] should correctly print trace from required cli', async () => {
   // This test is only here to satisfy code coverage
-  const cli = require('../src/cli.js')
+  const cli = require('../out/cli.js')
   const files = [join(__dirname, inputjs)];
   const stdout = await cli('print', files);
   expect(stdout).toMatch(normalizeOutput(outputjs));
@@ -50,7 +50,7 @@ it('[codecov] should correctly print trace from required cli', async () => {
 
 it('[codecov] should correctly build dist from required cli', async () => {
   // This test is only here to satisfy code coverage
-  const cli = require('../src/cli.js')
+  const cli = require('../out/cli.js')
   const files = [join(__dirname, inputjs)];
   await cli('build', files);
   const found = existsSync(join(__dirname, outputjs));
@@ -59,7 +59,7 @@ it('[codecov] should correctly build dist from required cli', async () => {
 
 it('[codecov] should correctly print help when unknown action is used', async () => {
   // This test is only here to satisfy code coverage
-  const cli = require('../src/cli.js')
+  const cli = require('../out/cli.js')
   const files = [join(__dirname, inputjs)];
   const stdout = await cli('unknown', files);
   expect(stdout).toMatch('provide an action');

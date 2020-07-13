@@ -1,6 +1,6 @@
 const fs = require('fs');
 const { join } = require('path');
-const nodeFileTrace = require('../src/node-file-trace');
+const { nodeFileTrace } = require('../out/node-file-trace');
 
 global._unit = true;
 
