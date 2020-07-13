@@ -292,11 +292,13 @@ export class Job {
       this.analysisCache.set(path, analyzeResult);
     }
 
-    if (analyzeResult.isESM)
+    const { deps, imports, assets, isESM } = analyzeResult;
+
+    if (isESM)
       this.esmFileList.add(relative(this.base, path));
     
     await Promise.all([
-      ...[...analyzeResult.assets].map(async asset => {
+      ...[...assets].map(async asset => {
         const ext = extname(asset);
         if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '' ||
             this.ts && (ext === '.ts' || ext === '.tsx') && asset.startsWith(this.base) && asset.substr(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
@@ -304,9 +306,9 @@ export class Job {
         else
           this.emitFile(this.realpath(asset, path), 'asset', path);
       }),
-      ...[...analyzeResult.deps].map(async dep => {
+      ...[...deps].map(async dep => {
         try {
-          var resolved = resolveDependency(dep, path, this, !analyzeResult.isESM);
+          var resolved = resolveDependency(dep, path, this, !isESM);
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
@@ -319,7 +321,7 @@ export class Job {
             await this.emitDependency(item, path);
           }
         }
-        else if (resolved) {
+        else {
           // ignore builtins
           if (resolved.startsWith('node:')) return;
           await this.emitDependency(resolved, path);
@@ -340,7 +342,7 @@ export class Job {
             await this.emitDependency(item, path);
           }
         }
-        else if (resolved) {
+        else {
           // ignore builtins
           if (resolved.startsWith('node:')) return;
           await this.emitDependency(resolved, path);

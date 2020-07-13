@@ -9,7 +9,8 @@ export default function resolveDependency (specifier: string, parent: string, jo
   if (isAbsolute(specifier) || specifier === '.' || specifier === '..' || specifier.startsWith('./') || specifier.startsWith('../')) {
     const trailingSlash = specifier.endsWith('/');
     resolved = resolvePath(resolve(parent, '..', specifier) + (trailingSlash ? '/' : ''), parent, job);
-  } else {
+  }
+  else {
     resolved = resolvePackage(specifier, parent, job, cjsResolve);
   }
 
