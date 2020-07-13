@@ -327,7 +327,7 @@ export class Job {
           await this.emitDependency(resolved, path);
         }
       }),
-      ...[...analyzeResult.imports].map(async dep => {
+      ...[...imports].map(async dep => {
         try {
           var resolved = resolveDependency(dep, path, this, false);
         }
