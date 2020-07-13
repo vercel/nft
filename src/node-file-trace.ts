@@ -306,7 +306,7 @@ export class Job {
       }),
       ...[...analyzeResult.deps].map(async dep => {
         try {
-          var resolved = await resolveDependency(dep, path, this, !analyzeResult.isESM);
+          var resolved = resolveDependency(dep, path, this, !analyzeResult.isESM);
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
@@ -327,7 +327,7 @@ export class Job {
       }),
       ...[...analyzeResult.imports].map(async dep => {
         try {
-          var resolved = await resolveDependency(dep, path, this, false);
+          var resolved = resolveDependency(dep, path, this, false);
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
