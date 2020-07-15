@@ -1,3 +1,12 @@
 [
-  "package.json"
+    "node_modules/@example/common",
+    "node_modules/@example/web",
+    "package.json",
+    "packages/common/hello.js",
+    "packages/common/package.json",
+    "packages/web/index.js",
+    "packages/web/package.json",
+    "input.js",
+    "packages/common/hello.js",
+    "packages/web/index.js"
 ]
