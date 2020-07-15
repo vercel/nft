@@ -1,12 +1,11 @@
 [
-    "node_modules/@example/common",
-    "node_modules/@example/web",
-    "package.json",
-    "packages/common/hello.js",
-    "packages/common/package.json",
-    "packages/web/index.js",
-    "packages/web/package.json",
-    "input.js",
-    "packages/common/hello.js",
-    "packages/web/index.js"
+    "test/unit/yarn-workspace-esm/input.js",
+    "test/unit/yarn-workspace-esm/node_modules/@example/common",
+    "test/unit/yarn-workspace-esm/node_modules/@example/web",
+    "test/unit/yarn-workspace-esm/package.json",
+    "test/unit/yarn-workspace-esm/packages/common/hello.js",
+    "test/unit/yarn-workspace-esm/packages/common/package.json",
+    "test/unit/yarn-workspace-esm/packages/web/index.js",
+    "test/unit/yarn-workspace-esm/packages/web/package.json",
+    "test/unit/yarn-workspace-esm/packages/web/index.js"
 ]
