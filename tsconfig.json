@@ -2,6 +2,8 @@
   "compilerOptions": {
     "declaration": true,
     "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
     "lib": ["esnext"],
     "module": "commonjs",
     "moduleResolution": "node",
@@ -14,6 +16,7 @@
     "outDir": "out",
     "target": "esnext",
     "types": ["node"],
+    "skipLibCheck": true,
     "strict": true
   },
   "include": ["src/**/*"],
