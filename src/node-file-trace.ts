@@ -1,4 +1,4 @@
-import { NodeFileTraceOptions, Stats } from './types';
+import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats } from './types';
 import { basename, dirname, extname, relative, resolve, sep } from 'path';
 import fs from 'fs';
 import analyze, { AnalyzeResult } from './analyze';
@@ -13,7 +13,7 @@ function inPath (path: string, parent: string) {
   return path.startsWith(parent) && path[parent.length] === sep;
 }
 
-export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions = {}) {
+export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions = {}): Promise<NodeFileTraceResult> {
   const job = new Job(opts);
 
   if (opts.readFile)
@@ -34,12 +34,13 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
     return undefined;
   }));
 
-  return {
+  const result: NodeFileTraceResult = {
     fileList: [...job.fileList].sort(),
     esmFileList: [...job.esmFileList].sort(),
     reasons: job.reasons,
     warnings: [...job.warnings]
   };
+  return result;
 };
 
 export class Job {
@@ -61,7 +62,7 @@ export class Job {
   public esmFileList: Set<string>;
   public processed: Set<string>;
   public warnings: Set<Error>;
-  public reasons = Object.create(null);
+  public reasons: NodeFileTraceReasons = Object.create(null);
   
   constructor ({
     base = process.cwd(),

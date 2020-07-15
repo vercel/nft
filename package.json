@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "tsc && rm out/tsconfig.tsbuildinfo",
     "test": "jest --verbose",
     "test-verbose": "jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\"",
     "codecov": "codecov",
