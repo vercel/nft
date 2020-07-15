@@ -6,6 +6,5 @@
     "test/unit/yarn-workspace-esm/packages/common/hello.js",
     "test/unit/yarn-workspace-esm/packages/common/package.json",
     "test/unit/yarn-workspace-esm/packages/web/index.js",
-    "test/unit/yarn-workspace-esm/packages/web/package.json",
-    "test/unit/yarn-workspace-esm/packages/web/index.js"
+    "test/unit/yarn-workspace-esm/packages/web/package.json"
 ]
