@@ -1,5 +1,5 @@
 import { hello } from '@example/common';
 
-export default () => {
+export default function handler() {
   console.log(hello('world'));
 }
