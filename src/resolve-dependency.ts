@@ -50,7 +50,7 @@ function resolveDir (path: string, parent: string, job: Job) {
   if (pkgCfg && typeof pkgCfg.main === 'string') {
     const resolved = resolveFile(resolve(path, pkgCfg.main), parent, job) || resolveFile(resolve(path, pkgCfg.main, 'index'), parent, job);
     if (resolved) {
-      job.emitFile(job.realpath(path, parent) + sep + 'package.json', 'resolve', parent);
+      job.emitFile(path + sep + 'package.json', 'resolve', parent);
       return resolved;
     }
   }
