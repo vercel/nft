@@ -90,7 +90,7 @@
     "memcached": "^2.2.2",
     "mongoose": "^5.7.5",
     "mysql": "^2.17.1",
-    "npm": "^6.13.4",
+    "npm": "^6.14.6",
     "oracledb": "^4.2.0",
     "paraphrase": "1.8.0",
     "passport": "^0.4.0",
