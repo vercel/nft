@@ -27,7 +27,7 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
 
   await Promise.all(files.map(file => {
     const path = resolve(file);
-    job.emitFile(job.realpath(path), 'initial');
+    job.emitFile(path, 'initial');
     if (path.endsWith('.js') || path.endsWith('.cjs') || path.endsWith('.mjs') || path.endsWith('.node') || job.ts && (path.endsWith('.ts') || path.endsWith('.tsx'))) {
       return job.emitDependency(path);
     }
@@ -224,7 +224,7 @@ export class Job {
       const resolved = resolve(parentPath, symlink);
       const realParent = this.realpath(parentPath, parent);
       if (inPath(path, realParent))
-        this.emitFile(path, 'resolve', parent);
+        this.emitFile(path, 'resolve', parent, true);
       return this.realpath(resolved, parent, seen);
     }
     // keep backtracking for realpath, emitting folder symlinks within base
@@ -233,7 +233,9 @@ export class Job {
     return this.realpath(dirname(path), parent, seen) + sep + basename(path);
   }
 
-  emitFile (path: string, reason: string, parent?: string) {
+  emitFile (path: string, reason: string, parent?: string, isRealpath = false) {
+    if (!isRealpath)
+      path = this.realpath(path, parent);
     if (this.fileList.has(path)) return;
     path = relative(this.base, path);
     if (parent)
@@ -305,7 +307,7 @@ export class Job {
             this.ts && (ext === '.ts' || ext === '.tsx') && asset.startsWith(this.base) && asset.substr(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
           await this.emitDependency(asset, path);
         else
-          this.emitFile(this.realpath(asset, path), 'asset', path);
+          this.emitFile(asset, 'asset', path);
       }),
       ...[...deps].map(async dep => {
         try {

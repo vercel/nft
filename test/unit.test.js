@@ -4,31 +4,8 @@ const { nodeFileTrace } = require('../out/node-file-trace');
 
 global._unit = true;
 
-function tryCreateSymlink (target, path) {
-  if (process.platform === 'win32') {
-    console.log('skipping create symlink on Windows');
-    return;
-  }
-  try {
-    fs.symlinkSync(target, path);
-  }
-  catch (e) {
-    if (e.code !== 'EEXIST' && e.code !== 'UNKNOWN') throw e;
-  }
-}
-
-// ensure test/yarn-workspaces/node_modules/x -> test/yarn-workspaces/packages/x
-try {
-  fs.mkdirSync(join(__dirname, 'unit', 'yarn-workspaces', 'node_modules'));
-}
-catch (e) {
-  if (e.code !== 'EEXIST' && e.code !== 'UNKNOWN') throw e;
-}
-tryCreateSymlink('../packages/x', join(__dirname, 'unit', 'yarn-workspaces', 'node_modules', 'x'));
-tryCreateSymlink('./asset1.txt',  join(__dirname, 'unit', 'asset-symlink', 'asset.txt'));
-
 for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
-  if (process.platform === 'win32' && ['yarn-workspaces', 'asset-symlink', 'require-symlink'].includes(unitTest)) {
+  if (process.platform === 'win32' && ['yarn-workspaces', 'yarn-workspace-esm', 'asset-symlink', 'require-symlink'].includes(unitTest)) {
     console.log('skipping symlink test on Windows: ' + unitTest);
     continue;
   }
