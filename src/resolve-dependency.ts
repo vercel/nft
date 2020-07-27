@@ -123,7 +123,7 @@ function getExportsTarget(exports: string | string[] | { [key: string]: string }
   return undefined;
 }
 
-function resolveExportsTarget (pkgPath: string, exp: string | string[] | { [key: string]: string }, subpath: string, job: Job, cjsResolve: boolean, parent: string): string | undefined {
+function resolveExportsTarget (pkgPath: string, exp: string | string[] | { [key: string]: string }, subpath: string, job: Job, cjsResolve: boolean): string | undefined {
   let exports: { [key: string]: string | string[] | { [key: string]: string } };
   if (typeof exp === 'string' ||
       typeof exp === 'object' && !Array.isArray(exp) && Object.keys(exp).length && Object.keys(exp)[0][0] !== '.') {
@@ -142,12 +142,8 @@ function resolveExportsTarget (pkgPath: string, exp: string | string[] | { [key:
       continue;
     if (subpath.startsWith(match)) {
       const target = getExportsTarget(exports[match], job.exports, cjsResolve);
-      if (typeof target === 'string' && target.endsWith('/') && target.startsWith('./')) {
-        const subpathTarget = pkgPath + match.slice(1) + subpath.slice(match.length);
-        if (cjsResolve)
-          return resolvePath(subpathTarget, parent, job);
-        return subpathTarget;
-      }
+      if (typeof target === 'string' && target.endsWith('/') && target.startsWith('./'))
+        return pkgPath + match.slice(1) + subpath.slice(match.length);
     }
   }
   return undefined;
@@ -167,7 +163,13 @@ function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boo
       const pkgCfg = getPkgCfg(pjsonBoundary, job);
       const { exports: pkgExports } = pkgCfg || {};
       if (pkgCfg && pkgCfg.name && pkgExports !== null && pkgExports !== undefined) {
-        selfResolved = resolveExportsTarget(pjsonBoundary, pkgExports, '.' + name.slice(pkgName.length), job, cjsResolve, parent);
+        selfResolved = resolveExportsTarget(pjsonBoundary, pkgExports, '.' + name.slice(pkgName.length), job, cjsResolve);
+        if (selfResolved) {
+          if (cjsResolve)
+            selfResolved = resolveFile(selfResolved, parent, job) || resolveDir(selfResolved, parent, job);
+          else if (!job.isFile(selfResolved))
+            throw new NotFoundError(selfResolved, parent);
+        }
         if (selfResolved)
           job.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', parent);
       }
@@ -187,9 +189,13 @@ function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boo
       let legacyResolved;
       if (!job.exportsOnly)
         legacyResolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
-      let resolved = resolveExportsTarget(nodeModulesDir + sep + pkgName, pkgExports, '.' + name.slice(pkgName.length), job, cjsResolve, parent);
-      if (resolved && cjsResolve)
-        resolved = resolveFile(resolved, parent, job) || resolveDir(resolved, parent, job);
+      let resolved = resolveExportsTarget(nodeModulesDir + sep + pkgName, pkgExports, '.' + name.slice(pkgName.length), job, cjsResolve);
+      if (resolved) {
+        if (cjsResolve)
+          resolved = resolveFile(resolved, parent, job) || resolveDir(resolved, parent, job);
+        else if (!job.isFile(resolved))
+          throw new NotFoundError(resolved, parent);
+      }
       if (resolved) {
         job.emitFile(nodeModulesDir + sep + pkgName + sep + 'package.json', 'resolve', parent);
         if (legacyResolved && legacyResolved !== resolved)
