@@ -1,5 +1,5 @@
 import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats } from './types';
-import { basename, dirname, extname, relative, resolve, sep } from 'path';
+import { basename, dirname, extname, relative, resolve, sep, join } from 'path';
 import fs from 'fs';
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency from './resolve-dependency';
@@ -230,7 +230,7 @@ export class Job {
     // keep backtracking for realpath, emitting folder symlinks within base
     if (!inPath(path, this.base))
       return path;
-    return this.realpath(dirname(path), parent, seen) + sep + basename(path);
+    return join(this.realpath(dirname(path), parent, seen), basename(path));
   }
 
   emitFile (path: string, reason: string, parent?: string, isRealpath = false) {
@@ -260,7 +260,7 @@ export class Job {
     let separatorIndex: number;
     while ((separatorIndex = path.lastIndexOf(sep)) > rootSeparatorIndex) {
       path = path.substr(0, separatorIndex);
-      if (this.isFile(path + sep + 'package.json'))
+      if (this.isFile(join(path, 'package.json')))
         return path;
     }
     return undefined;
@@ -279,7 +279,7 @@ export class Job {
     if (path.endsWith('.js')) {
       const pjsonBoundary = this.getPjsonBoundary(path);
       if (pjsonBoundary)
-        this.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
+        this.emitFile(join(pjsonBoundary, 'package.json'), 'resolve', path);
     }
 
     let analyzeResult: AnalyzeResult;

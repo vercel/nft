@@ -1,4 +1,4 @@
-import { isAbsolute, resolve, sep } from 'path';
+import { isAbsolute, resolve, sep, join, relative } from 'path';
 import { Job } from './node-file-trace';
 
 // node resolver
@@ -50,7 +50,7 @@ function resolveDir (path: string, parent: string, job: Job) {
   if (pkgCfg && typeof pkgCfg.main === 'string') {
     const resolved = resolveFile(resolve(path, pkgCfg.main), parent, job) || resolveFile(resolve(path, pkgCfg.main, 'index'), parent, job);
     if (resolved) {
-      job.emitFile(path + sep + 'package.json', 'resolve', parent);
+      job.emitFile(join(path, 'package.json'), 'resolve', parent);
       return resolved;
     }
   }
@@ -83,7 +83,7 @@ interface PkgCfg {
 }
 
 function getPkgCfg (pkgPath: string, job: Job): PkgCfg | undefined {
-  const pjsonSource = job.readFile(pkgPath + sep + 'package.json');
+  const pjsonSource = job.readFile(join(pkgPath, 'package.json'));
   if (pjsonSource) {
     try {
       return JSON.parse(pjsonSource.toString());
@@ -135,7 +135,7 @@ function resolveExportsTarget (pkgPath: string, exp: string | string[] | { [key:
   if (subpath in exports) {
     const target = getExportsTarget(exports[subpath], job.exports, cjsResolve);
     if (typeof target === 'string' && target.startsWith('./'))
-      return pkgPath + target.slice(1);
+      return join(pkgPath, target);
   }
   for (const match of Object.keys(exports)) {
     if (!match.endsWith('/'))
@@ -143,7 +143,7 @@ function resolveExportsTarget (pkgPath: string, exp: string | string[] | { [key:
     if (subpath.startsWith(match)) {
       const target = getExportsTarget(exports[match], job.exports, cjsResolve);
       if (typeof target === 'string' && target.endsWith('/') && target.startsWith('./'))
-        return pkgPath + match.slice(2) + subpath.slice(match.length);
+        return join(pkgPath, match, relative(match, subpath));
     }
   }
   return undefined;
@@ -165,7 +165,7 @@ function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boo
       if (pkgCfg && pkgCfg.name && pkgExports !== null && pkgExports !== undefined) {
         selfResolved = resolveExportsTarget(pjsonBoundary, pkgExports, '.' + name.slice(pkgName.length), job, cjsResolve);
         if (selfResolved)
-          job.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', parent);
+          job.emitFile(join(pjsonBoundary, 'package.json'), 'resolve', parent);
       }
     }
   }
@@ -174,20 +174,20 @@ function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boo
   const rootSeparatorIndex = packageParent.indexOf(sep);
   while ((separatorIndex = packageParent.lastIndexOf(sep)) > rootSeparatorIndex) {
     packageParent = packageParent.substr(0, separatorIndex);
-    const nodeModulesDir = packageParent + sep + 'node_modules';
+    const nodeModulesDir = join(packageParent, 'node_modules');
     const stat = job.stat(nodeModulesDir);
     if (!stat || !stat.isDirectory()) continue;
-    const pkgCfg = getPkgCfg(nodeModulesDir + sep + pkgName, job);
+    const pkgCfg = getPkgCfg(join(nodeModulesDir, pkgName), job);
     const { exports: pkgExports } = pkgCfg || {};
     if (job.exports && pkgExports !== undefined && pkgExports !== null && !selfResolved) {
       let legacyResolved;
       if (!job.exportsOnly)
-        legacyResolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
-      let resolved = resolveExportsTarget(nodeModulesDir + sep + pkgName, pkgExports, '.' + name.slice(pkgName.length), job, cjsResolve);
+        legacyResolved = resolveFile(join(nodeModulesDir, name), parent, job) || resolveDir(join(nodeModulesDir, name), parent, job);
+      let resolved = resolveExportsTarget(join(nodeModulesDir, pkgName), pkgExports, '.' + name.slice(pkgName.length), job, cjsResolve);
       if (resolved && cjsResolve)
         resolved = resolveFile(resolved, parent, job) || resolveDir(resolved, parent, job);
       if (resolved) {
-        job.emitFile(nodeModulesDir + sep + pkgName + sep + 'package.json', 'resolve', parent);
+        job.emitFile(join(nodeModulesDir, pkgName, 'package.json'), 'resolve', parent);
         if (legacyResolved && legacyResolved !== resolved)
           return [resolved, legacyResolved];
         return resolved;
@@ -196,7 +196,7 @@ function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boo
         return legacyResolved;
     }
     else {
-      const resolved = resolveFile(nodeModulesDir + sep + name, parent, job) || resolveDir(nodeModulesDir + sep + name, parent, job);
+      const resolved = resolveFile(join(nodeModulesDir, name), parent, job) || resolveDir(join(nodeModulesDir, name), parent, job);
       if (resolved) {
         if (selfResolved && selfResolved !== resolved)
           return [resolved, selfResolved];
