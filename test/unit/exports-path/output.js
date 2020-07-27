@@ -1,8 +1,8 @@
 [
   "package.json",
-  "test/unit/exports-only/input.js",
-  "test/unit/exports-only/node_modules/pkg/package.json",
-  "test/unit/exports-only/node_modules/pkg/require-main.cjs",
-  "test/unit/exports-only/node_modules/pkg/subdir/import-main.js",
-  "test/unit/exports-only/node_modules/pkg/subdir/package.json"
+  "test/unit/exports-path/input.js",
+  "test/unit/exports-path/node_modules/apollo-upload-client/package.json",
+  "test/unit/exports-path/node_modules/apollo-upload-client/public/ReactNativeFile.js",
+  "test/unit/exports-path/node_modules/extract-files/package.json",
+  "test/unit/exports-path/node_modules/extract-files/public/ReactNativeFile.js"
 ]
