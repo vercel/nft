@@ -18,5 +18,5 @@
   "package.json",
   "test/unit/webpack-wrapper-strs-namespaces-large/content/guides/index.md",
   "test/unit/webpack-wrapper-strs-namespaces-large/content/packages.json",
-  "test/unit/webpack-wrapper-strs-namespaces-large/input.js",
+  "test/unit/webpack-wrapper-strs-namespaces-large/input.js"
 ]
