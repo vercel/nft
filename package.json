@@ -1,6 +1,6 @@
 {
   "name": "@zeit/node-file-trace",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "repository": "vercel/node-file-trace",
   "license": "MIT",
   "main": "./out/index.js",
