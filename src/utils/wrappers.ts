@@ -305,7 +305,6 @@ export function handleWrappers(ast: Node) {
     else if (wrapper.callee.type === 'FunctionExpression' &&
         wrapper.callee.params.length === 1 &&
         wrapper.callee.body.body.length > 2 &&
-        wrapper.callee.body.body[0] &&
         wrapper.callee.body.body[0].type === 'VariableDeclaration' &&
         wrapper.callee.body.body[0].declarations.length === 1 &&
         wrapper.callee.body.body[0].declarations[0].type === 'VariableDeclarator' &&
