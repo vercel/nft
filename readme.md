@@ -1,17 +1,17 @@
 # Node File Trace
 
-[![CI Status](https://badgen.net/github/checks/vercel/node-file-trace?label=CI)](https://github.com/vercel/node-file-trace/actions?workflow=CI)
-[![Code Coverage](https://badgen.net/codecov/c/github/vercel/node-file-trace)](https://codecov.io/gh/vercel/node-file-trace)
+[![CI Status](https://badgen.net/github/checks/vercel/nft?label=CI)](https://github.com/vercel/nft/actions?workflow=CI)
+[![Code Coverage](https://badgen.net/codecov/c/github/vercel/nft)](https://codecov.io/gh/vercel/nft)
 
 This package is used in [@vercel/node](https://npmjs.com/package/@vercel/node) and [@vercel/next](https://npmjs.com/package/@vercel/next) to determine exactly which files (including `node_modules`) are necessary for the application runtime.
 
-This is similar to [@zeit/ncc](https://npmjs.com/package/@zeit/ncc) except there is no bundling performed and therefore no reliance on webpack. This achieves the same tree-shaking benefits without moving any assets or binaries.
+This is similar to [@vercel/ncc](https://npmjs.com/package/@vercel/ncc) except there is no bundling performed and therefore no reliance on webpack. This achieves the same tree-shaking benefits without moving any assets or binaries.
 
 ## Usage
 
 ### Installation
 ```bash
-npm i @zeit/node-file-trace
+npm i @vercel/nft
 ```
 
 ### Usage
@@ -19,7 +19,7 @@ npm i @zeit/node-file-trace
 Provide the list of source files as input:
 
 ```js
-const { nodeFileTrace } = require('@zeit/node-file-trace');
+const { nodeFileTrace } = require('@vercel/nft');
 const files = ['./src/main.js', './src/second.js'];
 const { fileList } = await nodeFileTrace(files);
 ```
