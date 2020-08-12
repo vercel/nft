@@ -1546,11 +1546,6 @@
   dependencies:
     tslib "^1.9.3"
 
-"@zeit/ncc@^0.17.0":
-  version "0.17.0"
-  resolved "https://registry.yarnpkg.com/@zeit/ncc/-/ncc-0.17.0.tgz#f6121a15cf7ec76a65c17a3aa7d38e98151ea76e"
-  integrity sha512-PEu1L+bqj5c/BbkmBu3IRKOP10jprmJu4+EtHaFBQzeTfGcXnzbrssUVhzXpGi2X6Dw5S1FvwLWFGP3X5uEKYA==
-
 Base64@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/Base64/-/Base64-1.1.0.tgz#810ef21afa8357df92ad7b5389188c446b9cb956"
@@ -9757,7 +9752,6 @@ npm@^6.14.6:
     cmd-shim "^3.0.3"
     columnify "~1.5.4"
     config-chain "^1.1.12"
-    debuglog "*"
     detect-indent "~5.0.0"
     detect-newline "^2.1.0"
     dezalgo "~1.0.3"
@@ -9772,7 +9766,6 @@ npm@^6.14.6:
     has-unicode "~2.0.1"
     hosted-git-info "^2.8.8"
     iferr "^1.0.2"
-    imurmurhash "*"
     infer-owner "^1.0.4"
     inflight "~1.0.6"
     inherits "^2.0.4"
@@ -9791,14 +9784,8 @@ npm@^6.14.6:
     libnpx "^10.2.2"
     lock-verify "^2.1.0"
     lockfile "^1.0.4"
-    lodash._baseindexof "*"
     lodash._baseuniq "~4.6.0"
-    lodash._bindcallback "*"
-    lodash._cacheindexof "*"
-    lodash._createcache "*"
-    lodash._getnative "*"
     lodash.clonedeep "~4.5.0"
-    lodash.restparam "*"
     lodash.union "~4.6.0"
     lodash.uniq "~4.5.0"
     lodash.without "~4.4.0"
