@@ -1,3 +1,5 @@
+import { Job } from './node-file-trace';
+
 export interface Stats {
   isFile(): boolean;
   isDirectory(): boolean;
@@ -45,6 +47,7 @@ export interface NodeFileTraceOptions {
   readFile?: (path: string) => Buffer | string | null;
   stat?: (path: string) => Stats | null;
   readlink?: (path: string) => string | null;
+  resolve?: (id: string, parent: string, job: Job, cjsResolve: boolean) => string | string[];
 }
 
 export interface NodeFileTraceReasons {

@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { join } = require('path');
+const { join, isAbsolute, resolve } = require('path');
 const { nodeFileTrace } = require('../out/node-file-trace');
 
 global._unit = true;
@@ -25,7 +25,10 @@ for (const { testName, isRoot } of unitTests) {
     // get called, the TypeScript files won't get compiled: Currently this is only
     // used in the tsx-input test:
     const readFileMock = jest.fn(function() {
-      return this.constructor.prototype.readFile.apply(this, arguments);
+      const [id] = arguments;
+      return id.startsWith('custom-resolution-')
+        ? ''
+        : this.constructor.prototype.readFile.apply(this, arguments);
     });
 
     let inputFileName = "input.js";
@@ -49,7 +52,10 @@ for (const { testName, isRoot } of unitTests) {
       mixedModules: true,
       // Ignore unit test output "actual.js", and ignore GitHub Actions preinstalled packages
       ignore: (str) => str.endsWith('/actual.js') || str.startsWith('usr/local'),
-      readFile: readFileMock
+      readFile: readFileMock,
+      resolve: testName.startsWith('resolve-hook')
+        ? (id, parent) => `custom-resolution-${id}`
+        : undefined,
     });
     let expected;
     try {

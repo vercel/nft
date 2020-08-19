@@ -108,6 +108,7 @@ The following FS functions can be hooked by passing them as options:
 * `readFile(path): Promise<string>`
 * `stat(path): Promise<FS.Stats>`
 * `readlink(path): Promise<string>`
+* `resolve(id: string, parent: string): Promise<string | string[]>`
 
 #### TypeScript
 

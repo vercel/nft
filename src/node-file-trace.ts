@@ -24,6 +24,8 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
     job.stat = opts.stat;
   if (opts.readlink)
     job.readlink = opts.readlink;
+  if (opts.resolve)
+    job.resolve = opts.resolve;
 
   job.ts = true;
 
@@ -65,7 +67,7 @@ export class Job {
   public processed: Set<string>;
   public warnings: Set<Error>;
   public reasons: NodeFileTraceReasons = Object.create(null);
-  
+
   constructor ({
     base = process.cwd(),
     processCwd,
@@ -199,6 +201,10 @@ export class Job {
     }
   }
 
+  resolve (id: string, parent: string, job: Job, cjsResolve: boolean): string | string[] {
+    return resolveDependency(id, parent, job, cjsResolve);
+  }
+
   readFile (path: string): string | Buffer | null {
     const cached = this.fileCache.get(path);
     if (cached !== undefined) return cached;
@@ -313,7 +319,7 @@ export class Job {
       }),
       ...[...deps].map(async dep => {
         try {
-          var resolved = resolveDependency(dep, path, this, !isESM);
+          var resolved = this.resolve(dep, path, this, !isESM);
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
@@ -334,7 +340,7 @@ export class Job {
       }),
       ...[...imports].map(async dep => {
         try {
-          var resolved = resolveDependency(dep, path, this, false);
+          var resolved = this.resolve(dep, path, this, false);
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
