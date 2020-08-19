@@ -1,0 +1,10 @@
+{
+  "name": "yarn-pnp-test",
+  "dependencies": {
+    "@vercel/nft": "link:../../../",
+    "@yarnpkg/pnpify": "^2.1.0"
+  },
+  "workspaces": [
+    "workspaces/*"
+  ]
+}

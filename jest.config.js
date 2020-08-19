@@ -5,8 +5,8 @@ module.exports = {
     global: {
       branches: 80.5,
       functions: 95.28,
-      lines: 85.87,
-      statements: -249
+      lines: 85.7,
+      statements: -252
     }
   },
   testEnvironment: "node",

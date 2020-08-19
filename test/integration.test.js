@@ -1,4 +1,5 @@
 const { promises, readdirSync, mkdirSync } = require('fs');
+const cp = require('child_process');
 const path = require('path');
 const { nodeFileTrace } = require('../out/node-file-trace');
 const os = require('os');
@@ -7,6 +8,7 @@ const rimraf = require('rimraf');
 const mkdirp = promisify(require('mkdirp'));
 const { readFile, writeFile, readlink, symlink } = promises;
 const { fork } = require('child_process');
+const exec = promisify(cp.exec);
 
 jest.setTimeout(200000);
 
@@ -54,3 +56,30 @@ for (const integrationTest of readdirSync(integrationDir)) {
     rimraf.sync(tmpdir);
   });
 }
+
+it('should correctly trace under a yarn pnp environment', async () => {
+  const cwd = path.join(__dirname, 'fixtures/yarn-pnp');
+  // it needs to run within that context because otherwise it won't use .pnp
+  const { stdout } = await exec('yarn pnpify node trace.js workspaces/a/index.js workspaces/b/index.js', { cwd });
+
+  expect(JSON.parse(stdout)).toEqual([
+    {
+      entrypoint: 'workspaces/a/index.js',
+      fileList: [
+        '.yarn/cache/apr-intercept-npm-3.0.2.zip/node_modules/apr-intercept/dist/apr-intercept.umd.js',
+        '.yarn/cache/apr-intercept-npm-3.0.2.zip/node_modules/apr-intercept/package.json',
+        'workspaces/a/index.js',
+        'workspaces/a/package.json',
+      ].map((pathname) => pathname.split(/\//).join(path.sep)),
+    },
+    {
+      entrypoint: 'workspaces/b/index.js',
+      fileList: [
+        '.yarn/cache/apr-intercept-npm-3.0.4.zip/node_modules/apr-intercept/dist/apr-intercept.umd.js',
+        '.yarn/cache/apr-intercept-npm-3.0.4.zip/node_modules/apr-intercept/package.json',
+        'workspaces/b/index.js',
+        'workspaces/b/package.json',
+      ].map((pathname) => pathname.split(/\//).join(path.sep)),
+    },
+  ]);
+});

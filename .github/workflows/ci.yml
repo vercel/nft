@@ -11,7 +11,7 @@ on:
 jobs:
   test:
     name: Test on node ${{ matrix.node }} and ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -39,7 +39,11 @@ jobs:
     - name: Run Tests
       env:
         BULL_REDIS_CONNECTION: ${{ secrets.BULL_REDIS_CONNECTION }}
-      run: yarn test-verbose
+      # we need to install deps on yarn-pnp _after_ we build nft because it has
+      # a virtual dependency on nft
+      run: |
+        cd test/fixtures/yarn-pnp && yarn || true; cd -
+        yarn test-verbose
     - name: Submit Code Coverage
       if: matrix.os == 'ubuntu-latest' && matrix.node == 10 # only run once
       env:

@@ -1,0 +1,9 @@
+{
+  "name": "@yarn-pnp-test/b",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@yarn-pnp-test/a": "workspace:workspaces/a",
+    "apr-intercept": "3.0.4"
+  }
+}

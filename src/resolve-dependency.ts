@@ -176,6 +176,12 @@ function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boo
     }
   }
 
+  if ('pnp' in process.versions) {
+    try {
+      return require.resolve(name, { paths: [parent] });
+    } catch (err) {}
+  }
+
   let separatorIndex: number;
   const rootSeparatorIndex = packageParent.indexOf(sep);
   while ((separatorIndex = packageParent.lastIndexOf(sep)) > rootSeparatorIndex) {

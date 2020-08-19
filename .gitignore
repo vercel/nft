@@ -4,3 +4,7 @@ out
 coverage
 test/**/dist
 test/**/actual.js
+test/**/.yarn/cache
+test/**/.yarn/install-state.gz
+test/**/.yarn/build-state.yml
+test/**/.pnp.js
