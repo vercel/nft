@@ -38,8 +38,8 @@ for (const { testName, isRoot } of unitTests) {
       base: isRoot ? '/' : `${__dirname}/../`,
       processCwd: unitPath,
       paths: {
-        dep: 'test/unit/esm-paths/esm-dep.js',
-        'dep/': 'test/unit/esm-paths-trailer/'
+        dep: `${__dirname}/../test/unit/esm-paths/esm-dep.js`,
+        'dep/': `${__dirname}/../test/unit/esm-paths-trailer/`
       },
       exportsOnly: testName.startsWith('exports-only'),
       ts: true,
