@@ -5,15 +5,19 @@ const { nodeFileTrace } = require('../out/node-file-trace');
 global._unit = true;
 
 const skipOnWindows = ['yarn-workspaces', 'yarn-workspaces-base-root', 'yarn-workspace-esm', 'asset-symlink', 'require-symlink'];
-const setBaseToRoot = ['yarn-workspaces-base-root'];
+const unitTestDirs = fs.readdirSync(join(__dirname, 'unit'));
+const unitTests = [
+  ...unitTestDirs.map(testName => ({testName, isRoot: false})),
+  ...unitTestDirs.map(testName => ({testName, isRoot: true})),
+];
 
-for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
-  if (process.platform === 'win32' && skipOnWindows.includes(unitTest)) {
-    console.log('skipping symlink test on Windows: ' + unitTest);
+for (const { testName, isRoot } of unitTests) {
+  if (process.platform === 'win32' && skipOnWindows.includes(testName)) {
+    console.log('skipping symlink test on Windows: ' + testName);
     continue;
-  }
-  it(`should correctly trace ${unitTest}`, async () => {
-    const unitPath = join(__dirname, 'unit', unitTest);
+  };
+  it(`should correctly trace ${testName} from ${isRoot ? 'root' : 'cwd'}`, async () => {
+    const unitPath = join(__dirname, 'unit', testName);
 
     // We mock readFile because when node-file-trace is integrated into @now/node
     // this is the hook that triggers TypeScript compilation. So if this doesn't
@@ -25,11 +29,9 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
 
     let inputFileName = "input.js";
 
-    if (unitTest === "tsx-input") {
+    if (testName === "tsx-input") {
       inputFileName = "input.tsx";
     }
-
-    const isRoot = setBaseToRoot.includes(unitTest);
 
     const { fileList, reasons } = await nodeFileTrace([join(unitPath, inputFileName)], {
       base: isRoot ? '/' : `${__dirname}/../`,
@@ -38,11 +40,11 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
         dep: 'test/unit/esm-paths/esm-dep.js',
         'dep/': 'test/unit/esm-paths-trailer/'
       },
-      exportsOnly: unitTest.startsWith('exports-only'),
+      exportsOnly: testName.startsWith('exports-only'),
       ts: true,
       log: true,
       // disable analysis for basic-analysis unit tests
-      analysis: !unitTest.startsWith('basic-analysis'),
+      analysis: !testName.startsWith('basic-analysis'),
       mixedModules: true,
       ignore: '**/actual.js',
       readFile: readFileMock
@@ -73,7 +75,7 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
       throw e;
     }
 
-    if (unitTest === "tsx-input") {
+    if (testName === "tsx-input") {
       expect(readFileMock.mock.calls.length).toBe(2);
     }
   });
