@@ -5,12 +5,14 @@ import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
+import { join } from 'path';
 
 const { gracefulify } = require('graceful-fs');
 gracefulify(fs);
 
 function inPath (path: string, parent: string) {
-  return path.startsWith(parent) && path[parent.length] === sep;
+  const pathWithSep = join(parent, sep);
+  return path.startsWith(pathWithSep) && path !== pathWithSep;
 }
 
 export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions = {}): Promise<NodeFileTraceResult> {
