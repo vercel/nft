@@ -12,11 +12,12 @@ const unitTests = [
 ];
 
 for (const { testName, isRoot } of unitTests) {
-  if (process.platform === 'win32' && skipOnWindows.includes(testName)) {
-    console.log('skipping symlink test on Windows: ' + testName);
+  const testSuffix = `${testName} from ${isRoot ? 'root' : 'cwd'}`;
+  if (process.platform === 'win32' && (isRoot || skipOnWindows.includes(testName))) {
+    console.log(`Skipping unit test on Windows: ${testSuffix}`);
     continue;
   };
-  it(`should correctly trace ${testName} from ${isRoot ? 'root' : 'cwd'}`, async () => {
+  it(`should correctly trace ${testSuffix}`, async () => {
     const unitPath = join(__dirname, 'unit', testName);
 
     // We mock readFile because when node-file-trace is integrated into @now/node
