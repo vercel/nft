@@ -232,7 +232,7 @@ export class Job {
     // keep backtracking for realpath, emitting folder symlinks within base
     if (!inPath(path, this.base))
       return path;
-    return this.realpath(dirname(path), parent, seen) + sep + basename(path);
+    return join(this.realpath(dirname(path), parent, seen), basename(path));
   }
 
   emitFile (path: string, reason: string, parent?: string, isRealpath = false) {
