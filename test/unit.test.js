@@ -4,8 +4,11 @@ const { nodeFileTrace } = require('../out/node-file-trace');
 
 global._unit = true;
 
+const skipOnWindows = ['yarn-workspaces', 'yarn-workspaces-base-root', 'yarn-workspace-esm', 'asset-symlink', 'require-symlink'];
+const setBaseToRoot = ['yarn-workspaces-base-root'];
+
 for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
-  if (process.platform === 'win32' && ['yarn-workspaces', 'yarn-workspace-esm', 'asset-symlink', 'require-symlink'].includes(unitTest)) {
+  if (process.platform === 'win32' && skipOnWindows.includes(unitTest)) {
     console.log('skipping symlink test on Windows: ' + unitTest);
     continue;
   }
@@ -26,8 +29,10 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
       inputFileName = "input.tsx";
     }
 
+    const isRoot = setBaseToRoot.includes(unitTest);
+
     const { fileList, reasons } = await nodeFileTrace([join(unitPath, inputFileName)], {
-      base: `${__dirname}/../`,
+      base: isRoot ? '/' : `${__dirname}/../`,
       processCwd: unitPath,
       paths: {
         dep: 'test/unit/esm-paths/esm-dep.js',
@@ -48,6 +53,11 @@ for (const unitTest of fs.readdirSync(join(__dirname, 'unit'))) {
       if (process.platform === 'win32') {
         // When using Windows, the expected output should use backslash
         expected = expected.map(str => str.replace(/\//g, '\\'));
+      }
+      if (isRoot) {
+        // We set `base: "/"` but we can't hardcode an absolute path because
+        // CI will look different than a local machine so we fix the path here.
+        expected = expected.map(str => join(__dirname, '..', str).slice(1));
       }
     }
     catch (e) {
