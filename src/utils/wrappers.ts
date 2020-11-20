@@ -355,19 +355,12 @@ export function handleWrappers(ast: Node) {
           externalMap.set(k, m.body.body[0].expression.right.arguments[0].value);
         }
       }
+      if (externalMap.size)
       for (const [, m] of modules) {
         if (m.params.length === 3 && m.params[2].type === 'Identifier') {
           const assignedVars = new Map();
           walk(m.body, {
             enter (node, maybeParent) {
-              if (node.type === 'FunctionExpression' ||
-                  node.type === 'FunctionDeclaration' ||
-                  node.type === 'ArrowFunctionExpression' ||
-                  node.type === 'BlockStatement' ||
-                  node.type === 'TryStatement') {
-                if (maybeParent)
-                  return this.skip();
-              }
               if (node.type === 'CallExpression' &&
                   node.callee.type === 'Identifier' &&
                   node.callee.name === m.params[2].name &&
