@@ -1,6 +1,6 @@
 {
   "name": "@vercel/nft",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "repository": "vercel/nft",
   "license": "MIT",
   "main": "./out/index.js",
