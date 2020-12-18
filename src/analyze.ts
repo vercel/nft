@@ -815,6 +815,15 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       if (resolvedThen) emitAssetPath(resolvedThen);
       if (resolvedElse) emitAssetPath(resolvedElse);
     }
+    else if (staticChildNode && staticChildNode.type === 'ArrayExpression' && 'value' in staticChildValue && staticChildValue.value instanceof Array) {
+      for (const value of staticChildValue.value) {
+        try { 
+          const resolved = path.resolve(value);
+          emitAssetPath(resolved);
+        }
+        catch (e) {}
+      }
+    }
     staticChildNode = staticChildValue = undefined;
   }
 };
