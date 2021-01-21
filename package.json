@@ -109,7 +109,7 @@
     "semver": "^7.1.1",
     "sequelize": "^5.9.3",
     "sharp": "^0.22.1",
-    "socket.io": "^2.2.0",
+    "socket.io": "^2.4.0",
     "socket.io-client": "^2.2.0",
     "stripe": "^7.4.0",
     "swig": "^1.4.2",
