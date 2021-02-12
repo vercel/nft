@@ -83,7 +83,7 @@ const { fileList } = await nodeFileTrace(files, {
 });
 ```
 
-Any package with `"exports"` will then only have its exports traced, and the main will not be included at all. This can reduce the output size when targeting [Node.js 12.17.0)(https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V12.md#12.17.0) or newer.
+Any package with `"exports"` will then only have its exports traced, and the main will not be included at all. This can reduce the output size when targeting [Node.js 12.17.0](https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V12.md#12.17.0) or newer.
 
 #### Paths
 
