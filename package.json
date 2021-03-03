@@ -100,7 +100,7 @@
     "pg": "^7.11.0",
     "phantomjs-prebuilt": "^2.1.16",
     "polyfill-library": "3.93.0",
-    "pug": "^2.0.4",
+    "pug": "^3.0.1",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "redis": "^2.8.0",
