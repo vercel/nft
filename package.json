@@ -19,7 +19,7 @@
     "out"
   ],
   "dependencies": {
-    "acorn": "^7.1.1",
+    "acorn": "^7.4.1",
     "acorn-class-fields": "^0.3.2",
     "acorn-export-ns-from": "^0.1.0",
     "acorn-import-meta": "^1.1.0",
