@@ -1,5 +1,9 @@
 import { walk, Node } from 'estree-walker';
 
+function isUndefinedOrVoid (node: Node) {
+  return node.type === 'Identifier' && node.name === 'undefined' || node.type === 'UnaryExpression' && node.operator === 'void' && node.argument.type === 'Literal' && node.argument.value === 0;
+}
+
 // Wrapper detection pretransforms to enable static analysis
 export function handleWrappers(ast: Node) {
   // UglifyJS will convert function wrappers into !function(){}
@@ -121,19 +125,22 @@ export function handleWrappers(ast: Node) {
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.type === 'CallExpression' &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.arguments.length &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.arguments.every((arg: any) => arg && arg.type === 'Literal' && typeof arg.value === 'number') &&
-        wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.type === 'CallExpression' &&
-        wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.callee.type === 'FunctionExpression' &&
-        wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.arguments.length === 0 &&
+        (
+          wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.type === 'FunctionExpression' ||
+          wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.type === 'CallExpression' &&
+          wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.callee.type === 'FunctionExpression' &&
+          wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.arguments.length === 0
+        ) &&
         // (dont go deeper into browserify loader internals than this)
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.arguments.length === 3 &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.arguments[0].type === 'ObjectExpression' &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.arguments[1].type === 'ObjectExpression' &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.arguments[2].type === 'ArrayExpression') {
       const modules = wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.arguments[0].properties;
-      
+
       // verify modules is the expected data structure
       // in the process, extract external requires
-      const externals: Record<string, string> = {};
+      const externals: Record<string, Node> = {};
       if (modules.every((m: any) => {
         if (m.type !== 'Property' ||
             m.computed !== false ||
@@ -142,27 +149,40 @@ export function handleWrappers(ast: Node) {
             m.value.type !== 'ArrayExpression' ||
             m.value.elements.length !== 2 ||
             m.value.elements[0].type !== 'FunctionExpression' ||
-            m.value.elements[1].type !== 'ObjectExpression')
+            m.value.elements[1].type !== 'ObjectExpression') {
           return false;
-        
+        }
         // detect externals from undefined moduleMap values
         const moduleMap = m.value.elements[1].properties;
         for (const prop of moduleMap) {
           if (prop.type !== 'Property' ||
-              (prop.value.type !== 'Identifier' && prop.value.type !== 'Literal') ||
-              prop.key.type !== 'Literal' ||
-              typeof prop.key.value !== 'string' ||
-              prop.computed)
+              (prop.value.type !== 'Identifier' && prop.value.type !== 'Literal' && !isUndefinedOrVoid(prop.value)) ||
+              !(
+                prop.key.type === 'Literal' && typeof prop.key.value === 'string' ||
+                prop.key.type === 'Identifier'
+              ) ||
+              prop.computed) {
             return false;
-          if (prop.value.type === 'Identifier' && prop.value.name === 'undefined')
-            externals[prop.key.value] = prop.key;
+          }
+          if (isUndefinedOrVoid(prop.value)) {
+            if (prop.key.type === 'Identifier')
+              externals[prop.key.name] = {
+                type: 'Literal',
+                start: prop.key.start,
+                end: prop.key.end,
+                value: prop.key.name,
+                raw: JSON.stringify(prop.key.name)
+              };
+            else if (prop.key.type === 'Literal')
+              externals[prop.key.value] = prop.key;
+          }
         }
         return true;
       })) {
         // if we have externals, inline them into the browserify cache for webpack to pick up
         const externalIds = Object.keys(externals);
         if (externalIds.length) {
-          const cache = wrapper.arguments[0].body.body[1].argument.callee.arguments[1];
+          const cache = (wrapper.arguments[0].body.body[1] || wrapper.arguments[0].body.body[0]).argument.callee.arguments[1];
           cache.properties = externalIds.map(ext => {
             return {
               type: 'Property',
