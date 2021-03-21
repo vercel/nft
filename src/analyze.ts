@@ -21,6 +21,7 @@ const acorn = Parser.extend(
   require("acorn-class-fields"),
   require("acorn-static-class-features"),
 );
+
 import os from 'os';
 import { handleWrappers } from './utils/wrappers';
 import resolveFrom from 'resolve-from';
