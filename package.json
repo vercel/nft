@@ -19,12 +19,9 @@
     "out"
   ],
   "dependencies": {
-    "acorn": "^7.4.1",
-    "acorn-class-fields": "^0.3.2",
-    "acorn-export-ns-from": "^0.1.0",
-    "acorn-import-meta": "^1.1.0",
-    "acorn-numeric-separator": "^0.3.0",
-    "acorn-static-class-features": "^0.2.1",
+    "acorn": "^8.1.0",
+    "acorn-class-fields": "^1.0.0",
+    "acorn-static-class-features": "^1.0.0",
     "bindings": "^1.4.0",
     "estree-walker": "^0.6.1",
     "glob": "^7.1.3",
