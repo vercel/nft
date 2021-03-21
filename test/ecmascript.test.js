@@ -17,7 +17,6 @@ const ignoreCategories = new Set([
   'additional meta properties',
   'syntactic tail calls',
   'object shorthand improvements',
-  'optional chaining operator (?.)',
   'throw expressions',
   'partial application syntax',
   'Object.freeze and Object.seal syntax',
