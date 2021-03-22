@@ -32,6 +32,7 @@ export interface NodeFileTraceOptions {
   base?: string;
   processCwd?: string;
   exports?: string[];
+  conditions?: string[];
   exportsOnly?: boolean;
   ignore?: string | string[] | ((path: string) => boolean);
   analysis?: boolean | {
