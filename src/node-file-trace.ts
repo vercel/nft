@@ -51,7 +51,7 @@ export class Job {
   public ts: boolean;
   public base: string;
   public cwd: string;
-  public exports: string[];
+  public conditions: string[];
   public exportsOnly: boolean;
   public paths: Record<string, string>;
   public ignoreFn: (path: string, parent?: string) => boolean;
@@ -71,7 +71,8 @@ export class Job {
   constructor ({
     base = process.cwd(),
     processCwd,
-    exports = ['node'],
+    exports,
+    conditions = exports || ['node'],
     exportsOnly = false,
     paths = {},
     ignore,
@@ -106,7 +107,7 @@ export class Job {
     }
     this.base = base;
     this.cwd = resolve(processCwd || base);
-    this.exports = exports;
+    this.conditions = conditions;
     this.exportsOnly = exportsOnly;
     const resolvedPaths: Record<string, string> = {};
     for (const path of Object.keys(paths)) {

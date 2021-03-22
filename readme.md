@@ -57,15 +57,15 @@ const { fileList } = await nodeFileTrace(files, {
 
 By default `processCwd` is the same as `base`.
 
-#### Exports
+#### Exports & Imports
 
-By default tracing of the [Node.js "exports" field](https://nodejs.org/dist/latest-v14.x/docs/api/esm.html#esm_package_entry_points) is supported, with the `"node"`, `"require"`, `"import"` and `"default"` conditions traced as defined.
+By default tracing of the [Node.js "exports" and "imports" fields](https://nodejs.org/dist/latest-v14.x/docs/api/esm.html#esm_package_entry_points) is supported, with the `"node"`, `"require"`, `"import"` and `"default"` conditions traced as defined.
 
-Alternatively the explicit list of exports can be provided:
+Alternatively the explicit list of conditions can be provided:
 
 ```js
 const { fileList } = await nodeFileTrace(files, {
-  exports: ['node', 'production']
+  conditions: ['node', 'production']
 });
 ```
 
