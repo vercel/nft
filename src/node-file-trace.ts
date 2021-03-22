@@ -71,8 +71,8 @@ export class Job {
   constructor ({
     base = process.cwd(),
     processCwd,
-    exports = ['node'],
-    conditions = exports,
+    exports,
+    conditions = exports || ['node'],
     exportsOnly = false,
     paths = {},
     ignore,
