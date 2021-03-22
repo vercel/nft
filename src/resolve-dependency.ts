@@ -145,7 +145,7 @@ function resolveExportsImports (pkgPath: string, obj: PackageTarget, subpath: st
     if (typeof target === 'string' && target.startsWith('./'))
       return pkgPath + target.slice(1);
   }
-  for (const match of Object.keys(matchObj).sort((a, b) => a.length > b.length ? -1 : 1)) {
+  for (const match of Object.keys(matchObj).sort((a, b) => b.length - a.length)) {
     if (match.endsWith('*') && subpath.startsWith(match.slice(0, -1))) {
       const target = getExportsTarget(matchObj[match], job.conditions, cjsResolve);
       if (typeof target === 'string' && target.startsWith('./'))
