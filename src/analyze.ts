@@ -25,7 +25,7 @@ const acorn = Parser.extend(
 import os from 'os';
 import { handleWrappers } from './utils/wrappers';
 import resolveFrom from 'resolve-from';
-import { EvaluatedValue } from './types';
+import { ConditionalValue, EvaluatedValue, StaticValue } from './types';
 
 const staticProcess = {
   cwd: () => {
@@ -242,18 +242,21 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     }
   }
 
-  const knownBindings = Object.assign(Object.create(null), {
+  const knownBindings: Record<string, {
+    shadowDepth: number,
+    value: StaticValue | ConditionalValue
+  }> = Object.assign(Object.create(null), {
     __dirname: {
       shadowDepth: 0,
-      value: path.resolve(id, '..')
+      value: { value: path.resolve(id, '..') }
     },
     __filename: {
       shadowDepth: 0,
-      value: id
+      value: { value: id }
     },
     process: {
       shadowDepth: 0,
-      value: staticProcess
+      value: { value: staticProcess }
     }
   });
 
@@ -261,20 +264,22 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     knownBindings.require = {
       shadowDepth: 0,
       value: {
-        [FUNCTION] (specifier: string) {
-          deps.add(specifier);
-          const m = staticModules[specifier];
-          return m.default;
-        },
-        resolve (specifier: string) {
-          return resolve(specifier, id, job);
+        value: {
+          [FUNCTION] (specifier: string) {
+            deps.add(specifier);
+            const m = staticModules[specifier];
+            return m.default;
+          },
+          resolve (specifier: string) {
+            return resolve(specifier, id, job);
+          }
         }
       }
     };
-    knownBindings.require.value.resolve[TRIGGER] = true;
+    (knownBindings.require.value as StaticValue).value.resolve[TRIGGER] = true;
   }
 
-  function setKnownBinding (name: string, value: any) {
+  function setKnownBinding (name: string, value: StaticValue | ConditionalValue) {
     // require is somewhat special in that we shadow it but don't
     // statically analyze it ("known unknown" of sorts)
     if (name === 'require') return;
@@ -283,13 +288,14 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       value: value
     };
   }
-  function getKnownBinding (name: string) {
+  function getKnownBinding (name: string): EvaluatedValue {
     const binding = knownBindings[name];
     if (binding) {
       if (binding.shadowDepth === 0) {
         return binding.value;
       }
     }
+    return undefined;
   }
   function hasKnownBindingValue (name: string) {
     const binding = knownBindings[name];
@@ -305,11 +311,11 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         if (staticModule) {
           for (const impt of decl.specifiers) {
             if (impt.type === 'ImportNamespaceSpecifier')
-              setKnownBinding(impt.local.name, staticModule);
+              setKnownBinding(impt.local.name, { value: staticModule });
             else if (impt.type === 'ImportDefaultSpecifier' && 'default' in staticModule)
-              setKnownBinding(impt.local.name, staticModule.default);
+              setKnownBinding(impt.local.name, { value: staticModule.default });
             else if (impt.type === 'ImportSpecifier' && impt.imported.name in staticModule)
-              setKnownBinding(impt.local.name, staticModule[impt.imported.name]);
+              setKnownBinding(impt.local.name, { value: staticModule[impt.imported.name] });
           }
         }
       }
@@ -325,7 +331,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       vars[name] = getKnownBinding(name);
     });
     Object.keys(globalBindings).forEach(name => {
-      vars[name] = globalBindings[name];
+      vars[name] = { value: globalBindings[name] };
     });
     // evaluate returns undefined for non-statically-analyzable
     const result = evaluate(expr, vars, computeBranches);
@@ -445,7 +451,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           // detect asset leaf expression triggers (if not already)
           // __dirname,  __filename
           // Could add import.meta.url, even path-like environment variables
-          if (typeof (binding = getKnownBinding(node.name)) === 'string' && binding.match(absoluteRegEx) ||
+          if (typeof (binding = (getKnownBinding(node.name) as StaticValue | undefined)?.value) === 'string' && binding.match(absoluteRegEx) ||
               binding && (typeof binding === 'function' || typeof binding === 'object') && binding[TRIGGER]) {
             staticChildValue = { value: typeof binding === 'string' ? binding : undefined };
             staticChildNode = node;
@@ -611,14 +617,14 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       else if (node.type === 'VariableDeclaration' && parent && !isVarLoop(parent) && job.analysis.evaluatePureExpressions) {
         for (const decl of node.declarations) {
           if (!decl.init) continue;
-          const computed = computePureStaticValue(decl.init, false);
-          if (computed && 'value' in computed) {
+          const computed = computePureStaticValue(decl.init, true);
+          if (computed) {
             // var known = ...;
             if (decl.id.type === 'Identifier') {
-              setKnownBinding(decl.id.name, computed.value);
+              setKnownBinding(decl.id.name, computed);
             }
             // var { known } = ...;
-            else if (decl.id.type === 'ObjectPattern') {
+            else if (decl.id.type === 'ObjectPattern' && 'value' in computed) {
               for (const prop of decl.id.properties) {
                 if (prop.type !== 'Property' ||
                     prop.key.type !== 'Identifier' ||
@@ -627,10 +633,10 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                     computed.value === null ||
                     !(prop.key.name in computed.value))
                   continue;
-                setKnownBinding(prop.value.name, computed.value[prop.key.name]);
+                setKnownBinding(prop.value.name, { value: computed.value[prop.key.name] });
               }
             }
-            if (isAbsolutePathStr(computed.value)) {
+            if (!('value' in computed) && isAbsolutePathStr(computed.then) && isAbsolutePathStr(computed.else)) {
               staticChildValue = computed;
               staticChildNode = decl.init;
               emitStaticChildAsset();
@@ -644,7 +650,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           if (computed && 'value' in computed) {
             // var known = ...
             if (node.left.type === 'Identifier') {
-              setKnownBinding(node.left.name, computed.value);
+              setKnownBinding(node.left.name, computed);
             }
             // var { known } = ...
             else if (node.left.type === 'ObjectPattern') {
@@ -656,7 +662,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                     computed.value === null ||
                     !(prop.key.name in computed.value))
                   continue;
-                setKnownBinding(prop.value.name, computed.value[prop.key.name]);
+                setKnownBinding(prop.value.name, { value: computed.value[prop.key.name] });
               }
             }
             if (isAbsolutePathStr(computed.value)) {
@@ -712,7 +718,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             }
           }
           if (returned)
-            setKnownBinding(fnName.name, BOUND_REQUIRE);
+            setKnownBinding(fnName.name, { value: BOUND_REQUIRE });
         }
       }
     },
