@@ -253,12 +253,8 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     return walk(node.expression);
   },
   'Identifier': function Identifier(this: State, node: Node, _walk: Walk) {
-    if (Object.hasOwnProperty.call(this.vars, node.name)) {
-      const val = this.vars[node.name];
-      if (val === UNKNOWN)
-        return undefined;
-      return { value: val };
-    }
+    if (Object.hasOwnProperty.call(this.vars, node.name))
+      return this.vars[node.name];
     return undefined;
   },
   'Literal': function Literal (this: State, node: Node, _walk: Walk) {
@@ -390,7 +386,7 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
   },
   'ThisExpression': function ThisExpression(this: State, _node: Node, _walk: Walk) {
     if (Object.hasOwnProperty.call(this.vars, 'this'))
-      return { value: this.vars['this'] };
+      return this.vars['this'];
     return undefined;
   },
   'UnaryExpression': function UnaryExpression(this: State, node: Node, walk: Walk) {
