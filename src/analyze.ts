@@ -15,6 +15,7 @@ import resolve from './resolve-dependency.js';
 //@ts-ignore
 import nodeGypBuild from 'node-gyp-build';
 import { Job } from './node-file-trace';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 // Note: these should be deprecated over time as they ship in Acorn core
 const acorn = Parser.extend(
@@ -124,7 +125,8 @@ const globalBindings: any = {
   // Support for require calls generated from `import` statements by tsc
   __importDefault: normalizeDefaultRequire,
   __importStar: normalizeWildcardRequire,
-  MONGOOSE_DRIVER_PATH: undefined
+  MONGOOSE_DRIVER_PATH: undefined,
+  URL: URL,
 };
 globalBindings.global = globalBindings.GLOBAL = globalBindings.globalThis = globalBindings;
 
@@ -157,8 +159,22 @@ const excludeAssetFiles = new Set(['CHANGELOG.md', 'README.md', 'readme.md', 'ch
 let cwd: string;
 
 const absoluteRegEx = /^\/[^\/]+|^[a-z]:[\\/][^\\/]+/i;
-function isAbsolutePathStr(str: any): str is string {
-  return typeof str === 'string' && absoluteRegEx.test(str);
+function isAbsolutePathOrUrl(str: any): boolean {
+  if (str instanceof URL)
+    return str.protocol === 'file:';
+  if (typeof str === 'string') {
+    if (str.startsWith('file:')) {
+      try {
+        new URL(str);
+        return true;
+      }
+      catch {
+        return false;
+      }
+    }
+    return absoluteRegEx.test(str);
+  }
+  return false;
 }
 
 const BOUND_REQUIRE = Symbol();
@@ -241,6 +257,8 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       return { assets, deps, imports, isESM: false };
     }
   }
+
+  const importMetaUrl = pathToFileURL(id).href;
 
   const knownBindings: Record<string, {
     shadowDepth: number,
@@ -333,6 +351,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     Object.keys(globalBindings).forEach(name => {
       vars[name] = { value: globalBindings[name] };
     });
+    vars['import.meta'] = { url: importMetaUrl };
     // evaluate returns undefined for non-statically-analyzable
     const result = evaluate(expr, vars, computeBranches);
     return result;
@@ -450,7 +469,6 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           let binding;
           // detect asset leaf expression triggers (if not already)
           // __dirname,  __filename
-          // Could add import.meta.url, even path-like environment variables
           if (typeof (binding = (getKnownBinding(node.name) as StaticValue | undefined)?.value) === 'string' && binding.match(absoluteRegEx) ||
               binding && (typeof binding === 'function' || typeof binding === 'object') && binding[TRIGGER]) {
             staticChildValue = { value: typeof binding === 'string' ? binding : undefined };
@@ -458,6 +476,12 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             backtrack(parent!, this);
           }
         }
+      }
+      else if (job.analysis.computeFileReferences && node.type === 'MemberExpression' && node.object.type === 'MetaProperty' && node.object.meta.name === 'import' && node.object.property.name === 'meta' && (node.property.computed ? node.property.value : node.property.name) === 'url') {
+        // import.meta.url leaf trigger
+        staticChildValue = { value: importMetaUrl };
+        staticChildNode = node;
+        backtrack(parent!, this);
       }
       else if (node.type === 'ImportExpression') {
         processRequireArg(node.source, true);
@@ -636,7 +660,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 setKnownBinding(prop.value.name, { value: computed.value[prop.key.name] });
               }
             }
-            if (!('value' in computed) && isAbsolutePathStr(computed.then) && isAbsolutePathStr(computed.else)) {
+            if (!('value' in computed) && isAbsolutePathOrUrl(computed.then) && isAbsolutePathOrUrl(computed.else)) {
               staticChildValue = computed;
               staticChildNode = decl.init;
               emitStaticChildAsset();
@@ -665,7 +689,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 setKnownBinding(prop.value.name, { value: computed.value[prop.key.name] });
               }
             }
-            if (isAbsolutePathStr(computed.value)) {
+            if (isAbsolutePathOrUrl(computed.value)) {
               staticChildValue = computed;
               staticChildNode = node.right;
               emitStaticChildAsset();
@@ -797,24 +821,28 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     return true;
   }
 
+  function resolveAbsolutePathOrUrl (value: string | URL): string {
+    return value instanceof URL ? fileURLToPath(value as any) : value.startsWith('file:') ? fileURLToPath(new URL(value) as any) : path.resolve(value);
+  }
+
   function emitStaticChildAsset () {
     if (!staticChildValue) {
       return;
     }
 
-    if ('value' in staticChildValue && isAbsolutePathStr(staticChildValue.value)) {
+    if ('value' in staticChildValue && isAbsolutePathOrUrl(staticChildValue.value)) {
       try { 
-        const resolved = path.resolve(staticChildValue.value);
+        const resolved = resolveAbsolutePathOrUrl(staticChildValue.value);
         emitAssetPath(resolved);
       }
       catch (e) {}
     }
-    else if ('then' in staticChildValue && 'else' in staticChildValue && isAbsolutePathStr(staticChildValue.then) && isAbsolutePathStr(staticChildValue.else)) {
+    else if ('then' in staticChildValue && 'else' in staticChildValue && isAbsolutePathOrUrl(staticChildValue.then) && isAbsolutePathOrUrl(staticChildValue.else)) {
       let resolvedThen;
-      try { resolvedThen = path.resolve(staticChildValue.then); }
+      try { resolvedThen = resolveAbsolutePathOrUrl(staticChildValue.then); }
       catch (e) {}
       let resolvedElse;
-      try { resolvedElse = path.resolve(staticChildValue.else); }
+      try { resolvedElse = resolveAbsolutePathOrUrl(staticChildValue.else); }
       catch (e) {}
       if (resolvedThen) emitAssetPath(resolvedThen);
       if (resolvedElse) emitAssetPath(resolvedElse);
@@ -822,7 +850,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     else if (staticChildNode && staticChildNode.type === 'ArrayExpression' && 'value' in staticChildValue && staticChildValue.value instanceof Array) {
       for (const value of staticChildValue.value) {
         try { 
-          const resolved = path.resolve(value);
+          const resolved = resolveAbsolutePathOrUrl(value);
           emitAssetPath(resolved);
         }
         catch (e) {}
