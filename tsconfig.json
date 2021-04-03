@@ -14,7 +14,7 @@
     "noUnusedParameters": true,
     "noImplicitThis": true,
     "outDir": "out",
-    "target": "esnext",
+    "target": "es2017",
     "types": ["node"],
     "skipLibCheck": true,
     "strict": true
