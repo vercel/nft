@@ -15,7 +15,7 @@ import resolve from './resolve-dependency.js';
 //@ts-ignore
 import nodeGypBuild from 'node-gyp-build';
 import { Job } from './node-file-trace';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath, pathToFileURL, URL } from 'url';
 
 // Note: these should be deprecated over time as they ship in Acorn core
 const acorn = Parser.extend(
@@ -464,8 +464,11 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       // currently backtracking
       if (staticChildNode) return;
 
+      if (!parent)
+        return;
+
       if (node.type === 'Identifier') {
-        if (isIdentifierRead(node, parent!) && job.analysis.computeFileReferences) {
+        if (isIdentifierRead(node, parent) && job.analysis.computeFileReferences) {
           let binding;
           // detect asset leaf expression triggers (if not already)
           // __dirname,  __filename
@@ -473,7 +476,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
               binding && (typeof binding === 'function' || typeof binding === 'object') && binding[TRIGGER]) {
             staticChildValue = { value: typeof binding === 'string' ? binding : undefined };
             staticChildNode = node;
-            backtrack(parent!, this);
+            backtrack(parent, this);
           }
         }
       }
@@ -481,7 +484,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         // import.meta.url leaf trigger
         staticChildValue = { value: importMetaUrl };
         staticChildNode = node;
-        backtrack(parent!, this);
+        backtrack(parent, this);
       }
       else if (node.type === 'ImportExpression') {
         processRequireArg(node.source, true);
@@ -612,7 +615,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 // if it computes, then we start backtracking
                 if (staticChildValue) {
                   staticChildNode = node.arguments[0];
-                  backtrack(parent!, this);
+                  backtrack(parent, this);
                   return this.skip();
                 }
               }
@@ -822,7 +825,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   }
 
   function resolveAbsolutePathOrUrl (value: string | URL): string {
-    return value instanceof URL ? fileURLToPath(value as any) : value.startsWith('file:') ? fileURLToPath(new URL(value) as any) : path.resolve(value);
+    return value instanceof URL ? fileURLToPath(value) : value.startsWith('file:') ? fileURLToPath(new URL(value)) : path.resolve(value);
   }
 
   function emitStaticChildAsset () {
