@@ -1,5 +1,6 @@
 import { Node } from 'estree-walker';
 import { EvaluatedValue, StaticValue, ConditionalValue } from '../types';
+import { URL } from 'url';
 type Walk = (node: Node) => EvaluatedValue;
 type State = { computeBranches: boolean, vars: Record<string, any> };
 
@@ -313,6 +314,68 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     }
     else {
       return { value: undefined };
+    }
+    return undefined;
+  },
+  'MetaProperty': function MetaProperty(this: State, node: Node) {
+    if (node.meta.name === 'import' && node.property.name === 'meta')
+      return { value: this.vars['import.meta'] };
+    return undefined;
+  },
+  'NewExpression': function NewExpression(this: State, node: Node, walk: Walk) {
+    // new URL('./local', parent)
+    const cls = walk(node.callee);
+    if (cls && 'value' in cls && cls.value === URL && node.arguments.length) {
+      const arg = walk(node.arguments[0]);
+      if (!arg)
+        return undefined;
+      let parent = null;
+      if (node.arguments[1]) {
+        parent = walk(node.arguments[1]);
+        if (!parent || !('value' in parent))
+          return undefined;
+      }
+      if ('value' in arg) {
+        if (parent) {
+          try {
+            return { value: new URL(arg.value, parent.value) };
+          }
+          catch {
+            return undefined;
+          }
+        }
+        try {
+          return { value: new URL(arg.value) };
+        }
+        catch {
+          return undefined;
+        }
+      }
+      else {
+        const test = arg.test;
+        if (parent) {
+          try {
+            return {
+              test,
+              then: new URL(arg.then, parent.value),
+              else: new URL(arg.else, parent.value)
+            };
+          }
+          catch {
+            return undefined;
+          }
+        }
+        try {
+          return {
+            test,
+            then: new URL(arg.then),
+            else: new URL(arg.else)
+          };
+        }
+        catch {
+          return undefined;
+        }
+      }
     }
     return undefined;
   },
