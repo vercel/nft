@@ -20,12 +20,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.4.0
+      uses: styfle/cancel-workflow-action@0.8.0
       with:
         access_token: ${{ github.token }}
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node }}
     - name: Print Node Version
@@ -41,7 +41,7 @@ jobs:
         BULL_REDIS_CONNECTION: ${{ secrets.BULL_REDIS_CONNECTION }}
       run: yarn test-verbose
     - name: Submit Code Coverage
-      if: matrix.os == 'ubuntu-latest' && matrix.node == 10 # only run once
+      if: matrix.os == 'ubuntu-latest' && matrix.node == 14 # only run once
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: yarn codecov
