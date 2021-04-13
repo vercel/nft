@@ -92,7 +92,6 @@
     "passport-google-oauth": "^2.0.0",
     "passport-trakt": "^1.0.4",
     "path-platform": "^0.11.15",
-    "playwright-core": "^1.10.0",
     "pdf2json": "^1.1.8",
     "pdfkit": "^0.10.0",
     "pg": "^7.11.0",
