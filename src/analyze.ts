@@ -127,6 +127,9 @@ const globalBindings: any = {
   __importStar: normalizeWildcardRequire,
   MONGOOSE_DRIVER_PATH: undefined,
   URL: URL,
+  Object: {
+    assign: Object.assign
+  }
 };
 globalBindings.global = globalBindings.GLOBAL = globalBindings.globalThis = globalBindings;
 
@@ -345,11 +348,11 @@ export default async function analyze(id: string, code: string, job: Job): Promi
 
   function computePureStaticValue (expr: Node, computeBranches = true) {
     const vars = Object.create(null);
-    Object.keys(knownBindings).forEach(name => {
-      vars[name] = getKnownBinding(name);
-    });
     Object.keys(globalBindings).forEach(name => {
       vars[name] = { value: globalBindings[name] };
+    });
+    Object.keys(knownBindings).forEach(name => {
+      vars[name] = getKnownBinding(name);
     });
     vars['import.meta'] = { url: importMetaUrl };
     // evaluate returns undefined for non-statically-analyzable

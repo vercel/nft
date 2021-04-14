@@ -316,7 +316,7 @@ export function handleWrappers(ast: Node) {
     //     },
     //     function(e, t, r) {
     //       const n = require("fs");
-    //       const ns = { a: require("fs") };
+    //       const ns = Object.assign(a => require("fs"), { a: require("fs") });
     //     }
     //   ]);
     //
@@ -432,29 +432,52 @@ export function handleWrappers(ast: Node) {
                   node.arguments[0].type === 'Identifier' &&
                   assignedVars.get(node.arguments[0].name)) {
                 if (maybeParent && maybeParent.init === node) {
+                  const req =  {
+                    type: 'CallExpression',
+                    callee: {
+                      type: 'Identifier',
+                      name: 'require'
+                    },
+                    arguments: [{
+                      type: 'Literal',
+                      value: assignedVars.get(node.arguments[0].name)
+                    }]
+                  };
                   maybeParent.init = {
-                    type: 'ObjectExpression',
-                    properties: [{
-                      type: 'ObjectProperty',
-                      method: false,
-                      computed: false,
-                      shorthand: false,
-                      key: {
+                    type: 'CallExpression',
+                    callee: {
+                      type: 'MemberExpression',
+                      object: {
                         type: 'Identifier',
-                        name: 'a'
+                        name: 'Object'
                       },
-                      value: {
-                        type: 'CallExpression',
-                        callee: {
-                          type: 'Identifier',
-                          name: 'require'
-                        },
-                        arguments: [{
-                          type: 'Literal',
-                          value: assignedVars.get(node.arguments[0].name)
+                      property: {
+                        type: 'Identifier',
+                        name: 'assign'
+                      }
+                    },
+                    arguments: [
+                      {
+                        type: 'ArrowFunctionExpression',
+                        expression: true,
+                        params: [],
+                        body: req
+                      },
+                      {
+                        type: 'ObjectExpression',
+                        properties: [{
+                          type: 'ObjectProperty',
+                          method: false,
+                          computed: false,
+                          shorthand: false,
+                          key: {
+                            type: 'Identifier',
+                            name: 'a'
+                          },
+                          value: req
                         }]
                       }
-                    }]
+                    ]
                   };
                 }
               }
@@ -465,4 +488,3 @@ export function handleWrappers(ast: Node) {
     }
   }
 }
-
