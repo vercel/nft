@@ -57,7 +57,11 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
       const innerValue = walk(node.body);
       if (!innerValue || !('value' in innerValue))
         return;
-      return { value: () => innerValue.value };
+      return { 
+        value: {
+          [FUNCTION]: innerValue.value
+        }
+      };
     }
     return undefined;
   },
@@ -274,7 +278,6 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
   },
   'MemberExpression': function MemberExpression(this: State, node: Node, walk: Walk) {
     const obj = walk(node.object);
-    // do not allow access to methods on Function
     if (!obj || 'test' in obj || typeof obj.value === 'function') {
       return undefined;
     }
