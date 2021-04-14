@@ -59,7 +59,7 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
         return;
       return { 
         value: {
-          [FUNCTION]: innerValue.value
+          [FUNCTION]: () => innerValue.value
         }
       };
     }
