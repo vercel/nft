@@ -20,7 +20,7 @@ export function handleWrappers(ast: Node) {
       ast.body[0].type === 'ExpressionStatement' &&
       ast.body[0].expression.type === 'CallExpression' &&
       ast.body[0].expression.callee.type === 'FunctionExpression' &&
-      ast.body[0].expression.arguments.length === 1)
+      (ast.body[0].expression.arguments.length === 1 || ast.body[0].expression.arguments.length === 0))
     wrapper = ast.body[0].expression;
   else if (ast.body.length === 1 &&
       ast.body[0].type === 'ExpressionStatement' &&
@@ -34,7 +34,7 @@ export function handleWrappers(ast: Node) {
       ast.body[0].expression.right.callee.type === 'FunctionExpression' &&
       ast.body[0].expression.right.arguments.length === 1)
     wrapper = ast.body[0].expression.right;
-
+  
   if (wrapper) {
     // When.js-style AMD wrapper:
     //   (function (define) { 'use strict' define(function (require) { ... }) })
@@ -42,7 +42,7 @@ export function handleWrappers(ast: Node) {
     // ->
     //   (function (define) { 'use strict' define(function () { ... }) })
     //   (typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(require); })
-    if (wrapper.arguments[0].type === 'ConditionalExpression' && 
+    if (wrapper.arguments[0] && wrapper.arguments[0].type === 'ConditionalExpression' && 
         wrapper.arguments[0].test.type === 'LogicalExpression' &&
         wrapper.arguments[0].test.operator === '&&' &&
         wrapper.arguments[0].test.left.type === 'BinaryExpression' &&
@@ -112,7 +112,7 @@ export function handleWrappers(ast: Node) {
     //     "external": { exports: require('external') }
     //   },[24])(24)
     //   });
-    else if (wrapper.arguments[0].type === 'FunctionExpression' &&
+    else if (wrapper.arguments[0] && wrapper.arguments[0].type === 'FunctionExpression' &&
         wrapper.arguments[0].params.length === 0 &&
         (wrapper.arguments[0].body.body.length === 1 ||
             wrapper.arguments[0].body.body.length === 2 &&
@@ -236,7 +236,7 @@ export function handleWrappers(ast: Node) {
     //   })(function () {
     //     // ...
     //   }
-    else if (wrapper.arguments[0].type === 'FunctionExpression' &&
+    else if (wrapper.arguments[0] && wrapper.arguments[0].type === 'FunctionExpression' &&
         wrapper.arguments[0].params.length === 2 &&
         wrapper.arguments[0].params[0].type === 'Identifier' &&
         wrapper.arguments[0].params[1].type === 'Identifier' &&
@@ -316,12 +316,23 @@ export function handleWrappers(ast: Node) {
     //     },
     //     function(e, t, r) {
     //       const n = require("fs");
-    //       const ns = { a: require("fs") };
+    //       const ns = Object.assign(a => n, { a: n });
     //     }
     //   ]);
     //
     // OR !(function (){})() | (function () {})() variants
     // OR { 0: function..., 'some-id': function () ... } registry variants
+    // OR Webpack 5 non-runtime variant:
+    //   
+    //   (function() {
+    //     var exports = {};
+    //     exports.id = 223;
+    //     exports.ids = [223];
+    //     exports.modules = { ... };
+    //     var __webpack_require__ = require("../../webpack-runtime.js");
+    //     ...
+    //   })()
+    //
     else if (wrapper.callee.type === 'FunctionExpression' &&
         wrapper.callee.params.length === 1 &&
         wrapper.callee.body.body.length > 2 &&
@@ -350,13 +361,44 @@ export function handleWrappers(ast: Node) {
           wrapper.arguments[0].properties &&
           wrapper.arguments[0].properties.length > 0 &&
           wrapper.arguments[0].properties.every((prop: any) => prop && prop.key && prop.key.type === 'Literal' && prop.value && prop.value.type === 'FunctionExpression')
-        )) {
+        ) ||
+        wrapper.arguments.length === 0 &&
+        wrapper.callee.type === 'FunctionExpression' &&
+        wrapper.callee.params.length === 0 &&
+        wrapper.callee.body.type === 'BlockStatement' &&
+        wrapper.callee.body.body.length > 5 &&
+        wrapper.callee.body.body[0].type === 'VariableDeclaration' &&
+        wrapper.callee.body.body[0].declarations.length === 1 &&
+        wrapper.callee.body.body[0].declarations[0].id.type === 'Identifier' &&
+        wrapper.callee.body.body[1].type === 'ExpressionStatement' &&
+        wrapper.callee.body.body[1].expression.type === 'AssignmentExpression' &&
+        wrapper.callee.body.body[2].type === 'ExpressionStatement' &&
+        wrapper.callee.body.body[2].expression.type === 'AssignmentExpression' &&
+        wrapper.callee.body.body[3].type === 'ExpressionStatement' &&
+        wrapper.callee.body.body[3].expression.type === 'AssignmentExpression' &&
+        wrapper.callee.body.body[3].expression.left.type === 'MemberExpression' &&
+        wrapper.callee.body.body[3].expression.left.object.type === 'Identifier' &&
+        wrapper.callee.body.body[3].expression.left.object.name === wrapper.callee.body.body[0].declarations[0].id.name &&
+        wrapper.callee.body.body[3].expression.left.property.type === 'Identifier' &&
+        wrapper.callee.body.body[3].expression.left.property.name === 'modules' &&
+        wrapper.callee.body.body[3].expression.right.type === 'ObjectExpression' &&
+        (wrapper.callee.body.body[4].type === 'VariableDeclaration' &&
+          wrapper.callee.body.body[4].declarations.length === 1 &&
+          wrapper.callee.body.body[4].declarations[0].init.type === 'CallExpression' &&
+          wrapper.callee.body.body[4].declarations[0].init.callee.type === 'Identifier' &&
+          wrapper.callee.body.body[4].declarations[0].init.callee.name === 'require' ||
+          wrapper.callee.body.body[5].type === 'VariableDeclaration' &&
+          wrapper.callee.body.body[5].declarations.length === 1 &&
+          wrapper.callee.body.body[5].declarations[0].init.type === 'CallExpression' &&
+          wrapper.callee.body.body[5].declarations[0].init.callee.type === 'Identifier' &&
+          wrapper.callee.body.body[5].declarations[0].init.callee.name === 'require')) {
       const externalMap = new Map<number, any>();
+      const moduleObj = wrapper.callee.params.length ? wrapper.arguments[0] : wrapper.callee.body.body[3].expression.right;
       let modules: [number, any][];
-      if (wrapper.arguments[0].type === 'ArrayExpression')
-        modules = wrapper.arguments[0].elements.map((el: any, i: number) => [i, el]);
+      if (moduleObj.type === 'ArrayExpression')
+        modules = moduleObj.elements.map((el: any, i: number) => [i, el]);
       else
-        modules = wrapper.arguments[0].properties.map((prop: any) => [prop.key.value, prop.value]);
+        modules = moduleObj.properties.map((prop: any) => [prop.key.value, prop.value]);
       for (const [k, m] of modules) {
         if (m.body.body.length === 1 &&
             m.body.body[0].type === 'ExpressionStatement' &&
@@ -375,7 +417,6 @@ export function handleWrappers(ast: Node) {
           externalMap.set(k, m.body.body[0].expression.right.arguments[0].value);
         }
       }
-      if (externalMap.size)
       for (const [, m] of modules) {
         if (m.params.length === 3 && m.params[2].type === 'Identifier') {
           const assignedVars = new Map();
@@ -429,32 +470,44 @@ export function handleWrappers(ast: Node) {
                   node.callee.property.type === 'Identifier' &&
                   node.callee.property.name === 'n' &&
                   node.arguments.length === 1 &&
-                  node.arguments[0].type === 'Identifier' &&
-                  assignedVars.get(node.arguments[0].name)) {
+                  node.arguments[0].type === 'Identifier') {
                 if (maybeParent && maybeParent.init === node) {
+                  const req = node.arguments[0];
                   maybeParent.init = {
-                    type: 'ObjectExpression',
-                    properties: [{
-                      type: 'ObjectProperty',
-                      method: false,
-                      computed: false,
-                      shorthand: false,
-                      key: {
+                    type: 'CallExpression',
+                    callee: {
+                      type: 'MemberExpression',
+                      object: {
                         type: 'Identifier',
-                        name: 'a'
+                        name: 'Object'
                       },
-                      value: {
-                        type: 'CallExpression',
-                        callee: {
-                          type: 'Identifier',
-                          name: 'require'
-                        },
-                        arguments: [{
-                          type: 'Literal',
-                          value: assignedVars.get(node.arguments[0].name)
+                      property: {
+                        type: 'Identifier',
+                        name: 'assign'
+                      }
+                    },
+                    arguments: [
+                      {
+                        type: 'ArrowFunctionExpression',
+                        expression: true,
+                        params: [],
+                        body: req
+                      },
+                      {
+                        type: 'ObjectExpression',
+                        properties: [{
+                          type: 'ObjectProperty',
+                          method: false,
+                          computed: false,
+                          shorthand: false,
+                          key: {
+                            type: 'Identifier',
+                            name: 'a'
+                          },
+                          value: req
                         }]
                       }
-                    }]
+                    ]
                   };
                 }
               }
@@ -465,4 +518,3 @@ export function handleWrappers(ast: Node) {
     }
   }
 }
-

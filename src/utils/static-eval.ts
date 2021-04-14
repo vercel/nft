@@ -51,6 +51,20 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     }
     return { value: arr };
   },
+  'ArrowFunctionExpression': function (this: State, node: Node, walk: Walk) {
+    // () => val support only
+    if (node.params.length === 0 && !node.generator && !node.async && node.expression) {
+      const innerValue = walk(node.body);
+      if (!innerValue || !('value' in innerValue))
+        return;
+      return { 
+        value: {
+          [FUNCTION]: () => innerValue.value
+        }
+      };
+    }
+    return undefined;
+  },
   'BinaryExpression': function BinaryExpression(this: State, node: Node, walk: Walk) {
     const op = node.operator;
 
@@ -160,7 +174,8 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
   },
   'CallExpression': function CallExpression(this: State, node: Node, walk: Walk) {
     const callee = walk(node.callee);
-    if (!callee || 'test' in callee) return;
+    if (!callee || 'test' in callee)
+      return;
     let fn: any = callee.value;
     if (typeof fn === 'object' && fn !== null) fn = fn[FUNCTION];
     if (typeof fn !== 'function') return;
@@ -263,7 +278,6 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
   },
   'MemberExpression': function MemberExpression(this: State, node: Node, walk: Walk) {
     const obj = walk(node.object);
-    // do not allow access to methods on Function
     if (!obj || 'test' in obj || typeof obj.value === 'function') {
       return undefined;
     }
