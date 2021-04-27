@@ -251,7 +251,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   //@ts-ignore
   if (!ast) {
     try {
-      ast = acorn.parse(code, { ecmaVersion: 2020, sourceType: 'module' });
+      ast = acorn.parse(code, { ecmaVersion: 2020, sourceType: 'module', allowAwaitOutsideFunction: true });
       isESM = true;
     }
     catch (e) {
@@ -837,7 +837,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     }
 
     if ('value' in staticChildValue && isAbsolutePathOrUrl(staticChildValue.value)) {
-      try { 
+      try {
         const resolved = resolveAbsolutePathOrUrl(staticChildValue.value);
         emitAssetPath(resolved);
       }
@@ -855,7 +855,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     }
     else if (staticChildNode && staticChildNode.type === 'ArrayExpression' && 'value' in staticChildValue && staticChildValue.value instanceof Array) {
       for (const value of staticChildValue.value) {
-        try { 
+        try {
           const resolved = resolveAbsolutePathOrUrl(value);
           emitAssetPath(resolved);
         }
