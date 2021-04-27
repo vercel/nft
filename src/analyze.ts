@@ -239,7 +239,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   let isESM = false;
 
   try {
-    ast = acorn.parse(code, { ecmaVersion: 2020, allowReturnOutsideFunction: true, allowAwaitOutsideFunction: true });
+    ast = acorn.parse(code, { ecmaVersion: 2020, allowReturnOutsideFunction: true });
     isESM = false;
   }
   catch (e) {
