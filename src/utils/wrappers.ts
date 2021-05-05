@@ -279,6 +279,7 @@ export function handleWrappers(ast: Node) {
             callSite = statement.consequent.body[0].expression.right;
           if (callSite &&
               callSite.callee.type === 'Identifier' &&
+              wrapper.callee.params.length > 0 &&
               callSite.callee.name === wrapper.callee.params[0].name &&
               callSite.arguments.length === 2 &&
               callSite.arguments[0].type === 'Identifier' &&
@@ -406,6 +407,7 @@ export function handleWrappers(ast: Node) {
             m.body.body[0].expression.operator === '=' &&
             m.body.body[0].expression.left.type === 'MemberExpression' &&
             m.body.body[0].expression.left.object.type === 'Identifier' &&
+            m.params.length > 0 &&
             m.body.body[0].expression.left.object.name === m.params[0].name &&
             m.body.body[0].expression.left.property.type === 'Identifier' &&
             m.body.body[0].expression.left.property.name === 'exports' &&
