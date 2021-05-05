@@ -68,7 +68,6 @@
     "firebase-admin": "^9.7.0",
     "fluent-ffmpeg": "^2.1.2",
     "graphql": "^14.4.2",
-    "grpc": "^1.24.9",
     "highlights": "^3.1.4",
     "hot-shots": "^6.3.0",
     "ioredis": "^4.11.1",
