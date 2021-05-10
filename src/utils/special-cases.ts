@@ -23,6 +23,11 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAssetDirectory(resolve(dirname(id)));
     }
   },
+  'camaro' ({ id, emitAsset }) {
+    if (id.endsWith('camaro/dist/camaro.js')) {
+      emitAsset(resolve(dirname(id), 'camaro.wasm'));
+    }
+  },
   'google-gax' ({ id, ast, emitAssetDirectory }) {
     if (id.endsWith('google-gax/build/src/grpc.js')) {
       // const googleProtoFilesDir = path.normalize(google_proto_files_1.getProtoPath('..'));
