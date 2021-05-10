@@ -15,11 +15,17 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
     if (id.endsWith('argon2/argon2.js')) {
       emitAssetDirectory(resolve(dirname(id), 'build', 'Release'));
       emitAssetDirectory(resolve(dirname(id), 'prebuilds'));
+      emitAssetDirectory(resolve(dirname(id), 'lib', 'binding'));
     }
   },
   'bull' ({ id, emitAssetDirectory }) {
     if (id.endsWith('bull/lib/commands/index.js')) {
       emitAssetDirectory(resolve(dirname(id)));
+    }
+  },
+  'camaro' ({ id, emitAsset }) {
+    if (id.endsWith('camaro/dist/camaro.js')) {
+      emitAsset(resolve(dirname(id), 'camaro.wasm'));
     }
   },
   'google-gax' ({ id, ast, emitAssetDirectory }) {
