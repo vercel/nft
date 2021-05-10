@@ -190,7 +190,7 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     let predicate;
     let args = [];
     let argsElse;
-    let allWildcards = node.arguments.length > 0;
+    let allWildcards = node.arguments.length > 0 && node.callee.property?.name !== 'concat';
     const wildcards: string[] = [];
     for (let i = 0, l = node.arguments.length; i < l; i++) {
       let x = walk(node.arguments[i]);
@@ -282,6 +282,13 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
       return undefined;
     }
     if (node.property.type === 'Identifier') {
+      if (typeof obj.value === 'string' && node.property.name === 'concat') {
+        return {
+          value: {
+            [FUNCTION]: (...args: string[]) => obj.value.concat(args)
+          }
+        };
+      }
       if (typeof obj.value === 'object' && obj.value !== null) {
         const objValue = obj.value as any;
         if (node.computed) {
