@@ -1,6 +1,6 @@
 # Node File Trace
 
-[![CI Status](https://badgen.net/github/checks/vercel/nft?label=CI)](https://github.com/vercel/nft/actions?workflow=CI)
+[![CI Status](https://github.com/vercel/nft/actions/workflows/ci.yml/badge.svg)](https://github.com/vercel/nft/actions/workflows/ci.yml)
 [![Code Coverage](https://badgen.net/codecov/c/github/vercel/nft)](https://codecov.io/gh/vercel/nft)
 
 This package is used in [@vercel/node](https://npmjs.com/package/@vercel/node) and [@vercel/next](https://npmjs.com/package/@vercel/next) to determine exactly which files (including `node_modules`) are necessary for the application runtime.
