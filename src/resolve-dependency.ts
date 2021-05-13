@@ -199,7 +199,7 @@ function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boo
     if (pjsonBoundary) {
       const pkgCfg = getPkgCfg(pjsonBoundary, job);
       const { exports: pkgExports } = pkgCfg || {};
-      if (pkgCfg && pkgCfg.name && pkgExports !== null && pkgExports !== undefined) {
+      if (pkgCfg && pkgCfg.name && pkgCfg.name === pkgName && pkgExports !== null && pkgExports !== undefined) {
         selfResolved = resolveExportsImports(pjsonBoundary, pkgExports, '.' + name.slice(pkgName.length), job, false, cjsResolve);
         if (selfResolved) {
           if (cjsResolve)
@@ -251,6 +251,7 @@ function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boo
       }
     }
   }
+  console.log('[fallthrough]');
   if (selfResolved) return selfResolved;
   if (Object.hasOwnProperty.call(job.paths, name)) {
     return job.paths[name];
