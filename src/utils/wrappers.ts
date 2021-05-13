@@ -34,7 +34,6 @@ export function handleWrappers(ast: Node) {
       ast.body[0].expression.right.callee.type === 'FunctionExpression' &&
       ast.body[0].expression.right.arguments.length === 1)
     wrapper = ast.body[0].expression.right;
-  
   if (wrapper) {
     // When.js-style AMD wrapper:
     //   (function (define) { 'use strict' define(function (require) { ... }) })
@@ -335,7 +334,6 @@ export function handleWrappers(ast: Node) {
     //   })()
     //
     else if (wrapper.callee.type === 'FunctionExpression' &&
-        wrapper.callee.params.length === 1 &&
         wrapper.callee.body.body.length > 2 &&
         wrapper.callee.body.body[0].type === 'VariableDeclaration' &&
         wrapper.callee.body.body[0].declarations.length === 1 &&
@@ -401,22 +399,28 @@ export function handleWrappers(ast: Node) {
       else
         modules = moduleObj.properties.map((prop: any) => [prop.key.value, prop.value]);
       for (const [k, m] of modules) {
-        if (m.body.body.length === 1 &&
+        const statement = m.body.body.length === 1 ? m.body.body[0] :
+            (m.body.body.length === 2 || m.body.body.length === 3 && m.body.body[2].type === 'EmptyStatement') &&
             m.body.body[0].type === 'ExpressionStatement' &&
-            m.body.body[0].expression.type === 'AssignmentExpression' &&
-            m.body.body[0].expression.operator === '=' &&
-            m.body.body[0].expression.left.type === 'MemberExpression' &&
-            m.body.body[0].expression.left.object.type === 'Identifier' &&
+            m.body.body[0].expression.type === 'Literal' &&
+            m.body.body[0].expression.value === 'use strict'
+            ? m.body.body[1] : null;
+        if (statement &&
+            statement.type === 'ExpressionStatement' &&
+            statement.expression.type === 'AssignmentExpression' &&
+            statement.expression.operator === '=' &&
+            statement.expression.left.type === 'MemberExpression' &&
+            statement.expression.left.object.type === 'Identifier' &&
             m.params.length > 0 &&
-            m.body.body[0].expression.left.object.name === m.params[0].name &&
-            m.body.body[0].expression.left.property.type === 'Identifier' &&
-            m.body.body[0].expression.left.property.name === 'exports' &&
-            m.body.body[0].expression.right.type === 'CallExpression' &&
-            m.body.body[0].expression.right.callee.type === 'Identifier' &&
-            m.body.body[0].expression.right.callee.name === 'require' &&
-            m.body.body[0].expression.right.arguments.length === 1 &&
-            m.body.body[0].expression.right.arguments[0].type === 'Literal') {
-          externalMap.set(k, m.body.body[0].expression.right.arguments[0].value);
+            statement.expression.left.object.name === m.params[0].name &&
+            statement.expression.left.property.type === 'Identifier' &&
+            statement.expression.left.property.name === 'exports' &&
+            statement.expression.right.type === 'CallExpression' &&
+            statement.expression.right.callee.type === 'Identifier' &&
+            statement.expression.right.callee.name === 'require' &&
+            statement.expression.right.arguments.length === 1 &&
+            statement.expression.right.arguments[0].type === 'Literal') {
+          externalMap.set(k, statement.expression.right.arguments[0].value);
         }
       }
       for (const [, m] of modules) {
