@@ -251,7 +251,6 @@ function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boo
       }
     }
   }
-  console.log('[fallthrough]');
   if (selfResolved) return selfResolved;
   if (Object.hasOwnProperty.call(job.paths, name)) {
     return job.paths[name];
