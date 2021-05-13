@@ -400,10 +400,11 @@ export function handleWrappers(ast: Node) {
         modules = moduleObj.properties.map((prop: any) => [prop.key.value, prop.value]);
       for (const [k, m] of modules) {
         const statement = m.body.body.length === 1 ? m.body.body[0] :
-            m.body.body.length === 2 &&
+            (m.body.body.length === 2 || m.body.body.length === 3 && m.body.body[2].type === 'EmptyStatement') &&
             m.body.body[0].type === 'ExpressionStatement' &&
             m.body.body[0].expression.type === 'Literal' &&
-            m.body.body[0].expression.value === 'use strict' ? m.body.body[1] : null;
+            m.body.body[0].expression.value === 'use strict'
+            ? m.body.body[1] : null;
         if (statement &&
             statement.type === 'ExpressionStatement' &&
             statement.expression.type === 'AssignmentExpression' &&
