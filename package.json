@@ -98,6 +98,7 @@
     "phantomjs-prebuilt": "^2.1.16",
     "polyfill-library": "3.93.0",
     "pug": "^3.0.1",
+    "quirrel": "^1.4.4-53d27e33277",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "redis": "^3.1.1",

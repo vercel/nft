@@ -1,0 +1,1 @@
+const { Queue } = require("quirrel/vercel")
