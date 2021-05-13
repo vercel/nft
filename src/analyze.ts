@@ -14,6 +14,8 @@ import handleSpecialCases from './utils/special-cases';
 import resolve from './resolve-dependency.js';
 //@ts-ignore
 import nodeGypBuild from 'node-gyp-build';
+//@ts-ignore
+import mapboxPregyp from '@mapbox/node-pre-gyp';
 import { Job } from './node-file-trace';
 import { fileURLToPath, pathToFileURL, URL } from 'url';
 
@@ -92,6 +94,10 @@ const staticModules = Object.assign(Object.create(null), {
   os: {
     default: os,
     ...os
+  },
+  '@mapbox/node-pre-gyp': {
+    default: mapboxPregyp,
+    ...mapboxPregyp
   },
   'node-pre-gyp': pregyp,
   'node-pre-gyp/lib/pre-binding': pregyp,
