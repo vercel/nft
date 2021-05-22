@@ -345,21 +345,24 @@ export function handleWrappers(ast: Node) {
           wrapper.callee.body.body[0].declarations[0].init.type === 'CallExpression' &&
           wrapper.callee.body.body[0].declarations[0].init.arguments.length === 1
         ) &&
-        (wrapper.callee.body.body[1].type === 'FunctionDeclaration' &&
+        (wrapper.callee.body.body[1] && 
+          wrapper.callee.body.body[1].type === 'FunctionDeclaration' &&
           wrapper.callee.body.body[1].params.length === 1 &&
           wrapper.callee.body.body[1].body.body.length >= 3 ||
+          wrapper.callee.body.body[2] &&
           wrapper.callee.body.body[2].type === 'FunctionDeclaration' &&
           wrapper.callee.body.body[2].params.length === 1 &&
           wrapper.callee.body.body[2].body.body.length >= 3
         ) && (
-          wrapper.arguments[0] &&
-          wrapper.arguments[0].type === 'ArrayExpression' &&
-          wrapper.arguments[0].elements.length > 0 &&
-          wrapper.arguments[0].elements.every((el: any) => el && el.type === 'FunctionExpression') ||
-          wrapper.arguments[0].type === 'ObjectExpression' &&
-          wrapper.arguments[0].properties &&
-          wrapper.arguments[0].properties.length > 0 &&
-          wrapper.arguments[0].properties.every((prop: any) => prop && prop.key && prop.key.type === 'Literal' && prop.value && prop.value.type === 'FunctionExpression')
+          wrapper.arguments[0] && (
+            wrapper.arguments[0].type === 'ArrayExpression' &&
+            wrapper.arguments[0].elements.length > 0 &&
+            wrapper.arguments[0].elements.every((el: any) => el && el.type === 'FunctionExpression') ||
+            wrapper.arguments[0].type === 'ObjectExpression' &&
+            wrapper.arguments[0].properties &&
+            wrapper.arguments[0].properties.length > 0 &&
+            wrapper.arguments[0].properties.every((prop: any) => prop && prop.key && prop.key.type === 'Literal' && prop.value && prop.value.type === 'FunctionExpression')
+          )
         ) ||
         wrapper.arguments.length === 0 &&
         wrapper.callee.type === 'FunctionExpression' &&
