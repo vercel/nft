@@ -188,7 +188,12 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAssetDirectory(resolve(id, '../../lib'));
       emitAsset(resolve(id, '../exports.js'));
     }
-  }
+  },
+  'playwright-core' ({ id, emitAsset }) {
+    if (id.endsWith('playwright-core/index.js')) {
+      emitAsset(resolve(dirname(id), 'browsers.json'));
+    }
+  },
 };
 
 interface SpecialCaseOpts {
