@@ -3,7 +3,8 @@ import resolveDependency from '../resolve-dependency';
 import { getPackageName } from './get-package-base';
 import { readFileSync } from 'fs';
 import { Job } from '../node-file-trace';
-import { Node } from 'estree-walker';
+import { Ast } from '../types';
+type Node = Ast['body'][0]
 
 const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
   '@generated/photon' ({ id, emitAssetDirectory }) {
@@ -46,7 +47,9 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
     if (id.endsWith('oracledb/lib/oracledb.js')) {
       for (const statement of ast.body) {
         if (statement.type === 'ForStatement' &&
+            'body' in statement.body &&
             statement.body.body &&
+            Array.isArray(statement.body.body) &&
             statement.body.body[0] &&
             statement.body.body[0].type === 'TryStatement' &&
             statement.body.body[0].block.body[0] &&
@@ -103,7 +106,7 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
           const arg = statement.expression.right.arguments[0].arguments[0].value;
           let resolved: string;
           try {
-            const dep = resolveDependency(arg, id, job);
+            const dep = resolveDependency(String(arg), id, job);
             if (typeof dep === 'string') {
               resolved = dep;
             } else {
@@ -117,7 +120,9 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
           const relResolved = '/' + relative(dirname(id), resolved);
           statement.expression.right.arguments[0] = {
             type: 'BinaryExpression',
+            // @ts-ignore Its okay if start is undefined
             start: statement.expression.right.arguments[0].start,
+            // @ts-ignore Its okay if end is undefined
             end: statement.expression.right.arguments[0].end,
             operator: '+',
             left: {
@@ -147,17 +152,21 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
             statement.expression.left.property.type === 'Identifier' &&
             statement.expression.left.property.name === 'serveClient' &&
             statement.expression.right.type === 'FunctionExpression') {
-          let ifStatement;
-          for (const node of statement.expression.right.body.body)
-            if (node.type === 'IfStatement') ifStatement = node;
-          const ifBody = ifStatement && ifStatement.consequent.body;
-          let replaced: boolean | undefined = false;
-          if (ifBody && ifBody[0] && ifBody[0].type === 'ExpressionStatement')
-            replaced = replaceResolvePathStatement(ifBody[0]);
-          const tryBody: Node[] = ifBody && ifBody[1] && ifBody[1].type === 'TryStatement' && ifBody[1].block.body;
-          if (tryBody && tryBody[0])
-            replaced = replaceResolvePathStatement(tryBody[0]) || replaced;
-          return;
+          
+          for (const node of statement.expression.right.body.body) {
+            if (node.type === 'IfStatement' && node.consequent && 'body' in node.consequent && node.consequent.body) {
+              const ifBody = node.consequent.body;
+              let replaced: boolean | undefined = false;
+              if (Array.isArray(ifBody) && ifBody[0] && ifBody[0].type === 'ExpressionStatement') {
+                replaced = replaceResolvePathStatement(ifBody[0]);
+              }
+              if (Array.isArray(ifBody) && ifBody[1] && ifBody[1].type === 'TryStatement' && ifBody[1].block.body && ifBody[1].block.body[0]) {
+                replaced = replaceResolvePathStatement(ifBody[1].block.body[0]) || replaced;
+              }
+              return;
+            }
+          }
+          
         }
       }
     }
@@ -198,7 +207,7 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
 
 interface SpecialCaseOpts {
   id: string;
-  ast: Node;
+  ast: Ast;
   emitAsset: (filename: string) => void;
   emitAssetDirectory: (dirname: string) => void;
   job: Job;

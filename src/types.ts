@@ -1,4 +1,5 @@
 import { Job } from './node-file-trace';
+import { Node as TreeNode } from 'estree';
 
 export interface Stats {
   isFile(): boolean;
@@ -78,3 +79,5 @@ export interface ConditionalValue {
 }
 
 export type EvaluatedValue = StaticValue | ConditionalValue | undefined;
+
+export type Ast = { body: TreeNode[] };
