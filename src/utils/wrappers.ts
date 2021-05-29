@@ -1,32 +1,9 @@
-import { walk } from 'estree-walker';
+import { walk, Node as ESNode } from 'estree-walker';
 import { Ast } from '../types';
-import { SimpleCallExpression, Node, Statement, Literal } from 'estree';
+import { SimpleCallExpression, Node, Literal, FunctionExpression, ReturnStatement, ObjectExpression, ArrayExpression, Property } from 'estree';
 
 function isUndefinedOrVoid (node: Node) {
   return node.type === 'Identifier' && node.name === 'undefined' || node.type === 'UnaryExpression' && node.operator === 'void' && node.argument.type === 'Literal' && node.argument.value === 0;
-}
-function getLastReturnCalleeArgumentProps(statements: Statement[]) {
-  const last = statements[statements.length - 1];
-
-  if (last.type === 'ReturnStatement' &&
-  last.argument &&
-  last.argument.type === 'CallExpression' &&
-  last.argument.callee.type === 'CallExpression' &&
-  last.argument.arguments.length &&
-  last.argument.arguments.every(arg => arg && arg.type === 'Literal' && typeof arg.value === 'number') &&
-  (
-    last.argument.callee.callee.type === 'FunctionExpression' ||
-    last.argument.callee.callee.type === 'CallExpression' &&
-    last.argument.callee.callee.callee.type === 'FunctionExpression' &&
-    last.argument.callee.callee.arguments.length === 0
-  ) &&
-  // (dont go deeper into browserify loader internals than this)
-  last.argument.callee.arguments.length === 3 &&
-  last.argument.callee.arguments[0].type === 'ObjectExpression' &&
-  last.argument.callee.arguments[1].type === 'ObjectExpression' &&
-  last.argument.callee.arguments[2].type === 'ArrayExpression') {
-    return last.argument.callee.arguments[0].properties;
-  }
 }
 
 // Wrapper detection pretransforms to enable static analysis
@@ -60,6 +37,9 @@ export function handleWrappers(ast: Ast) {
       ast.body[0].expression.right.arguments.length === 1)
     wrapper = ast.body[0].expression.right;
   if (wrapper) {
+    let browserifyReturn: ReturnStatement;
+    let webpackModuleObj: ObjectExpression | ArrayExpression | undefined;
+
     // When.js-style AMD wrapper:
     //   (function (define) { 'use strict' define(function (require) { ... }) })
     //   (typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(require); })
@@ -150,9 +130,26 @@ export function handleWrappers(ast: Ast) {
             wrapper.arguments[0].body.body.length === 2 &&
             wrapper.arguments[0].body.body[0].type === 'VariableDeclaration' &&
             wrapper.arguments[0].body.body[0].declarations.length === 3 &&
-            wrapper.arguments[0].body.body[0].declarations.every(decl => decl.init === null && decl.id.type === 'Identifier')
-        ) && getLastReturnCalleeArgumentProps(wrapper.arguments[0].body.body)) {
-      const modules = getLastReturnCalleeArgumentProps(wrapper.arguments[0].body.body) || [];
+            wrapper.arguments[0].body.body[0].declarations.every((decl: any) => decl.init === null && decl.id.type === 'Identifier')
+        ) &&
+        wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].type === 'ReturnStatement' &&
+        (browserifyReturn = wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1]! as ReturnStatement) &&
+        browserifyReturn.argument?.type === 'CallExpression' &&
+        browserifyReturn.argument.arguments.length &&
+        browserifyReturn.argument.arguments.every(arg => arg && arg.type === 'Literal' && typeof arg.value === 'number') &&
+        browserifyReturn.argument.callee.type === 'CallExpression' &&
+        (
+          browserifyReturn.argument.callee.callee.type === 'FunctionExpression' ||
+          browserifyReturn.argument.callee.callee.type === 'CallExpression' &&
+          browserifyReturn.argument.callee.callee.callee.type === 'FunctionExpression' &&
+          browserifyReturn.argument.callee.callee.arguments.length === 0
+        ) &&
+        // (dont go deeper into browserify loader internals than this)
+        browserifyReturn.argument.callee.arguments.length === 3 &&
+        browserifyReturn.argument.callee.arguments[0].type === 'ObjectExpression' &&
+        browserifyReturn.argument.callee.arguments[1].type === 'ObjectExpression' &&
+        browserifyReturn.argument.callee.arguments[2].type === 'ArrayExpression') {
+      const modules = browserifyReturn.argument.callee.arguments[0].properties;
 
       // verify modules is the expected data structure
       // in the process, extract external requires
@@ -202,41 +199,36 @@ export function handleWrappers(ast: Ast) {
       })) {
         // if we have externals, inline them into the browserify cache for webpack to pick up
         const externalIds = Object.keys(externals);
-        const argBody = (wrapper.arguments[0].body.body[1] || wrapper.arguments[0].body.body[0]);
-        if (externalIds.length &&
-            argBody &&
-            'argument' in argBody &&
-            argBody.argument &&
-            'callee' in argBody.argument &&
-            'arguments' in argBody.argument.callee) {
-          const cache = argBody.argument.callee.arguments[1];
-          cache.properties = externalIds.map(ext => {
-            return {
-              type: 'Property',
-              kind: 'init',
-              key: externals[ext],
-              value: {
-                type: 'ObjectExpression',
-                properties: [{
-                  type: 'Property',
-                  kind: 'init',
-                  key: {
+        const cache = browserifyReturn.argument.callee.arguments[1];
+        cache.properties = externalIds.map(ext => {
+          return {
+            type: 'Property',
+            method: false,
+            shorthand: false,
+            computed: false,
+            kind: 'init',
+            key: externals[ext],
+            value: {
+              type: 'ObjectExpression',
+              properties: [{
+                type: 'Property',
+                kind: 'init',
+                key: {
+                  type: 'Identifier',
+                  name: 'exports'
+                },
+                value: {
+                  type: 'CallExpression',
+                  callee: {
                     type: 'Identifier',
-                    name: 'exports'
+                    name: 'require'
                   },
-                  value: {
-                    type: 'CallExpression',
-                    callee: {
-                      type: 'Identifier',
-                      name: 'require'
-                    },
-                    arguments: [externals[ext]]
-                  }
-                }]
-              }
-            };
-          });
-        }
+                  arguments: [externals[ext]]
+                }
+              }]
+            } as ObjectExpression
+          };
+        });
       }
     }
     // UMD wrapper
@@ -394,12 +386,14 @@ export function handleWrappers(ast: Ast) {
         ) && (
           wrapper.arguments[0] && (
             wrapper.arguments[0].type === 'ArrayExpression' &&
+            (webpackModuleObj = wrapper.arguments[0]) &&
             wrapper.arguments[0].elements.length > 0 &&
             wrapper.arguments[0].elements.every(el => el && el.type === 'FunctionExpression') ||
             wrapper.arguments[0].type === 'ObjectExpression' &&
+            (webpackModuleObj = wrapper.arguments[0]) &&
             wrapper.arguments[0].properties &&
             wrapper.arguments[0].properties.length > 0 &&
-            wrapper.arguments[0].properties.every(prop => prop && prop.type === 'Property' && prop.key && prop.key.type === 'Literal' && prop.value && prop.value.type === 'FunctionExpression')
+            wrapper.arguments[0].properties.every(prop => prop && prop.type === 'Property' && !prop.computed && prop.key && prop.key.type === 'Literal' && (typeof prop.key.value === 'string' || typeof prop.key.value === 'number') && prop.value && prop.value.type === 'FunctionExpression')
           )
         ) ||
         wrapper.arguments.length === 0 &&
@@ -422,6 +416,8 @@ export function handleWrappers(ast: Ast) {
         wrapper.callee.body.body[3].expression.left.property.type === 'Identifier' &&
         wrapper.callee.body.body[3].expression.left.property.name === 'modules' &&
         wrapper.callee.body.body[3].expression.right.type === 'ObjectExpression' &&
+        wrapper.callee.body.body[3].expression.right.properties.every(prop => prop && prop.type === 'Property' && !prop.computed && prop.key && prop.key.type === 'Literal' && (typeof prop.key.value === 'string' || typeof prop.key.value === 'number') && prop.value && prop.value.type === 'FunctionExpression') &&
+        (webpackModuleObj = wrapper.callee.body.body[3].expression.right) &&
         (wrapper.callee.body.body[4].type === 'VariableDeclaration' &&
           wrapper.callee.body.body[4].declarations.length === 1 &&
           wrapper.callee.body.body[4].declarations[0].init &&
@@ -434,17 +430,13 @@ export function handleWrappers(ast: Ast) {
           wrapper.callee.body.body[5].declarations[0].init.type === 'CallExpression' &&
           wrapper.callee.body.body[5].declarations[0].init.callee.type === 'Identifier' &&
           wrapper.callee.body.body[5].declarations[0].init.callee.name === 'require')) {
-      const externalMap = new Map<number, any>();
-      const statement = wrapper.callee.body.body[3];
-      if (statement.type !== 'ExpressionStatement' || statement.expression.type !== 'AssignmentExpression' || statement.expression.right.type !== 'ObjectExpression') {
-        throw new Error('Expected ExpressionStatement');
-      }
-      const moduleObj = wrapper.callee.params.length ? wrapper.arguments[0] : statement.expression.right;
-      let modules: [number, typeof moduleObj][];
-      if (moduleObj.type === 'ArrayExpression')
-        modules = moduleObj.elements.map((el, i) => [i, el]);
+      const externalMap = new Map<string, any>();
+      let modules: [string, FunctionExpression][];
+      if (webpackModuleObj.type === 'ArrayExpression')
+        modules = (webpackModuleObj.elements.filter(el => el?.type === 'FunctionExpression') as FunctionExpression[]).map((el, i) => [String(i), el]);
+      // Structure already checked in conditional above
       else
-        modules = 'properties' in moduleObj ? moduleObj.properties.map(prop => [prop.key.value, prop.value]) : [];
+        modules = webpackModuleObj.properties.map(prop => [String(((prop as Property).key as Literal).value), (prop as Property).value as FunctionExpression] as [string, FunctionExpression]);
       for (const [k, m] of modules) {
         const statement = m.body.body.length === 1 ? m.body.body[0] :
             (m.body.body.length === 2 || m.body.body.length === 3 && m.body.body[2].type === 'EmptyStatement') &&
@@ -475,7 +467,7 @@ export function handleWrappers(ast: Ast) {
       for (const [, m] of modules) {
         if ('params' in m && m.params.length === 3 && m.params[2].type === 'Identifier') {
           const assignedVars = new Map();
-          walk(m.body, {
+          walk((m.body as unknown) as ESNode, {
             enter (node, maybeParent) {
               if (node.type === 'CallExpression' &&
                   node.callee.type === 'Identifier' &&
@@ -483,7 +475,7 @@ export function handleWrappers(ast: Ast) {
                   node.callee.name === m.params[2].name &&
                   node.arguments.length === 1 &&
                   node.arguments[0].type === 'Literal') {
-                const externalId = externalMap.get(node.arguments[0].value);
+                const externalId = externalMap.get(String(node.arguments[0].value));
                 if (externalId) {
                   const replacement = {
                     type: 'CallExpression',
