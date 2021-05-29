@@ -1,6 +1,6 @@
 import { walk, Node as ESNode } from 'estree-walker';
 import { Ast } from '../types';
-import { SimpleCallExpression, Node, Literal, FunctionExpression, ReturnStatement, ObjectExpression, ArrayExpression, Property } from 'estree';
+import { SimpleCallExpression, Node, Literal, FunctionExpression, ReturnStatement, ObjectExpression, ArrayExpression, Property, CallExpression } from 'estree';
 
 function isUndefinedOrVoid (node: Node) {
   return node.type === 'Identifier' && node.name === 'undefined' || node.type === 'UnaryExpression' && node.operator === 'void' && node.argument.type === 'Literal' && node.argument.value === 0;
@@ -483,8 +483,9 @@ export function handleWrappers(ast: Ast) {
                   node.arguments[0].type === 'Literal') {
                 const externalId = externalMap.get(String(node.arguments[0].value));
                 if (externalId) {
-                  const replacement = {
+                  const replacement: CallExpression = {
                     type: 'CallExpression',
+                    optional: false,
                     callee: {
                       type: 'Identifier',
                       name: 'require'
@@ -495,19 +496,19 @@ export function handleWrappers(ast: Ast) {
                     }]
                   };
                   const parent = maybeParent!;
-                  if (parent.right === node) {
+                  if ('right' in parent && parent.right === node) {
                     parent.right = replacement;
                   }
-                  else if (parent.left === node) {
+                  else if ('left' in parent && parent.left === node) {
                     parent.left = replacement;
                   }
-                  else if (parent.object === node) {
+                  else if ('object' in parent && parent.object === node) {
                     parent.object = replacement;
                   }
-                  else if (parent.callee === node) {
+                  else if ('callee' in parent && parent.callee === node) {
                     parent.callee = replacement;
                   }
-                  else if (parent.arguments && parent.arguments.some(arg => arg === node)) {
+                  else if ('arguments' in parent && parent.arguments.some(arg => arg === node)) {
                     parent.arguments = parent.arguments.map(arg => arg === node ? replacement : arg);
                   }
                   else if ('init' in parent && parent.init === node) {
@@ -530,6 +531,7 @@ export function handleWrappers(ast: Ast) {
                   const req = node.arguments[0];
                   const callExpression: SimpleCallExpression = {
                     type: 'CallExpression',
+                    optional: false,
                     callee: {
                       type: 'MemberExpression',
                       computed: false,
@@ -553,7 +555,8 @@ export function handleWrappers(ast: Ast) {
                       {
                         type: 'ObjectExpression',
                         properties: [{
-                          type: 'ObjectProperty',
+                          type: 'Property',
+                          kind: 'init',
                           method: false,
                           computed: false,
                           shorthand: false,
