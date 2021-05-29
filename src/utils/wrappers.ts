@@ -130,7 +130,7 @@ export function handleWrappers(ast: Ast) {
             wrapper.arguments[0].body.body.length === 2 &&
             wrapper.arguments[0].body.body[0].type === 'VariableDeclaration' &&
             wrapper.arguments[0].body.body[0].declarations.length === 3 &&
-            wrapper.arguments[0].body.body[0].declarations.every((decl: any) => decl.init === null && decl.id.type === 'Identifier')
+            wrapper.arguments[0].body.body[0].declarations.every(decl => decl.init === null && decl.id.type === 'Identifier')
         ) &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].type === 'ReturnStatement' &&
         (browserifyReturn = wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1]! as ReturnStatement) &&
@@ -213,12 +213,16 @@ export function handleWrappers(ast: Ast) {
               properties: [{
                 type: 'Property',
                 kind: 'init',
+                method: false,
+                shorthand: false,
+                computed: false,
                 key: {
                   type: 'Identifier',
                   name: 'exports'
                 },
                 value: {
                   type: 'CallExpression',
+                  optional: false,
                   callee: {
                     type: 'Identifier',
                     name: 'require'
@@ -226,7 +230,7 @@ export function handleWrappers(ast: Ast) {
                   arguments: [externals[ext]]
                 }
               }]
-            } as ObjectExpression
+            }
           };
         });
       }
@@ -468,7 +472,9 @@ export function handleWrappers(ast: Ast) {
         if ('params' in m && m.params.length === 3 && m.params[2].type === 'Identifier') {
           const assignedVars = new Map();
           walk((m.body as unknown) as ESNode, {
-            enter (node, maybeParent) {
+            enter (_node, _maybeParent) {
+              const node = _node as Node;
+              const maybeParent = _maybeParent as Node | undefined;
               if (node.type === 'CallExpression' &&
                   node.callee.type === 'Identifier' &&
                   'name' in m.params[2] &&
@@ -501,10 +507,10 @@ export function handleWrappers(ast: Ast) {
                   else if (parent.callee === node) {
                     parent.callee = replacement;
                   }
-                  else if (parent.arguments && parent.arguments.some((arg: any) => arg === node)) {
-                    parent.arguments = parent.arguments.map((arg: any) => arg === node ? replacement : arg);
+                  else if (parent.arguments && parent.arguments.some(arg => arg === node)) {
+                    parent.arguments = parent.arguments.map(arg => arg === node ? replacement : arg);
                   }
-                  else if (parent.init === node) {
+                  else if ('init' in parent && parent.init === node) {
                     if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier')
                       assignedVars.set(parent.id.name, externalId);
                     parent.init = replacement;
@@ -520,12 +526,14 @@ export function handleWrappers(ast: Ast) {
                   node.callee.property.name === 'n' &&
                   node.arguments.length === 1 &&
                   node.arguments[0].type === 'Identifier') {
-                if (maybeParent && maybeParent.init === node) {
+                if (maybeParent && 'init' in maybeParent && maybeParent.init === node) {
                   const req = node.arguments[0];
-                  maybeParent.init = {
+                  const callExpression: SimpleCallExpression = {
                     type: 'CallExpression',
                     callee: {
                       type: 'MemberExpression',
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         name: 'Object'
@@ -558,6 +566,7 @@ export function handleWrappers(ast: Ast) {
                       }
                     ]
                   };
+                  maybeParent.init = callExpression;
                 }
               }
             }
