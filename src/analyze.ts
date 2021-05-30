@@ -28,7 +28,7 @@ const acorn = Parser.extend(
 import os from 'os';
 import { handleWrappers } from './utils/wrappers';
 import resolveFrom from 'resolve-from';
-import { ConditionalValue, EvaluatedValue, StaticValue } from './types';
+import { ConditionalValue, EvaluatedValue, StaticValue, Ast } from './types';
 
 const staticProcess = {
   cwd: () => {
@@ -329,10 +329,10 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     return binding && binding.shadowDepth === 0;
   }
 
-  if (isESM || job.mixedModules) {
+  if ((isESM || job.mixedModules) && isAst(ast)) {
     for (const decl of ast.body) {
       if (decl.type === 'ImportDeclaration') {
-        const source = decl.source.value;
+        const source = String(decl.source.value);
         deps.add(source);
         const staticModule = staticModules[source];
         if (staticModule) {
@@ -347,7 +347,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         }
       }
       else if (decl.type === 'ExportNamedDeclaration' || decl.type === 'ExportAllDeclaration') {
-        if (decl.source) deps.add(decl.source.value);
+        if (decl.source) deps.add(String(decl.source.value));
       }
     }
   }
@@ -439,8 +439,10 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   }
 
   let scope = attachScopes(ast, 'scope');
-  handleWrappers(ast);
-  handleSpecialCases({ id, ast, emitAsset: path => assets.add(path), emitAssetDirectory, job });
+  if (isAst(ast)) {
+    handleWrappers(ast);
+    handleSpecialCases({ id, ast, emitAsset: path => assets.add(path), emitAssetDirectory, job });
+  }
   function backtrack (parent: Node, context?: WalkerContext) {
     // computing a static expression outward
     // -> compute and backtrack
@@ -871,3 +873,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     staticChildNode = staticChildValue = undefined;
   }
 };
+
+function isAst(ast: any): ast is Ast {
+  return 'body' in ast;
+}
