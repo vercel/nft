@@ -32,12 +32,20 @@ it('should correctly build dist from cli', async () => {
   expect(found).toBe(true);
 });
 
+it('should correctly show size from cli', async () => {
+  const { stderr, stdout } = await exec(`node ../out/cli.js size ${inputjs}`, { cwd: __dirname });
+  if (stderr) {
+    throw new Error(stderr);
+  }
+  expect(stdout).toMatch('bytes total');
+});
+
 it('should correctly print help when unknown action is used', async () => {
   const { stderr, stdout } = await exec(`node ../out/cli.js unknown ${inputjs}`, { cwd: __dirname });
   if (stderr) {
     throw new Error(stderr);
   }
-  expect(stdout).toMatch('provide an action');
+  expect(stdout).toMatch('$ nft [command] <file>');
 });
 
 it('[codecov] should correctly print trace from required cli', async () => {
@@ -57,10 +65,18 @@ it('[codecov] should correctly build dist from required cli', async () => {
   expect(found).toBe(true);
 });
 
+it('[codecov] should correctly show size in bytes from required cli', async () => {
+  // This test is only here to satisfy code coverage
+  const cli = require('../out/cli.js')
+  const files = [join(__dirname, inputjs)];
+  const stdout = await cli('size', files);
+  expect(stdout).toMatch('bytes total');
+});
+
 it('[codecov] should correctly print help when unknown action is used', async () => {
   // This test is only here to satisfy code coverage
   const cli = require('../out/cli.js')
   const files = [join(__dirname, inputjs)];
   const stdout = await cli('unknown', files);
-  expect(stdout).toMatch('provide an action');
+  expect(stdout).toMatch('$ nft [command] <file>');
 });

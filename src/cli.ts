@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 import { join, dirname } from 'path';
-import { promises } from 'fs';
+import { promises, statSync, lstatSync } from 'fs';
 const { copyFile, mkdir } = promises;
 const rimraf = require('rimraf');
 import { nodeFileTrace } from './node-file-trace';
+
 
 async function cli(
   action = process.argv[2],
@@ -15,7 +16,7 @@ async function cli(
   const opts = {
     ts: true,
     mixedModules: true,
-    log: true
+    log: action !== 'size'
   };
 
   const { fileList, esmFileList, warnings } = await nodeFileTrace(files, opts);
@@ -39,8 +40,31 @@ async function cli(
       await mkdir(dir, { recursive: true });
       await copyFile(src, dest);
     }
+  } else if (action === 'size') {
+    const isSymbolicLink = (m: number) => (m & 61440) === 40960;
+    let bytes = 0;
+    for (const f of allFiles) {
+      const lstat = lstatSync(f);
+      if (isSymbolicLink(lstat.mode)) {
+        bytes += lstat.size;
+      } else {
+        const stat = statSync(f)
+        bytes += stat.size;
+      }
+    }
+    stdout.push(`${bytes} bytes total`)
   } else {
-    stdout.push('△ nft - provide an action such as `nft build` or `nft print`.');
+    stdout.push(`△ nft ${require('../package.json').version}`);
+    stdout.push('');
+    stdout.push('Usage:');
+    stdout.push('');
+    stdout.push(`  $ nft [command] <file>`);
+    stdout.push('');
+    stdout.push('Commands:');
+    stdout.push('');
+    stdout.push('  build    trace and copy to the dist directory');
+    stdout.push('  print    trace and print to stdout');
+    stdout.push('   size    trace and print size in bytes');
   }
   return stdout.join('\n');
 }
