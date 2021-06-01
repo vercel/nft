@@ -16,7 +16,7 @@ async function cli(
   const opts = {
     ts: true,
     mixedModules: true,
-    log: true
+    log: action !== 'size'
   };
 
   const { fileList, esmFileList, warnings } = await nodeFileTrace(files, opts);
@@ -52,7 +52,7 @@ async function cli(
         bytes += stat.size;
       }
     }
-    stdout.push(`${(bytes / 1e6).toFixed(2)} MB`)
+    stdout.push(`${bytes} bytes total`)
   } else {
     stdout.push(`△ nft ${require('../package.json').version}`);
     stdout.push('');
@@ -64,7 +64,7 @@ async function cli(
     stdout.push('');
     stdout.push('  build    trace and copy to the dist directory');
     stdout.push('  print    trace and print to stdout');
-    stdout.push('   size    trace and print size in MB');
+    stdout.push('   size    trace and print size in bytes');
   }
   return stdout.join('\n');
 }
