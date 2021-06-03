@@ -28,7 +28,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
     {
@@ -47,7 +49,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
   ],
@@ -73,7 +77,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
     {
@@ -93,7 +99,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
     {
@@ -113,7 +121,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
 // The spec was updated making this test invalid.  It was disabled until it can be fixed
@@ -152,15 +162,9 @@ exports.tests = [
             "cmn-hans-cn", // + ISO 3166-1 country code
             "es-419", // + UN M.49 region code
             "es-419-u-nu-latn-cu-bob", // + Unicode locale extension sequence
-            "i-klingon", // grandfathered tag
             "cmn-hans-cn-t-ca-u-ca-x-t-u", // singleton subtags can also be used as private use subtags
             "de-gregory-u-ca-gregory", // variant and extension subtags may be the same
             "aa-a-foo-x-a-foo-bar", // variant subtags can also be used as private use subtags
-            "x-en-US-12345", // anything goes in private use tags
-            "x-12345-12345-en-US",
-            "x-en-US-12345-12345",
-            "x-en-u-foo",
-            "x-en-u-foo-u-bar"
           ];
           for (var i in validLanguageTags) {
             Intl.Collator(validLanguageTags[i]);
@@ -181,7 +185,41 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
+      },
+    },
+    {
+      name: 'rejects invalid language tags',
+      spec: 'https://github.com/tc39/ecma402/pull/289',
+      exec: function(){/*
+        try {
+          // Taken from https://github.com/tc39/test262/blob/83b07ff15eadb141c3d6f4d236a8733b720041d2/test/intl402/6.2.2_a.js
+          var invalidLanguageTags = [
+            "i-klingon", // grandfathered tag
+            "x-en-US-12345", // anything goes in private use tags
+            "x-12345-12345-en-US",
+            "x-en-US-12345-12345",
+            "x-en-u-foo",
+            "x-en-u-foo-u-bar"
+          ];
+          for (var i in invalidLanguageTags) {
+            Intl.Collator(invalidLanguageTags[i]);
+          }
+          return false;
+        } catch(e) {
+          return true;
+        }
+      */},
+      res: {
+        edge18: false,
+        firefox76: true,
+        chrome81: true,
+        safari14: false,
+        graalvm19: false,
+        graalvm20: false,
+        graalvm20_1: true,
       },
     },
   ],
@@ -207,7 +245,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
   ],
@@ -233,7 +273,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
   ],
@@ -259,7 +301,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
     {
@@ -278,7 +322,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
     {
@@ -298,7 +344,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
     {
@@ -318,7 +366,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
 // The spec was updated making this test invalid.  It was disabled until it can be fixed
@@ -357,15 +407,9 @@ exports.tests = [
             "cmn-hans-cn", // + ISO 3166-1 country code
             "es-419", // + UN M.49 region code
             "es-419-u-nu-latn-cu-bob", // + Unicode locale extension sequence
-            "i-klingon", // grandfathered tag
             "cmn-hans-cn-t-ca-u-ca-x-t-u", // singleton subtags can also be used as private use subtags
             "de-gregory-u-ca-gregory", // variant and extension subtags may be the same
             "aa-a-foo-x-a-foo-bar", // variant subtags can also be used as private use subtags
-            "x-en-US-12345", // anything goes in private use tags
-            "x-12345-12345-en-US",
-            "x-en-US-12345-12345",
-            "x-en-u-foo",
-            "x-en-u-foo-u-bar"
           ];
           for (var i in validLanguageTags) {
             Intl.NumberFormat(validLanguageTags[i]);
@@ -386,7 +430,41 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
+      },
+    },
+    {
+      name: 'accepts valid language tags',
+      spec: 'https://github.com/tc39/ecma402/pull/289',
+      exec: function(){/*
+        try {
+          // Taken from https://github.com/tc39/test262/blob/83b07ff15eadb141c3d6f4d236a8733b720041d2/test/intl402/6.2.2_a.js
+          var validLanguageTags = [
+            "i-klingon", // grandfathered tag
+            "x-en-US-12345", // anything goes in private use tags
+            "x-12345-12345-en-US",
+            "x-en-US-12345-12345",
+            "x-en-u-foo",
+            "x-en-u-foo-u-bar"
+          ];
+          for (var i in invalidLanguageTags) {
+            Intl.NumberFormat(invalidLanguageTags[i]);
+          }
+          return false;
+        } catch(e) {
+          return true;
+        }
+      */},
+      res: {
+        edge18: false,
+        firefox76: true,
+        chrome81: true,
+        safari14: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
   ],
@@ -412,7 +490,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
     {
@@ -432,7 +512,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
     {
@@ -452,7 +534,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
 // The spec was updated making this test invalid.  It was disabled until it can be fixed
@@ -491,15 +575,9 @@ exports.tests = [
             "cmn-hans-cn", // + ISO 3166-1 country code
             "es-419", // + UN M.49 region code
             "es-419-u-nu-latn-cu-bob", // + Unicode locale extension sequence
-            "i-klingon", // grandfathered tag
             "cmn-hans-cn-t-ca-u-ca-x-t-u", // singleton subtags can also be used as private use subtags
             "de-gregory-u-ca-gregory", // variant and extension subtags may be the same
             "aa-a-foo-x-a-foo-bar", // variant subtags can also be used as private use subtags
-            "x-en-US-12345", // anything goes in private use tags
-            "x-12345-12345-en-US",
-            "x-en-US-12345-12345",
-            "x-en-u-foo",
-            "x-en-u-foo-u-bar"
           ];
           for (var i in validLanguageTags) {
             Intl.DateTimeFormat(validLanguageTags[i]);
@@ -520,14 +598,47 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
+      },
+    },
+    {
+      name: 'rejects invalid language tags',
+      spec: 'https://github.com/tc39/ecma402/pull/289',
+      exec: function(){/*
+        try {
+          // Taken from https://github.com/tc39/test262/blob/83b07ff15eadb141c3d6f4d236a8733b720041d2/test/intl402/6.2.2_a.js
+          var invalidLanguageTags = [
+            "i-klingon", // grandfathered tag
+            "x-en-US-12345", // anything goes in private use tags
+            "x-12345-12345-en-US",
+            "x-en-US-12345-12345",
+            "x-en-u-foo",
+            "x-en-u-foo-u-bar"
+          ];
+          for (var i in invalidLanguageTags) {
+            Intl.DateTimeFormat(invalidLanguageTags[i]);
+          }
+          return false;
+        } catch(e) {
+          return true;
+        }
+      */},
+      res: {
+        edge18: false,
+        firefox76: true,
+        chrome81: true,
+        graalvm19: false,
+        graalvm20: false,
+        graalvm20_1: true,
       },
     },
     {
       name: 'resolvedOptions().timeZone defaults to the host environment',
       exec: function () {/*
         var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        return tz !== undefined && tz.length > 0;
+        return tz !== void undefined && tz.length > 0;
       */},
       res: {
         ie9: false,
@@ -547,7 +658,9 @@ exports.tests = [
         android4_0: null,
         ios7: false,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       }
     },
     {
@@ -574,7 +687,9 @@ exports.tests = [
         opera10_50: false,
         node0_12: true,
         duktape2_0: false,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       }
     }
   ],
@@ -604,7 +719,9 @@ exports.tests = [
         nashorn1_8: true,
         nashorn9: true,
         nashorn10: true,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
   ],
@@ -634,7 +751,9 @@ exports.tests = [
         nashorn1_8: true,
         nashorn9: true,
         nashorn10: true,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
   ],
@@ -664,7 +783,9 @@ exports.tests = [
         nashorn1_8: true,
         nashorn9: true,
         nashorn10: true,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
   ],
@@ -694,7 +815,9 @@ exports.tests = [
         nashorn1_8: true,
         nashorn9: true,
         nashorn10: true,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
   ],
@@ -724,7 +847,9 @@ exports.tests = [
         nashorn1_8: true,
         nashorn9: true,
         nashorn10: true,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
   ],
@@ -754,7 +879,9 @@ exports.tests = [
         nashorn1_8: true,
         nashorn9: true,
         nashorn10: true,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
   ],
@@ -784,7 +911,9 @@ exports.tests = [
         nashorn1_8: true,
         nashorn9: true,
         nashorn10: true,
-        graalvm: true,
+        graalvm19: true,
+        graalvm20: true,
+        graalvm20_1: true,
       },
     },
   ],

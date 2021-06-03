@@ -49,12 +49,17 @@
     "sharedmem": {
       "val": "flagged",
       "note_id": "firefox-sharedmem",
-      "note_html": "The feature have to be enabled via <code>javascript.options.shared_memory</code> setting under <code>about:config</code>.  It is enabled by default in Firefox Developer Edition and Firefox Nightly builds."
+      "note_html": "The feature has to be enabled via <code>javascript.options.shared_memory</code> setting under <code>about:config</code>.  It is enabled by default in Firefox Developer Edition and Firefox Nightly builds."
     },
     "nomob": {
       "val": "flagged",
       "note_id": "firefox-nomob",
       "note_html": "The feature is available on desktop versions only, it is not available on mobile versions yet."
+    },
+    "beta": {
+      "val": "flagged",
+      "note_id": "firefox-beta",
+      "note_html": "The feature is available only in Firefox Beta, Firefox Developer Edition and Firefox Nightly builds."
     },
     "developer": {
       "val": "flagged",
@@ -69,34 +74,39 @@
     "bigint": {
       "val": "flagged",
       "note_id": "firefox-bigint",
-      "note_html": "The feature have to be enabled via <code>javascript.options.bigint</code> setting under <code>about:config</code>."
+      "note_html": "The feature has to be enabled via <code>javascript.options.bigint</code> setting under <code>about:config</code>."
     },
     "classFields": {
       "val": "flagged",
       "note_id": "firefox-class-fields",
-      "note_html": "The feature have to be enabled via <code>javascript.options.experimental.fields</code> setting under <code>about:config</code>."
+      "note_html": "The feature has to be enabled via <code>javascript.options.experimental.fields</code> setting under <code>about:config</code>."
+    },
+    "privateFields": {
+      "val": "flagged",
+      "note_id": "fx-private-fields",
+      "note_html": "The feature has to be enabled via <code>javascript.options.experimental.private_fields</code> setting under <code>about:config</code>."
     },
     "privateClassFields": {
       "val": false,
       "note_id": "firefox-private-class-fields",
-      "note_html": "The feature have to be enabled via <code>javascript.options.experimental.fields</code> setting under <code>about:config</code>. Private fields are supported by parser, but behave as public fields."
+      "note_html": "The feature has to be enabled via <code>javascript.options.experimental.fields</code> setting under <code>about:config</code>. Private fields are supported by parser, but behave as public fields."
     }
   },
   "chrome": {
     "sharedmem": {
       "val": "flagged",
       "note_id": "chrome-sharedmem",
-      "note_html": "The feature have to be enabled via \"Experimental enabled SharedArrayBuffer support in JavaScript.\" setting under <code>about:flags</code>"
+      "note_html": "The feature has to be enabled via \"Experimental enabled SharedArrayBuffer support in JavaScript.\" setting under <code>about:flags</code>"
     },
     "experimental": {
       "val": "flagged",
       "note_id": "chrome-experimental",
-      "note_html": "The feature have to be enabled via \"Experimental Javascript features\" setting under <code>about:flags</code>"
+      "note_html": "The feature has to be enabled via \"Experimental Javascript features\" setting under <code>about:flags</code>"
     },
     "harmony": {
       "val": "flagged",
       "note_id": "chrome-harmony",
-      "note_html": "The feature have to be enabled via <code>--js-flags=\"--harmony\"</code> flag"
+      "note_html": "The feature has to be enabled via <code>--js-flags=\"--harmony\"</code> flag"
     },
     "tco": {
       "val": false,
@@ -112,6 +122,11 @@
       "val": false,
       "note_id": "chrome-simd",
       "note_html": "The feature is considered unstable, but can be enabled via <code>--js-flags=\"--harmony-simd\"</code> flag"
+    },
+    "stringPrototypeReplaceAll": {
+      "val": "flagged",
+      "note_id": "chrome-string-prototype-replace-all",
+      "note_html": "The feature is considered unstable, but can be enabled via <code>--js-flags=\"--harmony-string-replaceall\"</code> flag"
     }
   },
   "safari": {
@@ -119,6 +134,65 @@
       "val": false,
       "note_id": "safari-templ-cahing",
       "note_html": "Safari 12 caches TemplateStrings using a GC-able \"CodeBlock\". But TemplateStrings are supposed to always be identical! When the CodeBlock is reclaimed, the TemplateStrings' identity is broken. Thankfully, <code>[[Call]]</code> vs <code>[[Construct]]</code> generate different CodeBlocks, which exposes the <a href='https://bugs.webkit.org/show_bug.cgi?id=190756'>broken behavior.</a>"
+    }
+  },
+  "graalvm": {
+    "es2020flag": {
+      "val": "flagged",
+      "note_id": "graalvm-es2020",
+      "note_html": "The feature can be enabled via <code>--js.ecmascript-version=2020</code> flag"
+    },
+    "es2021flag": {
+      "val": "flagged",
+      "note_id": "graalvm-es2021",
+      "note_html": "The feature can be enabled via <code>--js.ecmascript-version=2021</code> flag"
+    },
+    "es2022flag": {
+      "val": "flagged",
+      "note_id": "graalvm-es2022",
+      "note_html": "The feature can be enabled via <code>--js.ecmascript-version=2022</code> flag"
+    }
+  },
+  "hermes": {
+    "xEs6PromiseFlag": {
+      "val": "flagged",
+      "note_id": "hermes-promise",
+      "note_html": "The feature can be enabled via <code>-Xes6-promise</code> flag"
+    },
+    "xEs6SymbolFlag": {
+      "val": "flagged",
+      "note_id": "hermes-symbol",
+      "note_html": "The feature can be enabled via <code>-Xes6-symbol</code> flag"
+    },
+    "xEs6ProxyFlag": {
+      "val": "flagged",
+      "note_id": "hermes-proxy",
+      "note_html": "The feature can be enabled via <code>-Xes6-proxy</code> flag"
+    },
+    "evalStrictMode": {
+      "val": false,
+      "note_id": "hermes-eval-strict-mode",
+      "note_html": "Hermes isn't supporting strict mode in eval, test result is unrepresentative. See <a href=\"https://github.com/facebook/hermes/issues/102#issuecomment-528489267\">this comment</a> for details"
+    },
+    "evalLexicalScopeFailed": {
+      "val": false,
+      "note_id": "hermes-eval-lexical-scope-failed",
+      "note_html": "Hermes isn't supporting lexical scope in eval"
+    },
+    "evalLexicalScopeSuccess": {
+      "val": true,
+      "note_id": "hermes-eval-lexical-scope-success",
+      "note_html": "Hermes isn't supporting lexical scope in eval, test result is unrepresentative"
+    },
+    "catchDestructuring": {
+      "val": false,
+      "note_id": "hermes-catch-destructuring",
+      "note_html": "Hermes isn't currently supporting destructuring in catch parameters"
+    },
+    "class": {
+      "val": false,
+      "note_id": "hermes-class",
+      "note_html": "Hermes isn't currently supporting classes apparently"
     }
   },
   "sparseNote": {
