@@ -27,7 +27,6 @@ const ignoreCategories = new Set([
   'private class methods',
   'Class static initialization blocks',
   'Ergonomic brand checks for private fields',
-  'numeric separators',
 ]);
 
 async function runTests(importPath) {
