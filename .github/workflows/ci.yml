@@ -33,7 +33,7 @@ jobs:
     - name: Prepare Install (if applicable)
       run: node prepare-install.js
     - name: Install Dependencies
-      run: yarn install
+      run: yarn install --network-timeout 1000000
     - name: Build
       run: yarn build
     - name: Run Tests
