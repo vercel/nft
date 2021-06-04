@@ -245,7 +245,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   let isESM = false;
 
   try {
-    ast = acorn.parse(code, { ecmaVersion: 2020, allowReturnOutsideFunction: true });
+    ast = acorn.parse(code, { ecmaVersion: 'latest', allowReturnOutsideFunction: true });
     isESM = false;
   }
   catch (e) {
@@ -257,7 +257,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   //@ts-ignore
   if (!ast) {
     try {
-      ast = acorn.parse(code, { ecmaVersion: 2020, sourceType: 'module', allowAwaitOutsideFunction: true });
+      ast = acorn.parse(code, { ecmaVersion: 'latest', sourceType: 'module', allowAwaitOutsideFunction: true });
       isESM = true;
     }
     catch (e) {
