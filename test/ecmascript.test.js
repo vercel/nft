@@ -21,14 +21,21 @@ const ignoreCategories = new Set([
   'partial application syntax',
   'Object.freeze and Object.seal syntax',
   'Class and Property Decorators',
+  'the pipeline operator',
+  'Generator function.sent Meta Property',
+  'Logical Assignment',
+  'private class methods',
+  'Class static initialization blocks',
+  'Ergonomic brand checks for private fields',
+  'numeric separators',
 ]);
 
 async function runTests(importPath) {
   const { tests } = require(importPath);
-  for (const t in tests) {
-    for (const st in tests[t].subtests) {
-      const category = tests[t];
-      const { name, exec } = category.subtests[st];
+  for (const category of tests) {
+    const subtests = category.subtests || [category]
+    for (const test of subtests) {
+      const { name, exec } = test;
       if (ignoreCategories.has(category.name)) {
         continue;
       }

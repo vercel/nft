@@ -1,6 +1,7 @@
 var common = require('./data-common');
 
 var sparseNote = common.sparseNote;
+var hermes = common.hermes;
 
 exports.name = 'ES5';
 exports.target_file = 'es5/index.html';
@@ -30,7 +31,11 @@ exports.tests = [
       duktape2_0: true,
       nashorn1_8: true,
       nashorn9: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
@@ -55,7 +60,11 @@ exports.tests = [
       duktape2_0: true,
       nashorn1_8: true,
       nashorn9: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -80,7 +89,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -105,7 +118,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -134,7 +151,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   }],
   separator: 'after'
@@ -146,7 +167,7 @@ exports.tests = [
     name: 'Object.create',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create',
     exec: function () {
-      return typeof Object.create == 'function';
+      return typeof Object.create === 'function';
     },
     res: {
       ie9: true,
@@ -165,14 +186,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.defineProperty',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty',
     exec: function () {
-      return typeof Object.defineProperty == 'function';
+      return typeof Object.defineProperty === 'function';
     },
     res: {
       ie8: {
@@ -203,14 +228,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.defineProperties',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperties',
     exec: function () {
-      return typeof Object.defineProperties == 'function';
+      return typeof Object.defineProperties === 'function';
     },
     res: {
       ie9: true,
@@ -229,14 +258,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.getPrototypeOf',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getPrototypeOf',
     exec: function () {
-      return typeof Object.getPrototypeOf == 'function';
+      return typeof Object.getPrototypeOf === 'function';
     },
     res: {
       ie9: true,
@@ -257,14 +290,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.keys',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys',
     exec: function () {
-      return typeof Object.keys == 'function';
+      return typeof Object.keys === 'function';
     },
     res: {
       es5shim: true,
@@ -286,14 +323,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.seal',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/seal',
     exec: function () {
-      return typeof Object.seal == 'function';
+      return typeof Object.seal === 'function';
     },
     res: {
       ie9: true,
@@ -312,14 +353,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.freeze',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze',
     exec: function () {
-      return typeof Object.freeze == 'function';
+      return typeof Object.freeze === 'function';
     },
     res: {
       ie9: true,
@@ -338,14 +383,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.preventExtensions',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/preventExtensions',
     exec: function () {
-      return typeof Object.preventExtensions == 'function';
+      return typeof Object.preventExtensions === 'function';
     },
     res: {
       ie9: true,
@@ -364,14 +413,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.isSealed',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/isSealed',
     exec: function () {
-      return typeof Object.isSealed == 'function';
+      return typeof Object.isSealed === 'function';
     },
     res: {
       ie9: true,
@@ -390,14 +443,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.isFrozen',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/isFrozen',
     exec: function () {
-      return typeof Object.isFrozen == 'function';
+      return typeof Object.isFrozen === 'function';
     },
     res: {
       ie9: true,
@@ -416,14 +473,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.isExtensible',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/isExtensible',
     exec: function () {
-      return typeof Object.isExtensible == 'function';
+      return typeof Object.isExtensible === 'function';
     },
     res: {
       ie9: true,
@@ -442,14 +503,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.getOwnPropertyDescriptor',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getOwnPropertyDescriptor',
     exec: function () {
-      return typeof Object.getOwnPropertyDescriptor == 'function';
+      return typeof Object.getOwnPropertyDescriptor === 'function';
     },
     res: {
       ie7: false,
@@ -476,14 +541,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Object.getOwnPropertyNames',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getOwnPropertyNames',
     exec: function () {
-      return typeof Object.getOwnPropertyNames == 'function';
+      return typeof Object.getOwnPropertyNames === 'function';
     },
     res: {
       ie9: true,
@@ -504,7 +573,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
     separator: 'after'
   }],
@@ -516,7 +589,7 @@ exports.tests = [
     name: 'Array.isArray',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/isArray',
     exec: function () {
-      return typeof Array.isArray == 'function';
+      return typeof Array.isArray === 'function';
     },
     res: {
       es5shim: true,
@@ -537,14 +610,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Array.prototype.indexOf',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf',
     exec: function () {
-      return typeof Array.prototype.indexOf == 'function';
+      return typeof Array.prototype.indexOf === 'function';
     },
     res: {
       es5shim: true,
@@ -563,14 +640,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Array.prototype.lastIndexOf',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/lastIndexOf',
     exec: function () {
-      return typeof Array.prototype.lastIndexOf == 'function';
+      return typeof Array.prototype.lastIndexOf === 'function';
     },
     res: {
       es5shim: true,
@@ -589,14 +670,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Array.prototype.every',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/every',
     exec: function () {
-      return typeof Array.prototype.every == 'function';
+      return typeof Array.prototype.every === 'function';
     },
     res: {
       es5shim: sparseNote,
@@ -615,14 +700,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Array.prototype.some',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/some',
     exec: function () {
-      return typeof Array.prototype.some == 'function';
+      return typeof Array.prototype.some === 'function';
     },
     res: {
       es5shim: sparseNote,
@@ -641,14 +730,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Array.prototype.forEach',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach',
     exec: function () {
-      return typeof Array.prototype.forEach == 'function';
+      return typeof Array.prototype.forEach === 'function';
     },
     res: {
       es5shim: sparseNote,
@@ -667,14 +760,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Array.prototype.map',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map',
     exec: function () {
-      return typeof Array.prototype.map == 'function';
+      return typeof Array.prototype.map === 'function';
     },
     res: {
       es5shim: sparseNote,
@@ -693,14 +790,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Array.prototype.filter',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter',
     exec: function () {
-      return typeof Array.prototype.filter == 'function';
+      return typeof Array.prototype.filter === 'function';
     },
     res: {
       es5shim: sparseNote,
@@ -719,14 +820,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Array.prototype.reduce',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce',
     exec: function () {
-      return typeof Array.prototype.reduce == 'function';
+      return typeof Array.prototype.reduce === 'function';
     },
     res: {
       es5shim: sparseNote,
@@ -745,14 +850,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Array.prototype.reduceRight',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduceRight',
     exec: function () {
-      return typeof Array.prototype.reduceRight == 'function';
+      return typeof Array.prototype.reduceRight === 'function';
     },
     res: {
       es5shim: sparseNote,
@@ -771,7 +880,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   }, {
     name: 'Array.prototype.sort: compareFn must be function or undefined',
@@ -823,7 +936,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -856,7 +973,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   }],
 },
@@ -886,14 +1007,65 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
+    }
+  },
+  {
+    name: 'String.prototype.split',
+    mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/split',
+    exec: function () {
+      // all of these tests reflect bugs that es5-shim patches
+      return typeof String.prototype.split === 'function'
+        && ''.split().length === 1 && ''.split()[0] === ''
+        && ''.split(undefined).length === 1 && ''.split(undefined)[0] === ''
+        && 'ab'.split().length === 1 && 'ab'.split()[0] === 'ab'
+        && 'ab'.split(undefined).length === 1 && 'ab'.split(undefined)[0] === 'ab'
+        && '0'.split(undefined, 0).length === 0
+        && '.'.split(/(.?)(.?)/).length === 4
+        && 'test'.split(/(?:)/, -1).length === 4
+        && ''.split(/.?/).length === 0
+        && '.'.split(/()()/).length === 1;
+    },
+    res: {
+      chrome15: true,
+      chrome37: true,
+      edge15: true,
+      edge18: true,
+      edge80: true,
+      es5shim: true,
+      firefox3: false,
+      firefox3_6: false,
+      firefox4: false,
+      firefox5: true,
+      firefox10: true,
+      ie8: false,
+      ie9: true,
+      node0_4: true,
+      node0_6: true,
+      node0_8: false,
+      node0_10: false,
+      node0_12: true,
+      opera10_60: false,
+      opera11: true,
+      safari4: false,
+      safari5: false,
+      safari5_1: true,
+      safari13: true,
+      graalvm20_3: true,
+      jerryscript1_0: false,
+      jerryscript2_2_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'String.prototype.trim',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/Trim',
     exec: function () {
-      return typeof String.prototype.trim == 'function';
+      return typeof String.prototype.trim === 'function';
     },
     res: {
       es5shim: true,
@@ -914,7 +1086,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
     separator: 'after'
   }
@@ -927,7 +1103,7 @@ exports.tests = [
     name: 'Date.prototype.toISOString',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString',
     exec: function () {
-      return typeof Date.prototype.toISOString == 'function';
+      return typeof Date.prototype.toISOString === 'function';
     },
     res: {
       es5shim: true,
@@ -946,14 +1122,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Date.now',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now',
     exec: function () {
-      return typeof Date.now == 'function';
+      return typeof Date.now === 'function';
     },
     res: {
       es5shim: true,
@@ -971,7 +1151,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
@@ -1008,7 +1192,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   }]
 },
@@ -1017,7 +1205,7 @@ exports.tests = [
   significance: 'medium',
   mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind',
   exec: function () {
-    return typeof Function.prototype.bind == 'function';
+    return typeof Function.prototype.bind === 'function';
   },
   res: {
     es5shim: true,
@@ -1039,7 +1227,11 @@ exports.tests = [
     nashorn1_8: true,
     nashorn9: true,
     nashorn10: true,
-      graalvm: true,
+    graalvm19: true,
+    graalvm20: true,
+    graalvm20_1: true,
+    jerryscript1_0: true,
+    hermes0_7_0: true,
   },
 },
 {
@@ -1047,7 +1239,7 @@ exports.tests = [
   significance: 'medium',
   mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON',
   exec: function () {
-    return typeof JSON == 'object';
+    return typeof JSON === 'object';
   },
   res: {
     ie7: false,
@@ -1072,7 +1264,11 @@ exports.tests = [
     nashorn1_8: true,
     nashorn9: true,
     nashorn10: true,
-      graalvm: true,
+    graalvm19: true,
+    graalvm20: true,
+    graalvm20_1: true,
+    jerryscript1_0: true,
+    hermes0_7_0: true,
   },
   separator: 'after'
 },
@@ -1084,7 +1280,7 @@ exports.tests = [
     name: 'undefined',
     exec: function () {/*
       undefined = 12345;
-      var result = typeof undefined == 'undefined';
+      var result = typeof undefined === 'undefined';
       undefined = void 0;
       return result;
     */},
@@ -1108,14 +1304,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'NaN',
     exec: function () {/*
       NaN = false;
-      var result = typeof NaN == 'number';
+      var result = typeof NaN === 'number';
       NaN = Math.sqrt(-1);
       return result;
     */},
@@ -1139,14 +1339,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
     name: 'Infinity',
     exec: function () {/*
       Infinity = false;
-      var result = typeof Infinity == 'number';
+      var result = typeof Infinity === 'number';
       Infinity = 1/0;
       return result;
     */},
@@ -1170,7 +1374,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   }]
 },
@@ -1206,7 +1414,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1234,7 +1446,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
@@ -1262,7 +1478,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1291,7 +1511,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1323,7 +1547,12 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: false,
+      jerryscript2_2_0: true,
+      hermes0_7_0: true,
     }
   },
   {
@@ -1351,7 +1580,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     }
   },
   {
@@ -1360,7 +1593,7 @@ exports.tests = [
       var result = true;
       Object.prototype.length = 42;
       for (var i in Function) {
-          if (i == 'length') {
+          if (i === 'length') {
               result = false;
           }
       }
@@ -1373,6 +1606,8 @@ exports.tests = [
       edge13: true,
       firefox2: true,
       safari3_1: false,
+      safari14_1: true,
+      safaritp: true,
       chrome5: false,
       chrome13: false,
       chrome54: true,
@@ -1387,7 +1622,12 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: false,
+      jerryscript2_0: true,
+      hermes0_7_0: false,
     }
   },
   {
@@ -1418,7 +1658,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   }]
 },
@@ -1453,14 +1697,18 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: hermes.evalStrictMode,
     },
   },
   {
     name: '"this" is undefined in functions',
     exec: function() {/*
       'use strict';
-      return this === undefined && (function(){ return this === undefined; }).call();
+      return this === void undefined && (function(){ return this === void undefined; }).call();
     */},
     res: {
       ie10: {
@@ -1482,7 +1730,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1509,7 +1761,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1548,7 +1804,12 @@ exports.tests = [
       ios7: true,
       android4_1: true,
       duktape2_0: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: false,
+      jerryscript2_3_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1576,7 +1837,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: hermes.evalStrictMode,
     },
   },
   {
@@ -1602,7 +1867,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: hermes.evalStrictMode,
     },
   },
   {
@@ -1632,7 +1901,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: hermes.evalStrictMode,
     },
   },
   {
@@ -1659,7 +1932,12 @@ exports.tests = [
       ios7: true,
       android4_1: true,
       duktape2_0: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: false,
+      jerryscript2_0: true,
+      hermes0_7_0: false,
     },
   },
   {
@@ -1691,7 +1969,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: hermes.evalStrictMode,
     },
   },
   {
@@ -1720,7 +2002,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1747,7 +2033,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1775,7 +2065,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1807,7 +2101,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1833,7 +2131,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: hermes.evalLexicalScopeSuccess,
     },
   },
   {
@@ -1859,7 +2161,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: hermes.evalStrictMode,
     },
   },
   {
@@ -1885,7 +2191,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1911,7 +2221,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: true,
     },
   },
   {
@@ -1937,7 +2251,11 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: true,
+      hermes0_7_0: hermes.evalStrictMode,
     },
   },
   {
@@ -1968,7 +2286,12 @@ exports.tests = [
       nashorn1_8: true,
       nashorn9: true,
       nashorn10: true,
-      graalvm: true,
+      graalvm19: true,
+      graalvm20: true,
+      graalvm20_1: true,
+      jerryscript1_0: false,
+      jerryscript2_0: true,
+      hermes0_7_0: true,
     }
   }]
 }
