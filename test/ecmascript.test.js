@@ -39,7 +39,7 @@ async function runTests(importPath) {
         continue;
       }
       it(`should correctly trace ${importPath} "${category.name}" "${name}"`, async () => {
-        let str = exec.toString().replace('/*', '').replace('*/', '');
+        let str = exec.toString().replace('{/*', '{').replace('*/}', '}');
         str = `var obj = { exec: ${str} }`;
         const filename = path.join(tmpdir, `test${Math.random().toString().slice(2)}.js`);
         await writeFile(filename, str, 'utf8');

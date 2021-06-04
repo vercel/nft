@@ -1025,7 +1025,9 @@ exports.tests = [
         && 'ab'.split().length === 1 && 'ab'.split()[0] === 'ab'
         && 'ab'.split(undefined).length === 1 && 'ab'.split(undefined)[0] === 'ab'
         && '0'.split(undefined, 0).length === 0
+        && 'ab'.split(/(?:ab)*/).length === 2
         && '.'.split(/(.?)(.?)/).length === 4
+        && 'tesst'.split(/(s)*/)[1] !== 't'
         && 'test'.split(/(?:)/, -1).length === 4
         && ''.split(/.?/).length === 0
         && '.'.split(/()()/).length === 1;

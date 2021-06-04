@@ -8,7 +8,7 @@ const mkdirp = promisify(require('mkdirp'));
 const { readFile, writeFile, readlink, symlink } = promises;
 const { fork } = require('child_process');
 
-jest.setTimeout(200000);
+jest.setTimeout(200_000);
 
 const integrationDir = `${__dirname}${path.sep}integration`;
 
