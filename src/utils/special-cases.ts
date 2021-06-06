@@ -3,7 +3,7 @@ import resolveDependency from '../resolve-dependency';
 import { getPackageName } from './get-package-base';
 import { readFileSync } from 'fs';
 import { Job } from '../node-file-trace';
-import { Ast } from '../types';
+import { Ast } from './types';
 type Node = Ast['body'][0]
 
 const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {

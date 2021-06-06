@@ -1,5 +1,5 @@
 import { Node } from 'estree-walker';
-import { EvaluatedValue, StaticValue, ConditionalValue } from '../types';
+import { EvaluatedValue, StaticValue, ConditionalValue } from './types';
 import { URL } from 'url';
 type Walk = (node: Node) => EvaluatedValue;
 type State = { computeBranches: boolean, vars: Record<string, any> };
