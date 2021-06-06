@@ -1,5 +1,4 @@
 import { Job } from './node-file-trace';
-import { Node as TreeNode } from 'estree';
 
 export interface Stats {
   isFile(): boolean;
@@ -66,18 +65,3 @@ export interface NodeFileTraceResult {
   reasons: NodeFileTraceReasons;
   warnings: Error[];
 }
-
-export interface StaticValue {
-  value: any;
-  wildcards?: string[];
-}
-
-export interface ConditionalValue {
-  test: string;
-  then: any;
-  else: any;
-}
-
-export type EvaluatedValue = StaticValue | ConditionalValue | undefined;
-
-export type Ast = { body: TreeNode[] };

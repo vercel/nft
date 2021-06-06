@@ -28,7 +28,7 @@ const acorn = Parser.extend(
 import os from 'os';
 import { handleWrappers } from './utils/wrappers';
 import resolveFrom from 'resolve-from';
-import { ConditionalValue, EvaluatedValue, StaticValue, Ast } from './types';
+import { ConditionalValue, EvaluatedValue, StaticValue, Ast } from './utils/types';
 
 const staticProcess = {
   cwd: () => {
