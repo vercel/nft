@@ -23,6 +23,7 @@ import { fileURLToPath, pathToFileURL, URL } from 'url';
 const acorn = Parser.extend(
   require("acorn-class-fields"),
   require("acorn-static-class-features"),
+  require("acorn-private-class-elements")
 );
 
 import os from 'os';
