@@ -13,20 +13,6 @@ console.log('created directory ' + tmpdir);
 
  // These are tests known to fail so we skip them
 const ignoreCategories = new Set([
-  'bind (::) operator',
-  'additional meta properties',
-  'syntactic tail calls',
-  'object shorthand improvements',
-  'throw expressions',
-  'partial application syntax',
-  'Object.freeze and Object.seal syntax',
-  'Class and Property Decorators',
-  'the pipeline operator',
-  'Generator function.sent Meta Property',
-  'Logical Assignment',
-  'private class methods',
-  'Class static initialization blocks',
-  'Ergonomic brand checks for private fields',
 ]);
 
 async function runTests(importPath) {
