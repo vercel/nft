@@ -203,6 +203,11 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(dirname(id), 'browsers.json'));
     }
   },
+  'playwright' ({ id, emitAsset }) {
+    if (id.endsWith('playwright/index.js')) {
+      emitAsset(resolve(dirname(id), 'browsers.json'));
+    }
+  },
 };
 
 interface SpecialCaseOpts {
