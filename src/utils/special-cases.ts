@@ -82,6 +82,17 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAssetDirectory(resolve(dirname(id), '..', 'bin'));
     }
   },
+  'remark-prism' ({ id, emitAsset }) {
+    const file = 'remark-prism/src/highlight.js';
+    if (id.endsWith(file)) {
+      try {
+        const prefix = id.slice(0, -file.length);
+        emitAsset(resolve(prefix, `prismjs/components/prism-markdown.js`));
+      } catch (e) {
+        // fail silently
+      }
+    }
+  },
   'semver' ({ id, emitAsset }) {
     if (id.endsWith('semver/index.js')) {
       // See https://github.com/npm/node-semver/blob/master/CHANGELOG.md#710
