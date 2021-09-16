@@ -82,12 +82,12 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAssetDirectory(resolve(dirname(id), '..', 'bin'));
     }
   },
-  'remark-prism' ({ id, emitAsset }) {
+  'remark-prism' ({ id, emitAssetDirectory }) {
     const file = 'remark-prism/src/highlight.js';
     if (id.endsWith(file)) {
       try {
-        const prefix = id.slice(0, -file.length);
-        emitAsset(resolve(prefix, `prismjs/components/prism-markdown.js`));
+        const node_modules = id.slice(0, -file.length);
+        emitAssetDirectory(resolve(node_modules, 'prismjs', 'components'));
       } catch (e) {
         // fail silently
       }
