@@ -8,34 +8,50 @@ function isUndefinedOrVoid (node: Node) {
 
 // Wrapper detection pretransforms to enable static analysis
 export function handleWrappers(ast: Ast) {
+
+  let bodyNode = ast.body[0];
+
+  if (ast.body.length === 2 &&
+    ast.body[0].type === 'ExpressionStatement' &&
+    ast.body[0].expression.type === 'Literal' &&
+    ast.body[0].expression.value === 'use strict'
+    ) {
+      // We found a "use strict" expression as the first statement
+      // so we'll skip it and use the second statement.
+      bodyNode = ast.body[1];
+  }
+
   // UglifyJS will convert function wrappers into !function(){}
   let wrapper: SimpleCallExpression | undefined;
-  if (ast.body.length === 1 &&
-      ast.body[0].type === 'ExpressionStatement' &&
-      ast.body[0].expression.type === 'UnaryExpression' &&
-      ast.body[0].expression.operator === '!' &&
-      ast.body[0].expression.argument.type === 'CallExpression' &&
-      ast.body[0].expression.argument.callee.type === 'FunctionExpression' &&
-      ast.body[0].expression.argument.arguments.length === 1)
-    wrapper = ast.body[0].expression.argument;
-  else if (ast.body.length === 1 &&
-      ast.body[0].type === 'ExpressionStatement' &&
-      ast.body[0].expression.type === 'CallExpression' &&
-      ast.body[0].expression.callee.type === 'FunctionExpression' &&
-      (ast.body[0].expression.arguments.length === 1 || ast.body[0].expression.arguments.length === 0))
-    wrapper = ast.body[0].expression;
-  else if (ast.body.length === 1 &&
-      ast.body[0].type === 'ExpressionStatement' &&
-      ast.body[0].expression.type === 'AssignmentExpression' &&
-      ast.body[0].expression.left.type === 'MemberExpression' &&
-      ast.body[0].expression.left.object.type === 'Identifier' &&
-      ast.body[0].expression.left.object.name === 'module' &&
-      ast.body[0].expression.left.property.type === 'Identifier' &&
-      ast.body[0].expression.left.property.name === 'exports' &&
-      ast.body[0].expression.right.type === 'CallExpression' &&
-      ast.body[0].expression.right.callee.type === 'FunctionExpression' &&
-      ast.body[0].expression.right.arguments.length === 1)
-    wrapper = ast.body[0].expression.right;
+  if (bodyNode &&
+      bodyNode.type === 'ExpressionStatement' &&
+      bodyNode.expression.type === 'UnaryExpression' &&
+      bodyNode.expression.operator === '!' &&
+      bodyNode.expression.argument.type === 'CallExpression' &&
+      bodyNode.expression.argument.callee.type === 'FunctionExpression' &&
+      bodyNode.expression.argument.arguments.length === 1) {
+    wrapper = bodyNode.expression.argument;
+  } else if (bodyNode &&
+      bodyNode.type === 'ExpressionStatement' &&
+      bodyNode.expression.type === 'CallExpression' &&
+      (bodyNode.expression.callee.type === 'FunctionExpression' ||
+      bodyNode.expression.callee.type === 'ArrowFunctionExpression') &&
+      (bodyNode.expression.arguments.length === 1 || bodyNode.expression.arguments.length === 0)) {
+    wrapper = bodyNode.expression;
+  } else if (bodyNode &&
+      bodyNode.type === 'ExpressionStatement' &&
+      bodyNode.expression.type === 'AssignmentExpression' &&
+      bodyNode.expression.left.type === 'MemberExpression' &&
+      bodyNode.expression.left.object.type === 'Identifier' &&
+      bodyNode.expression.left.object.name === 'module' &&
+      bodyNode.expression.left.property.type === 'Identifier' &&
+      bodyNode.expression.left.property.name === 'exports' &&
+      bodyNode.expression.right.type === 'CallExpression' &&
+      bodyNode.expression.right.callee.type === 'FunctionExpression' &&
+      bodyNode.expression.right.arguments.length === 1) {
+    wrapper = bodyNode.expression.right;
+  }
+
   if (wrapper) {
     let browserifyReturn: ReturnStatement;
     let webpackModuleObj: ObjectExpression | ArrayExpression | undefined;
@@ -367,7 +383,10 @@ export function handleWrappers(ast: Ast) {
     //     ...
     //   })()
     //
-    else if (wrapper.callee.type === 'FunctionExpression' &&
+    else if ((wrapper.callee.type === 'FunctionExpression' || wrapper.callee.type === 'ArrowFunctionExpression') &&
+        wrapper.callee.body &&
+        'body' in wrapper.callee.body &&
+        Array.isArray(wrapper.callee.body.body) &&
         wrapper.callee.body.body.length > 2 &&
         wrapper.callee.body.body[0].type === 'VariableDeclaration' &&
         wrapper.callee.body.body[0].declarations.length === 1 &&
@@ -401,7 +420,7 @@ export function handleWrappers(ast: Ast) {
           )
         ) ||
         wrapper.arguments.length === 0 &&
-        wrapper.callee.type === 'FunctionExpression' &&
+        (wrapper.callee.type === 'FunctionExpression' || wrapper.callee.type === 'ArrowFunctionExpression') &&
         wrapper.callee.params.length === 0 &&
         wrapper.callee.body.type === 'BlockStatement' &&
         wrapper.callee.body.body.length > 5 &&
