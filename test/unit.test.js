@@ -19,48 +19,6 @@ for (const { testName, isRoot } of unitTests) {
   };
   const unitPath = join(__dirname, 'unit', testName);
   
-  if (testName === 'wildcard') {
-    it('should work with async fs options used', async () => {
-      const { fileList, reasons } = await nodeFileTrace([join(unitPath, 'input.js')], {
-        base: isRoot ? '/' : `${__dirname}/../`,
-        processCwd: unitPath,
-        paths: {
-          dep: `${__dirname}/../test/unit/esm-paths/esm-dep.js`,
-          'dep/': `${__dirname}/../test/unit/esm-paths-trailer/`
-        },
-        exportsOnly: testName.startsWith('exports-only'),
-        ts: true,
-        log: true,
-        // disable analysis for basic-analysis unit tests
-        analysis: !testName.startsWith('basic-analysis'),
-        mixedModules: true,
-        // Ignore unit test output "actual.js", and ignore GitHub Actions preinstalled packages
-        ignore: (str) => str.endsWith('/actual.js') || str.startsWith('usr/local'),
-        readFile: async (path) => {
-          try {
-            return await fs.promises.readFile(path)
-          } catch (err) {
-            return null
-          }
-        },
-        readlink: async (path) => {
-          try {
-            return await fs.promises.readlink(path)
-          } catch (err) {
-            return null
-          }
-        },
-        stat: async (path) => {
-          try {
-            return await fs.promises.stat(path)
-          } catch (err) {
-            return null
-          }
-        },
-      });
-    })
-  }
-  
   it(`should correctly trace ${testSuffix}`, async () => {
 
     // We mock readFile because when node-file-trace is integrated into @now/node
@@ -69,9 +27,21 @@ for (const { testName, isRoot } of unitTests) {
     // used in the tsx-input test:
     const readFileMock = jest.fn(function() {
       const [id] = arguments;
-      return id.startsWith('custom-resolution-')
-        ? ''
-        : this.constructor.prototype.readFile.apply(this, arguments);
+      
+      if (id.startsWith('custom-resolution-')) {
+        return ''
+      }
+      
+      // ensure sync readFile works as expected since default is 
+      // async now
+      if (testName === 'wildcard') {
+        try {
+          return fs.readFileSync(id).toString()
+        } catch (err) {
+          return null
+        }
+      }
+      return this.constructor.prototype.readFile.apply(this, arguments);
     });
 
     let inputFileName = "input.js";
