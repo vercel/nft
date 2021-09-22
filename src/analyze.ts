@@ -18,6 +18,9 @@ import mapboxPregyp from '@mapbox/node-pre-gyp';
 import { Job } from './node-file-trace';
 import { fileURLToPath, pathToFileURL, URL } from 'url';
 
+
+// TypeScript fails to resolve estree-walker to the top due to the conflicting
+// estree-walker version in rollup-pluginutils so we use require here instead
 const asyncWalk: typeof import('../node_modules/estree-walker').asyncWalk = require('estree-walker').asyncWalk
 
 // Note: these should be deprecated over time as they ship in Acorn core
