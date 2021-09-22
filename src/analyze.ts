@@ -1,6 +1,5 @@
 import path from 'path';
-import { existsSync, statSync } from 'fs';
-import { walk, WalkerContext, Node } from 'estree-walker';
+import { WalkerContext, Node } from 'estree-walker';
 import { attachScopes } from 'rollup-pluginutils';
 import { evaluate, UNKNOWN, FUNCTION, WILDCARD, wildcardRegEx } from './utils/static-eval';
 import { Parser } from 'acorn';
@@ -19,6 +18,8 @@ import mapboxPregyp from '@mapbox/node-pre-gyp';
 import { Job } from './node-file-trace';
 import { fileURLToPath, pathToFileURL, URL } from 'url';
 
+const asyncWalk: typeof import('../node_modules/estree-walker').asyncWalk = require('estree-walker').asyncWalk
+
 // Note: these should be deprecated over time as they ship in Acorn core
 const acorn = Parser.extend(
   require("acorn-class-fields"),
@@ -30,6 +31,7 @@ import os from 'os';
 import { handleWrappers } from './utils/wrappers';
 import resolveFrom from 'resolve-from';
 import { ConditionalValue, EvaluatedValue, StaticValue, Ast } from './utils/types';
+import isError from './utils/is-error';
 
 const staticProcess = {
   cwd: () => {
@@ -250,9 +252,11 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     isESM = false;
   }
   catch (e) {
-    const isModule = e && e.message && e.message.includes('sourceType: module');
-    if (!isModule) {
-      job.warnings.add(new Error(`Failed to parse ${id} as script:\n${e && e.message}`));
+    if (isError(e)) {
+      const isModule = e && e.message && e.message.includes('sourceType: module');
+      if (!isModule) {
+        job.warnings.add(new Error(`Failed to parse ${id} as script:\n${e && e.message}`));
+      }
     }
   }
   //@ts-ignore
@@ -262,7 +266,9 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       isESM = true;
     }
     catch (e) {
-      job.warnings.add(new Error(`Failed to parse ${id} as module:\n${e && e.message}`));
+      if (isError(e)) {
+        job.warnings.add(new Error(`Failed to parse ${id} as module:\n${e && e.message}`));
+      }
       // Parser errors just skip analysis
       return { assets, deps, imports, isESM: false };
     }
@@ -353,7 +359,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     }
   }
 
-  function computePureStaticValue (expr: Node, computeBranches = true) {
+  async function computePureStaticValue (expr: Node, computeBranches = true) {
     const vars = Object.create(null);
     Object.keys(globalBindings).forEach(name => {
       vars[name] = { value: globalBindings[name] };
@@ -363,7 +369,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     });
     vars['import.meta'] = { url: importMetaUrl };
     // evaluate returns undefined for non-statically-analyzable
-    const result = evaluate(expr, vars, computeBranches);
+    const result = await evaluate(expr, vars, computeBranches);
     return result;
   }
 
@@ -410,7 +416,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     });
   }
 
-  function processRequireArg (expression: Node, isImport = false) {
+  async function processRequireArg (expression: Node, isImport = false) {
     if (expression.type === 'ConditionalExpression') {
       processRequireArg(expression.consequent, isImport);
       processRequireArg(expression.alternate, isImport);
@@ -422,7 +428,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       return;
     }
 
-    let computed = computePureStaticValue(expression, true);
+    let computed = await computePureStaticValue(expression, true);
     if (!computed) return;
 
     if ('value' in computed && typeof computed.value === 'string') {
@@ -442,14 +448,14 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   let scope = attachScopes(ast, 'scope');
   if (isAst(ast)) {
     handleWrappers(ast);
-    handleSpecialCases({ id, ast, emitAsset: path => assets.add(path), emitAssetDirectory, job });
+    await handleSpecialCases({ id, ast, emitAsset: path => assets.add(path), emitAssetDirectory, job });
   }
-  function backtrack (parent: Node, context?: WalkerContext) {
+  async function backtrack (parent: Node, context?: WalkerContext) {
     // computing a static expression outward
     // -> compute and backtrack
     // Note that `context` can be undefined in `leave()`
     if (!staticChildNode) throw new Error('Internal error: No staticChildNode for backtrack.');
-    const curStaticValue = computePureStaticValue(parent, true);
+    const curStaticValue = await computePureStaticValue(parent, true);
     if (curStaticValue) {
       if ('value' in curStaticValue && typeof curStaticValue.value !== 'symbol' ||
           'then' in curStaticValue && typeof curStaticValue.then !== 'symbol' && typeof curStaticValue.else !== 'symbol') {
@@ -460,11 +466,14 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       }
     }
     // no static value -> see if we should emit the asset if it exists
-    emitStaticChildAsset();
+    await emitStaticChildAsset();
   }
 
-  walk(ast, {
-    enter (node, parent) {
+  await asyncWalk(ast, {
+    async enter (_node, _parent) {
+      const node: Node = _node as any
+      const parent: Node = _parent as any
+      
       if (node.scope) {
         scope = node.scope;
         for (const id in node.scope.declarations) {
@@ -488,7 +497,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
               binding && (typeof binding === 'function' || typeof binding === 'object') && binding[TRIGGER]) {
             staticChildValue = { value: typeof binding === 'string' ? binding : undefined };
             staticChildNode = node;
-            backtrack(parent, this);
+            await backtrack(parent, this);
           }
         }
       }
@@ -496,7 +505,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         // import.meta.url leaf trigger
         staticChildValue = { value: importMetaUrl };
         staticChildNode = node;
-        backtrack(parent, this);
+        await backtrack(parent, this);
       }
       else if (node.type === 'ImportExpression') {
         processRequireArg(node.source, true);
@@ -528,15 +537,15 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           return;
         }
 
-        const calleeValue = job.analysis.evaluatePureExpressions && computePureStaticValue(node.callee, false);
+        const calleeValue = job.analysis.evaluatePureExpressions && await computePureStaticValue(node.callee, false);
         // if we have a direct pure static function,
         // and that function has a [TRIGGER] symbol -> trigger asset emission from it
         if (calleeValue && 'value' in calleeValue && typeof calleeValue.value === 'function' && (calleeValue.value as any)[TRIGGER] && job.analysis.computeFileReferences) {
-          staticChildValue = computePureStaticValue(node, true);
+          staticChildValue = await computePureStaticValue(node, true);
           // if it computes, then we start backtracking
           if (staticChildValue && parent) {
             staticChildNode = node;
-            backtrack(parent, this);
+            await backtrack(parent, this);
           }
         }
         // handle well-known function symbol cases
@@ -554,7 +563,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             // require('bindings')(...)
             case BINDINGS:
               if (node.arguments.length) {
-                const arg = computePureStaticValue(node.arguments[0], false);
+                const arg = await computePureStaticValue(node.arguments[0], false);
                 if (arg && 'value' in arg && arg.value) {
                   let opts: any;
                   if (typeof arg.value === 'object')
@@ -573,7 +582,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                   if (resolved) {
                     staticChildValue = { value: resolved };
                     staticChildNode = node;
-                    emitStaticChildAsset();
+                    await emitStaticChildAsset();
                   }
                 }
               }
@@ -589,14 +598,14 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 if (resolved) {
                   staticChildValue = { value: resolved };
                   staticChildNode = node;
-                  emitStaticChildAsset();
+                  await emitStaticChildAsset();
                 }
               }
             break;
             // nbind.init(...) -> require('./resolved.node')
             case NBIND_INIT:
               if (node.arguments.length) {
-                const arg = computePureStaticValue(node.arguments[0], false);
+                const arg = await computePureStaticValue(node.arguments[0], false);
                 if (arg && 'value' in arg && (typeof arg.value === 'string' || typeof arg.value === 'undefined')) {
                   const bindingInfo = nbind(arg.value);
                   if (bindingInfo && bindingInfo.path) {
@@ -623,11 +632,11 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             break;
             case FS_FN:
               if (node.arguments[0] && job.analysis.computeFileReferences) {
-                staticChildValue = computePureStaticValue(node.arguments[0], true);
+                staticChildValue = await computePureStaticValue(node.arguments[0], true);
                 // if it computes, then we start backtracking
                 if (staticChildValue) {
                   staticChildNode = node.arguments[0];
-                  backtrack(parent, this);
+                  await backtrack(parent, this);
                   return this.skip();
                 }
               }
@@ -635,7 +644,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             // strong globalize (emits intl folder)
             case SET_ROOT_DIR:
               if (node.arguments[0]) {
-                const rootDir = computePureStaticValue(node.arguments[0], false);
+                const rootDir = await computePureStaticValue(node.arguments[0], false);
                 if (rootDir && 'value' in rootDir && rootDir.value)
                   emitAssetDirectory(rootDir.value + '/intl');
                 return this.skip();
@@ -645,7 +654,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             case PKG_INFO:
               let pjsonPath = path.resolve(id, '../package.json');
               const rootPjson = path.resolve('/package.json');
-              while (pjsonPath !== rootPjson && !existsSync(pjsonPath))
+              while (pjsonPath !== rootPjson && (await job.stat(pjsonPath) === null))
                 pjsonPath = path.resolve(pjsonPath, '../../package.json');
               if (pjsonPath !== rootPjson)
                 assets.add(pjsonPath);
@@ -656,7 +665,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       else if (node.type === 'VariableDeclaration' && parent && !isVarLoop(parent) && job.analysis.evaluatePureExpressions) {
         for (const decl of node.declarations) {
           if (!decl.init) continue;
-          const computed = computePureStaticValue(decl.init, true);
+          const computed = await computePureStaticValue(decl.init, true);
           if (computed) {
             // var known = ...;
             if (decl.id.type === 'Identifier') {
@@ -678,14 +687,14 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             if (!('value' in computed) && isAbsolutePathOrUrl(computed.then) && isAbsolutePathOrUrl(computed.else)) {
               staticChildValue = computed;
               staticChildNode = decl.init;
-              emitStaticChildAsset();
+              await emitStaticChildAsset();
             }
           }
         }
       }
       else if (node.type === 'AssignmentExpression' && parent && !isLoop(parent) && job.analysis.evaluatePureExpressions) {
         if (!hasKnownBindingValue(node.left.name)) {
-          const computed = computePureStaticValue(node.right, false);
+          const computed = await computePureStaticValue(node.right, false);
           if (computed && 'value' in computed) {
             // var known = ...
             if (node.left.type === 'Identifier') {
@@ -707,7 +716,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             if (isAbsolutePathOrUrl(computed.value)) {
               staticChildValue = computed;
               staticChildNode = node.right;
-              emitStaticChildAsset();
+              await emitStaticChildAsset();
             }
           }
         }
@@ -761,7 +770,10 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         }
       }
     },
-    leave (node, parent) {
+    async leave (_node, _parent) {
+      const node: Node = _node as any
+      const parent: Node = _parent as any
+      
       if (node.scope) {
         if (scope.parent) {
           scope = scope.parent;
@@ -776,20 +788,23 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         }
       }
 
-      if (staticChildNode && parent) backtrack(parent, this);
+      if (staticChildNode && parent) await backtrack(parent, this);
     }
   });
 
   await assetEmissionPromises;
   return { assets, deps, imports, isESM };
 
-  function emitAssetPath (assetPath: string) {
+  async function emitAssetPath (assetPath: string) {
     // verify the asset file / directory exists
     const wildcardIndex = assetPath.indexOf(WILDCARD);
     const dirIndex = wildcardIndex === -1 ? assetPath.length : assetPath.lastIndexOf(path.sep, wildcardIndex);
     const basePath = assetPath.substr(0, dirIndex);
     try {
-      var stats = statSync(basePath);
+      var stats = await job.stat(basePath);
+      if (stats === null) {
+        throw new Error('file not found')
+      }
     }
     catch (e) {
       return;
@@ -840,7 +855,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     return value instanceof URL ? fileURLToPath(value) : value.startsWith('file:') ? fileURLToPath(new URL(value)) : path.resolve(value);
   }
 
-  function emitStaticChildAsset () {
+  async function emitStaticChildAsset () {
     if (!staticChildValue) {
       return;
     }
@@ -848,7 +863,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     if ('value' in staticChildValue && isAbsolutePathOrUrl(staticChildValue.value)) {
       try {
         const resolved = resolveAbsolutePathOrUrl(staticChildValue.value);
-        emitAssetPath(resolved);
+        await emitAssetPath(resolved);
       }
       catch (e) {}
     }
@@ -859,14 +874,14 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       let resolvedElse;
       try { resolvedElse = resolveAbsolutePathOrUrl(staticChildValue.else); }
       catch (e) {}
-      if (resolvedThen) emitAssetPath(resolvedThen);
-      if (resolvedElse) emitAssetPath(resolvedElse);
+      if (resolvedThen) await emitAssetPath(resolvedThen);
+      if (resolvedElse) await emitAssetPath(resolvedElse);
     }
     else if (staticChildNode && staticChildNode.type === 'ArrayExpression' && 'value' in staticChildValue && staticChildValue.value instanceof Array) {
       for (const value of staticChildValue.value) {
         try {
           const resolved = resolveAbsolutePathOrUrl(value);
-          emitAssetPath(resolved);
+          await emitAssetPath(resolved);
         }
         catch (e) {}
       }
