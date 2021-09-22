@@ -25,13 +25,13 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
   const job = new Job(opts);
 
   if (opts.readFile)
-    job.readFile = opts.readFile as typeof job.readFile;
+    job.readFile = opts.readFile
   if (opts.stat)
-    job.stat = opts.stat as typeof job.stat;
+    job.stat = opts.stat
   if (opts.readlink)
-    job.readlink = opts.readlink as typeof job.readlink;
+    job.readlink = opts.readlink
   if (opts.resolve)
-    job.resolve = opts.resolve as typeof job.resolve;
+    job.resolve = opts.resolve
 
   job.ts = true;
 
