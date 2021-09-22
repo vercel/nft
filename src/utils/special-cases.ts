@@ -99,9 +99,9 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(id.replace('index.js', 'preload.js')));
     }
   },
-  'socket.io' ({ id, ast, job }) {
+  'socket.io': async function ({ id, ast, job }) {
     if (id.endsWith('socket.io/lib/index.js')) {
-      function replaceResolvePathStatement (statement: Node) {
+      async function replaceResolvePathStatement (statement: Node) {
         if (statement.type === 'ExpressionStatement' &&
             statement.expression.type === 'AssignmentExpression' &&
             statement.expression.operator === '=' &&
@@ -117,7 +117,7 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
           const arg = statement.expression.right.arguments[0].arguments[0].value;
           let resolved: string;
           try {
-            const dep = resolveDependency(String(arg), id, job);
+            const dep = await resolveDependency(String(arg), id, job);
             if (typeof dep === 'string') {
               resolved = dep;
             } else {
@@ -169,10 +169,10 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
               const ifBody = node.consequent.body;
               let replaced: boolean | undefined = false;
               if (Array.isArray(ifBody) && ifBody[0] && ifBody[0].type === 'ExpressionStatement') {
-                replaced = replaceResolvePathStatement(ifBody[0]);
+                replaced = await replaceResolvePathStatement(ifBody[0]);
               }
               if (Array.isArray(ifBody) && ifBody[1] && ifBody[1].type === 'TryStatement' && ifBody[1].block.body && ifBody[1].block.body[0]) {
-                replaced = replaceResolvePathStatement(ifBody[1].block.body[0]) || replaced;
+                replaced = await replaceResolvePathStatement(ifBody[1].block.body[0]) || replaced;
               }
               return;
             }
@@ -224,9 +224,9 @@ interface SpecialCaseOpts {
   job: Job;
 }
 
-export default function handleSpecialCases({ id, ast, emitAsset, emitAssetDirectory, job }: SpecialCaseOpts) {
+export default async function handleSpecialCases({ id, ast, emitAsset, emitAssetDirectory, job }: SpecialCaseOpts) {
   const pkgName = getPackageName(id);
   const specialCase = specialCases[pkgName || ''];
   id = id.replace(/\\/g,  '/');
-  if (specialCase) specialCase({ id, ast, emitAsset, emitAssetDirectory, job });
+  if (specialCase) await specialCase({ id, ast, emitAsset, emitAssetDirectory, job });
 };

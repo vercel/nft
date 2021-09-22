@@ -45,10 +45,10 @@ export interface NodeFileTraceOptions {
   ts?: boolean;
   log?: boolean;
   mixedModules?: boolean;
-  readFile?: (path: string) => Buffer | string | null;
-  stat?: (path: string) => Stats | null;
-  readlink?: (path: string) => string | null;
-  resolve?: (id: string, parent: string, job: Job, cjsResolve: boolean) => string | string[];
+  readFile?: (path: string) => Promise<Buffer | string | null>;
+  stat?: (path: string) => Promise<Stats | null>;
+  readlink?: (path: string) => Promise<string | null>;
+  resolve?: (id: string, parent: string, job: Job, cjsResolve: boolean) => Promise<string | string[]>;
 }
 
 export interface NodeFileTraceReasons {

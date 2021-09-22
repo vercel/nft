@@ -17,8 +17,9 @@ for (const { testName, isRoot } of unitTests) {
     console.log(`Skipping unit test on Windows: ${testSuffix}`);
     continue;
   };
+  const unitPath = join(__dirname, 'unit', testName);
+  
   it(`should correctly trace ${testSuffix}`, async () => {
-    const unitPath = join(__dirname, 'unit', testName);
 
     // We mock readFile because when node-file-trace is integrated into @now/node
     // this is the hook that triggers TypeScript compilation. So if this doesn't
@@ -26,9 +27,21 @@ for (const { testName, isRoot } of unitTests) {
     // used in the tsx-input test:
     const readFileMock = jest.fn(function() {
       const [id] = arguments;
-      return id.startsWith('custom-resolution-')
-        ? ''
-        : this.constructor.prototype.readFile.apply(this, arguments);
+      
+      if (id.startsWith('custom-resolution-')) {
+        return ''
+      }
+      
+      // ensure sync readFile works as expected since default is 
+      // async now
+      if (testName === 'wildcard') {
+        try {
+          return fs.readFileSync(id).toString()
+        } catch (err) {
+          return null
+        }
+      }
+      return this.constructor.prototype.readFile.apply(this, arguments);
     });
 
     let inputFileName = "input.js";

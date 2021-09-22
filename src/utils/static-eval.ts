@@ -4,7 +4,7 @@ import { URL } from 'url';
 type Walk = (node: Node) => EvaluatedValue;
 type State = { computeBranches: boolean, vars: Record<string, any> };
 
-export function evaluate(ast: Node, vars = {}, computeBranches = true): EvaluatedValue {
+export async function evaluate(ast: Node, vars = {}, computeBranches = true): Promise<EvaluatedValue> {
   const state: State = {
     computeBranches,
     vars
@@ -36,25 +36,25 @@ function countWildcards (str: string) {
   return cnt;
 }
 
-const visitors: Record<string, (this: State, node: Node, walk: Walk) => EvaluatedValue> = {
-  'ArrayExpression': function ArrayExpression(this: State, node: Node, walk: Walk) {
+const visitors: Record<string, (this: State, node: Node, walk: Walk) => Promise<EvaluatedValue>> = {
+  'ArrayExpression': async function ArrayExpression(this: State, node: Node, walk: Walk) {
     const arr = [];
     for (let i = 0, l = node.elements.length; i < l; i++) {
       if (node.elements[i] === null) {
         arr.push(null);
         continue;
       }
-      const x = walk(node.elements[i]);
+      const x = await walk(node.elements[i]);
       if (!x) return;
       if ('value' in x === false) return;
       arr.push((x as StaticValue).value);
     }
     return { value: arr };
   },
-  'ArrowFunctionExpression': function (this: State, node: Node, walk: Walk) {
+  'ArrowFunctionExpression': async function (this: State, node: Node, walk: Walk) {
     // () => val support only
     if (node.params.length === 0 && !node.generator && !node.async && node.expression) {
-      const innerValue = walk(node.body);
+      const innerValue = await walk(node.body);
       if (!innerValue || !('value' in innerValue))
         return;
       return { 
@@ -65,14 +65,14 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     }
     return undefined;
   },
-  'BinaryExpression': function BinaryExpression(this: State, node: Node, walk: Walk) {
+  'BinaryExpression': async function BinaryExpression(this: State, node: Node, walk: Walk) {
     const op = node.operator;
 
-    let l = walk(node.left);
+    let l = await walk(node.left);
 
     if (!l && op !== '+') return;
 
-    let r = walk(node.right);
+    let r = await walk(node.right);
 
     if (!l && !r) return;
 
@@ -172,8 +172,8 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     }
     return;
   },
-  'CallExpression': function CallExpression(this: State, node: Node, walk: Walk) {
-    const callee = walk(node.callee);
+  'CallExpression': async function CallExpression(this: State, node: Node, walk: Walk) {
+    const callee = await walk(node.callee);
     if (!callee || 'test' in callee)
       return;
     let fn: any = callee.value;
@@ -182,7 +182,7 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
 
     let ctx = null
     if (node.callee.object) {
-      ctx = walk(node.callee.object)
+      ctx = await walk(node.callee.object)
       ctx = ctx && 'value' in ctx && ctx.value ? ctx.value : null
     }
 
@@ -193,7 +193,7 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     let allWildcards = node.arguments.length > 0 && node.callee.property?.name !== 'concat';
     const wildcards: string[] = [];
     for (let i = 0, l = node.arguments.length; i < l; i++) {
-      let x = walk(node.arguments[i]);
+      let x = await walk(node.arguments[i]);
       if (x) {
         allWildcards = false;
         if ('value' in x && typeof x.value === 'string' && x.wildcards)
@@ -224,7 +224,7 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     if (allWildcards)
       return;
     try {
-      const result = fn.apply(ctx, args);
+      const result = await fn.apply(ctx, args);
       if (result === UNKNOWN)
         return;
       if (!predicate) {
@@ -235,7 +235,7 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
         }
         return { value: result };
       }
-      const resultElse = fn.apply(ctx, argsElse);
+      const resultElse = await fn.apply(ctx, argsElse);
       if (result === UNKNOWN)
         return;
       return { test: predicate, then: result, else: resultElse };
@@ -244,18 +244,18 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
       return;
     }
   },
-  'ConditionalExpression': function ConditionalExpression(this: State, node: Node, walk: Walk) {
-    const val = walk(node.test);
+  'ConditionalExpression': async function ConditionalExpression(this: State, node: Node, walk: Walk) {
+    const val = await walk(node.test);
     if (val && 'value' in val)
       return val.value ? walk(node.consequent) : walk(node.alternate);
 
     if (!this.computeBranches)
       return;
 
-    const thenValue = walk(node.consequent);
+    const thenValue = await walk(node.consequent);
     if (!thenValue || 'wildcards' in thenValue || 'test' in thenValue)
       return;
-    const elseValue = walk(node.alternate);
+    const elseValue = await walk(node.alternate);
     if (!elseValue || 'wildcards' in elseValue || 'test' in elseValue)
       return;
 
@@ -265,19 +265,19 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
       else: elseValue.value
     };
   },
-  'ExpressionStatement': function ExpressionStatement(this: State, node: Node, walk: Walk) {
+  'ExpressionStatement': async function ExpressionStatement(this: State, node: Node, walk: Walk) {
     return walk(node.expression);
   },
-  'Identifier': function Identifier(this: State, node: Node, _walk: Walk) {
+  'Identifier': async function Identifier(this: State, node: Node, _walk: Walk) {
     if (Object.hasOwnProperty.call(this.vars, node.name))
       return this.vars[node.name];
     return undefined;
   },
-  'Literal': function Literal (this: State, node: Node, _walk: Walk) {
+  'Literal': async function Literal (this: State, node: Node, _walk: Walk) {
     return { value: node.value };
   },
-  'MemberExpression': function MemberExpression(this: State, node: Node, walk: Walk) {
-    const obj = walk(node.object);
+  'MemberExpression': async function MemberExpression(this: State, node: Node, walk: Walk) {
+    const obj = await walk(node.object);
     if (!obj || 'test' in obj || typeof obj.value === 'function') {
       return undefined;
     }
@@ -293,7 +293,7 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
         const objValue = obj.value as any;
         if (node.computed) {
           // See if we can compute the computed property
-          const computedProp = walk(node.property);
+          const computedProp = await walk(node.property);
           if (computedProp && 'value' in computedProp && computedProp.value) {
             const val = objValue[computedProp.value];
             if (val === UNKNOWN) return undefined;
@@ -316,7 +316,7 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
         return { value: undefined };
       }
     }
-    const prop = walk(node.property);
+    const prop = await walk(node.property);
     if (!prop || 'test' in prop)
       return undefined;
     if (typeof obj.value === 'object' && obj.value !== null) {
@@ -338,21 +338,21 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     }
     return undefined;
   },
-  'MetaProperty': function MetaProperty(this: State, node: Node) {
+  'MetaProperty': async function MetaProperty(this: State, node: Node) {
     if (node.meta.name === 'import' && node.property.name === 'meta')
       return { value: this.vars['import.meta'] };
     return undefined;
   },
-  'NewExpression': function NewExpression(this: State, node: Node, walk: Walk) {
+  'NewExpression': async function NewExpression(this: State, node: Node, walk: Walk) {
     // new URL('./local', parent)
-    const cls = walk(node.callee);
+    const cls = await walk(node.callee);
     if (cls && 'value' in cls && cls.value === URL && node.arguments.length) {
-      const arg = walk(node.arguments[0]);
+      const arg = await walk(node.arguments[0]);
       if (!arg)
         return undefined;
       let parent = null;
       if (node.arguments[1]) {
-        parent = walk(node.arguments[1]);
+        parent = await walk(node.arguments[1]);
         if (!parent || !('value' in parent))
           return undefined;
       }
@@ -400,13 +400,13 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     }
     return undefined;
   },
-  'ObjectExpression': function ObjectExpression(this: State, node: Node, walk: Walk) {
+  'ObjectExpression': async function ObjectExpression(this: State, node: Node, walk: Walk) {
     const obj: any = {};
     for (let i = 0; i < node.properties.length; i++) {
       const prop = node.properties[i];
       const keyValue = prop.computed ? walk(prop.key) : prop.key && { value: prop.key.name || prop.key.value };
       if (!keyValue || 'test' in keyValue) return;
-      const value = walk(prop.value);
+      const value = await walk(prop.value);
       if (!value || 'test' in value) return;
       //@ts-ignore
       if (value.value === UNKNOWN) return;
@@ -415,7 +415,7 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     }
     return { value: obj };
   },
-  'TemplateLiteral': function TemplateLiteral(this: State, node: Node, walk: Walk) {
+  'TemplateLiteral': async function TemplateLiteral(this: State, node: Node, walk: Walk) {
     let val: StaticValue | ConditionalValue = { value: '' };
     for (var i = 0; i < node.expressions.length; i++) {
       if ('value' in val) {
@@ -425,7 +425,7 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
         val.then += node.quasis[i].value.cooked;
         val.else += node.quasis[i].value.cooked;
       }
-      let exprValue = walk(node.expressions[i]);
+      let exprValue = await walk(node.expressions[i]);
       if (!exprValue) {
         if (!this.computeBranches)
           return undefined;
@@ -468,13 +468,13 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Evaluate
     }
     return val;
   },
-  'ThisExpression': function ThisExpression(this: State, _node: Node, _walk: Walk) {
+  'ThisExpression': async function ThisExpression(this: State, _node: Node, _walk: Walk) {
     if (Object.hasOwnProperty.call(this.vars, 'this'))
       return this.vars['this'];
     return undefined;
   },
-  'UnaryExpression': function UnaryExpression(this: State, node: Node, walk: Walk) {
-    const val = walk(node.argument);
+  'UnaryExpression': async function UnaryExpression(this: State, node: Node, walk: Walk) {
+    const val = await walk(node.argument);
     if (!val)
       return undefined;
     if ('value' in val && 'wildcards' in val === false) {

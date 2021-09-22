@@ -1,11 +1,16 @@
 import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats } from './types';
 import { basename, dirname, extname, relative, resolve, sep } from 'path';
 import fs from 'fs';
+import { promisify } from 'util'
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
 import { join } from 'path';
+
+const fsReadFile = promisify(fs.readFile)
+const fsReadlink = promisify(fs.readlink)
+const fsStat = promisify(fs.stat)
 
 const { gracefulify } = require('graceful-fs');
 gracefulify(fs);
@@ -19,19 +24,19 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
   const job = new Job(opts);
 
   if (opts.readFile)
-    job.readFile = opts.readFile;
+    job.readFile = opts.readFile
   if (opts.stat)
-    job.stat = opts.stat;
+    job.stat = opts.stat
   if (opts.readlink)
-    job.readlink = opts.readlink;
+    job.readlink = opts.readlink
   if (opts.resolve)
-    job.resolve = opts.resolve;
+    job.resolve = opts.resolve
 
   job.ts = true;
 
-  await Promise.all(files.map(file => {
+  await Promise.all(files.map(async file => {
     const path = resolve(file);
-    job.emitFile(path, 'initial');
+    await job.emitFile(path, 'initial');
     if (path.endsWith('.js') || path.endsWith('.cjs') || path.endsWith('.mjs') || path.endsWith('.node') || job.ts && (path.endsWith('.ts') || path.endsWith('.tsx'))) {
       return job.emitDependency(path);
     }
@@ -151,11 +156,11 @@ export class Job {
     this.warnings = new Set();
   }
 
-  readlink (path: string) {
+  async readlink (path: string) {
     const cached = this.symlinkCache.get(path);
     if (cached !== undefined) return cached;
     try {
-      const link = fs.readlinkSync(path);
+      const link = await fsReadlink(path);
       // also copy stat cache to symlink
       const stats = this.statCache.get(path);
       if (stats)
@@ -171,25 +176,25 @@ export class Job {
     }
   }
 
-  isFile (path: string) {
-    const stats = this.stat(path);
+  async isFile (path: string) {
+    const stats = await this.stat(path);
     if (stats)
       return stats.isFile();
     return false;
   }
 
-  isDir (path: string) {
-    const stats = this.stat(path);
+  async isDir (path: string) {
+    const stats = await this.stat(path);
     if (stats)
       return stats.isDirectory();
     return false;
   }
 
-  stat (path: string) {
+  async stat (path: string) {
     const cached = this.statCache.get(path);
     if (cached) return cached;
     try {
-      const stats = fs.statSync(path);
+      const stats = await fsStat(path);
       this.statCache.set(path, stats);
       return stats;
     }
@@ -202,15 +207,15 @@ export class Job {
     }
   }
 
-  resolve (id: string, parent: string, job: Job, cjsResolve: boolean): string | string[] {
+  async resolve (id: string, parent: string, job: Job, cjsResolve: boolean): Promise<string | string[]> {
     return resolveDependency(id, parent, job, cjsResolve);
   }
 
-  readFile (path: string): string | Buffer | null {
+  async readFile (path: string): Promise<string | Buffer | null> {
     const cached = this.fileCache.get(path);
     if (cached !== undefined) return cached;
     try {
-      const source = fs.readFileSync(path).toString();
+      const source = (await fsReadFile(path)).toString();
       this.fileCache.set(path, source);
       return source;
     }
@@ -223,28 +228,28 @@ export class Job {
     }
   }
 
-  realpath (path: string, parent?: string, seen = new Set()): string {
+  async realpath (path: string, parent?: string, seen = new Set()): Promise<string> {
     if (seen.has(path)) throw new Error('Recursive symlink detected resolving ' + path);
     seen.add(path);
-    const symlink = this.readlink(path);
+    const symlink = await this.readlink(path);
     // emit direct symlink paths only
     if (symlink) {
       const parentPath = dirname(path);
       const resolved = resolve(parentPath, symlink);
-      const realParent = this.realpath(parentPath, parent);
+      const realParent = await this.realpath(parentPath, parent);
       if (inPath(path, realParent))
-        this.emitFile(path, 'resolve', parent, true);
+        await this.emitFile(path, 'resolve', parent, true);
       return this.realpath(resolved, parent, seen);
     }
     // keep backtracking for realpath, emitting folder symlinks within base
     if (!inPath(path, this.base))
       return path;
-    return join(this.realpath(dirname(path), parent, seen), basename(path));
+    return join(await this.realpath(dirname(path), parent, seen), basename(path));
   }
 
-  emitFile (path: string, reason: string, parent?: string, isRealpath = false) {
+  async emitFile (path: string, reason: string, parent?: string, isRealpath = false) {
     if (!isRealpath)
-      path = this.realpath(path, parent);
+      path = await this.realpath(path, parent);
     if (this.fileList.has(path)) return;
     path = relative(this.base, path);
     if (parent)
@@ -264,12 +269,12 @@ export class Job {
     return true;
   }
 
-  getPjsonBoundary (path: string) {
+  async getPjsonBoundary (path: string) {
     const rootSeparatorIndex = path.indexOf(sep);
     let separatorIndex: number;
     while ((separatorIndex = path.lastIndexOf(sep)) > rootSeparatorIndex) {
       path = path.substr(0, separatorIndex);
-      if (this.isFile(path + sep + 'package.json'))
+      if (await this.isFile(path + sep + 'package.json'))
         return path;
     }
     return undefined;
@@ -279,16 +284,16 @@ export class Job {
     if (this.processed.has(path)) return;
     this.processed.add(path);
 
-    const emitted = this.emitFile(path, 'dependency', parent);
+    const emitted = await this.emitFile(path, 'dependency', parent);
     if (!emitted) return;
     if (path.endsWith('.json')) return;
     if (path.endsWith('.node')) return await sharedLibEmit(path, this);
 
     // js files require the "type": "module" lookup, so always emit the package.json
     if (path.endsWith('.js')) {
-      const pjsonBoundary = this.getPjsonBoundary(path);
+      const pjsonBoundary = await this.getPjsonBoundary(path);
       if (pjsonBoundary)
-        this.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
+        await this.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
     }
 
     let analyzeResult: AnalyzeResult;
@@ -298,7 +303,7 @@ export class Job {
       analyzeResult = cachedAnalysis;
     }
     else {
-      const source = this.readFile(path);
+      const source = await this.readFile(path);
       if (source === null) throw new Error('File ' + path + ' does not exist.');
       analyzeResult = await analyze(path, source.toString(), this);
       this.analysisCache.set(path, analyzeResult);
@@ -316,11 +321,11 @@ export class Job {
             this.ts && (ext === '.ts' || ext === '.tsx') && asset.startsWith(this.base) && asset.substr(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
           await this.emitDependency(asset, path);
         else
-          this.emitFile(asset, 'asset', path);
+          await this.emitFile(asset, 'asset', path);
       }),
       ...[...deps].map(async dep => {
         try {
-          var resolved = this.resolve(dep, path, this, !isESM);
+          var resolved = await this.resolve(dep, path, this, !isESM);
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
@@ -341,7 +346,7 @@ export class Job {
       }),
       ...[...imports].map(async dep => {
         try {
-          var resolved = this.resolve(dep, path, this, false);
+          var resolved = await this.resolve(dep, path, this, false);
         }
         catch (e) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
