@@ -31,7 +31,6 @@ import os from 'os';
 import { handleWrappers } from './utils/wrappers';
 import resolveFrom from 'resolve-from';
 import { ConditionalValue, EvaluatedValue, StaticValue, Ast } from './utils/types';
-import isError from './utils/is-error';
 
 const staticProcess = {
   cwd: () => {
@@ -252,11 +251,9 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     isESM = false;
   }
   catch (e) {
-    if (isError(e)) {
-      const isModule = e && e.message && e.message.includes('sourceType: module');
-      if (!isModule) {
-        job.warnings.add(new Error(`Failed to parse ${id} as script:\n${e && e.message}`));
-      }
+    const isModule = e && e.message && e.message.includes('sourceType: module');
+    if (!isModule) {
+      job.warnings.add(new Error(`Failed to parse ${id} as script:\n${e && e.message}`));
     }
   }
   //@ts-ignore
@@ -266,9 +263,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       isESM = true;
     }
     catch (e) {
-      if (isError(e)) {
-        job.warnings.add(new Error(`Failed to parse ${id} as module:\n${e && e.message}`));
-      }
+      job.warnings.add(new Error(`Failed to parse ${id} as module:\n${e && e.message}`));
       // Parser errors just skip analysis
       return { assets, deps, imports, isESM: false };
     }

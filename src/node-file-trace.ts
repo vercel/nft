@@ -7,7 +7,6 @@ import resolveDependency from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
 import { join } from 'path';
-import isError from './utils/is-error';
 
 const fsReadFile = promisify(fs.readFile)
 const fsReadlink = promisify(fs.readlink)
@@ -170,7 +169,7 @@ export class Job {
       return link;
     }
     catch (e) {
-      if (isError(e) && e.code !== 'EINVAL' && e.code !== 'ENOENT' && e.code !== 'UNKNOWN')
+      if (e.code !== 'EINVAL' && e.code !== 'ENOENT' && e.code !== 'UNKNOWN')
         throw e;
       this.symlinkCache.set(path, null);
       return null;
@@ -200,7 +199,7 @@ export class Job {
       return stats;
     }
     catch (e) {
-      if (isError(e) && e.code === 'ENOENT') {
+      if (e.code === 'ENOENT') {
         this.statCache.set(path, null);
         return null;
       }
@@ -221,7 +220,7 @@ export class Job {
       return source;
     }
     catch (e) {
-      if (isError(e) && (e.code === 'ENOENT' || e.code === 'EISDIR')) {
+      if (e.code === 'ENOENT' || e.code === 'EISDIR') {
         this.fileCache.set(path, null);
         return null;
       }
@@ -329,9 +328,7 @@ export class Job {
           var resolved = await this.resolve(dep, path, this, !isESM);
         }
         catch (e) {
-          if (isError(e)) {
-            this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
-          }
+          this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
           return;
         }
         if (Array.isArray(resolved)) {
@@ -352,9 +349,7 @@ export class Job {
           var resolved = await this.resolve(dep, path, this, false);
         }
         catch (e) {
-          if (isError(e)) {
-            this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
-          }
+          this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
           return;
         }
         if (Array.isArray(resolved)) {
