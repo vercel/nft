@@ -17,8 +17,51 @@ for (const { testName, isRoot } of unitTests) {
     console.log(`Skipping unit test on Windows: ${testSuffix}`);
     continue;
   };
+  const unitPath = join(__dirname, 'unit', testName);
+  
+  if (testName === 'wildcard') {
+    it('should work with async fs options used', async () => {
+      const { fileList, reasons } = await nodeFileTrace([join(unitPath, 'input.js')], {
+        base: isRoot ? '/' : `${__dirname}/../`,
+        processCwd: unitPath,
+        paths: {
+          dep: `${__dirname}/../test/unit/esm-paths/esm-dep.js`,
+          'dep/': `${__dirname}/../test/unit/esm-paths-trailer/`
+        },
+        exportsOnly: testName.startsWith('exports-only'),
+        ts: true,
+        log: true,
+        // disable analysis for basic-analysis unit tests
+        analysis: !testName.startsWith('basic-analysis'),
+        mixedModules: true,
+        // Ignore unit test output "actual.js", and ignore GitHub Actions preinstalled packages
+        ignore: (str) => str.endsWith('/actual.js') || str.startsWith('usr/local'),
+        readFile: async (path) => {
+          try {
+            return await fs.promises.readFile(path)
+          } catch (err) {
+            return null
+          }
+        },
+        readlink: async (path) => {
+          try {
+            return await fs.promises.readlink(path)
+          } catch (err) {
+            return null
+          }
+        },
+        stat: async (path) => {
+          try {
+            return await fs.promises.stat(path)
+          } catch (err) {
+            return null
+          }
+        },
+      });
+    })
+  }
+  
   it(`should correctly trace ${testSuffix}`, async () => {
-    const unitPath = join(__dirname, 'unit', testName);
 
     // We mock readFile because when node-file-trace is integrated into @now/node
     // this is the hook that triggers TypeScript compilation. So if this doesn't
