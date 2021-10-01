@@ -67,6 +67,9 @@ export class Job {
   private statCache: Map<string, Stats | null>;
   private symlinkCache: Map<string, string | null>;
   private analysisCache: Map<string, AnalyzeResult>;
+  private globCache: Map<string, any>;
+  private pjsonBoundaryCache: Map<string, any>;
+  private resolveCache: Map<string, any>;
   public fileList: Set<string>;
   public esmFileList: Set<string>;
   public processed: Set<string>;
@@ -142,12 +145,18 @@ export class Job {
     this.statCache = cache && cache.statCache || new Map();
     this.symlinkCache = cache && cache.symlinkCache || new Map();
     this.analysisCache = cache && cache.analysisCache || new Map();
+    this.globCache = cache && cache.globCache || new Map();
+    this.pjsonBoundaryCache = cache && cache.pjsonBoundaryCache || new Map();
+    this.resolveCache = cache && cache.resolveCache || new Map();
 
     if (cache) {
       cache.fileCache = this.fileCache;
       cache.statCache = this.statCache;
       cache.symlinkCache = this.symlinkCache;
       cache.analysisCache = this.analysisCache;
+      cache.globCache = this.globCache;
+      cache.pjsonBoundaryCache = this.pjsonBoundaryCache;
+      cache.resolveCache = this.resolveCache;
     }
 
     this.fileList = new Set();
@@ -208,7 +217,12 @@ export class Job {
   }
 
   async resolve (id: string, parent: string, job: Job, cjsResolve: boolean): Promise<string | string[]> {
-    return resolveDependency(id, parent, job, cjsResolve);
+    const cacheKey = id + parent
+    const cacheItem = job.resolveCache.get(cacheKey)
+    if (typeof cacheItem !== 'undefined') return cacheItem
+    const res = await resolveDependency(id, parent, job, cjsResolve);
+    job.resolveCache.set(cacheKey, res || null)
+    return res
   }
 
   async readFile (path: string): Promise<string | Buffer | null> {
@@ -270,13 +284,20 @@ export class Job {
   }
 
   async getPjsonBoundary (path: string) {
+    const initialPath = path
+    const cacheItem = this.pjsonBoundaryCache.get(path)
+    if (typeof cacheItem !== 'undefined') return cacheItem
+    
     const rootSeparatorIndex = path.indexOf(sep);
     let separatorIndex: number;
     while ((separatorIndex = path.lastIndexOf(sep)) > rootSeparatorIndex) {
       path = path.substr(0, separatorIndex);
-      if (await this.isFile(path + sep + 'package.json'))
+      if (await this.isFile(path + sep + 'package.json')) {
+        this.pjsonBoundaryCache.set(initialPath, path)
         return path;
+      }
     }
+    this.pjsonBoundaryCache.set(initialPath, null)
     return undefined;
   }
 
