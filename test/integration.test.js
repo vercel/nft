@@ -14,10 +14,6 @@ const integrationDir = `${__dirname}${path.sep}integration`;
 
 for (const integrationTest of readdirSync(integrationDir)) {
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
-    // this test is failing without the yarn.lock present on windows
-    if (os.platform() === 'win32' && integrationTest === 'auth0.js') {
-      return
-    }
     console.log('Tracing and executing ' + integrationTest);
     const fails = integrationTest.endsWith('failure.js');
     const { fileList, reasons, warnings } = await nodeFileTrace([`${integrationDir}/${integrationTest}`], {
