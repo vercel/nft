@@ -3,7 +3,7 @@ import { basename, dirname, extname, relative, resolve, sep } from 'path';
 import fs from 'fs';
 import { promisify } from 'util'
 import analyze, { AnalyzeResult } from './analyze';
-import resolveDependency from './resolve-dependency';
+import resolveDependency, { FilesToEmit } from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
 import { join } from 'path';
@@ -237,7 +237,7 @@ export class Job {
     }
   }
 
-  async realpath (path: string, parent?: string, seen = new Set()): Promise<string> {
+  async realpath (path: string, parent?: string, seen = new Set(), filesToEmit ?: FilesToEmit): Promise<string> {
     if (seen.has(path)) throw new Error('Recursive symlink detected resolving ' + path);
     seen.add(path);
     const symlink = await this.readlink(path);
@@ -245,10 +245,15 @@ export class Job {
     if (symlink) {
       const parentPath = dirname(path);
       const resolved = resolve(parentPath, symlink);
-      const realParent = await this.realpath(parentPath, parent);
-      if (inPath(path, realParent))
-        await this.emitFile(path, 'resolve', parent, true);
-      return this.realpath(resolved, parent, seen);
+      const realParent = await this.realpath(parentPath, parent, undefined, filesToEmit);
+      if (inPath(path, realParent)) {
+        if (filesToEmit) {
+          filesToEmit.push({file: path, type: 'resolve', parent: parent!, isRealpath: true})
+        } else {
+          await this.emitFile(path, 'resolve', parent, true);
+        }
+      }
+      return this.realpath(resolved, parent, seen, filesToEmit);
     }
     // keep backtracking for realpath, emitting folder symlinks within base
     if (!inPath(path, this.base))
