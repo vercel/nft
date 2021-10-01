@@ -67,9 +67,9 @@ export class Job {
   private statCache: Map<string, Stats | null>;
   private symlinkCache: Map<string, string | null>;
   private analysisCache: Map<string, AnalyzeResult>;
-  private globCache: Map<string, any>;
-  private pjsonBoundaryCache: Map<string, any>;
-  private resolveCache: Map<string, any>;
+  private globCache: Map<string, string[] | null>;
+  private pjsonBoundaryCache: Map<string, string | null>;
+  private resolveCache: Map<string, { result: string | string[], toEmit: [] }>;
   public fileList: Set<string>;
   public esmFileList: Set<string>;
   public processed: Set<string>;
@@ -217,12 +217,7 @@ export class Job {
   }
 
   async resolve (id: string, parent: string, job: Job, cjsResolve: boolean): Promise<string | string[]> {
-    const cacheKey = id + parent
-    const cacheItem = job.resolveCache.get(cacheKey)
-    if (typeof cacheItem !== 'undefined') return cacheItem
-    const res = await resolveDependency(id, parent, job, cjsResolve);
-    job.resolveCache.set(cacheKey, res || null)
-    return res
+    return resolveDependency(id, parent, job, cjsResolve);
   }
 
   async readFile (path: string): Promise<string | Buffer | null> {

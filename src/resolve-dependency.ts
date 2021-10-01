@@ -1,33 +1,62 @@
 import { isAbsolute, resolve, sep } from 'path';
 import { Job } from './node-file-trace';
 
+type FilesToEmit = Array<{
+  file: string,
+  parent: string,
+  type: 'resolve'
+}>
+
 // node resolver
 // custom implementation to emit only needed package.json files for resolver
 // (package.json files are emitted as they are hit)
 export default async function resolveDependency (specifier: string, parent: string, job: Job, cjsResolve = true): Promise<string | string[]> {
+  const cacheKey = specifier + parent
+  const cacheItem = (job as any).resolveCache.get(cacheKey)
+  
+  if (cacheItem) {
+    await Promise.all((cacheItem.filesToEmit as FilesToEmit).map(async (item) => {
+      await job.emitFile(item.file, item.type, item.parent)
+    }))
+    return cacheItem.result
+  }
+ 
+  const filesToEmit: FilesToEmit = []
+  
   let resolved: string | string[];
   if (isAbsolute(specifier) || specifier === '.' || specifier === '..' || specifier.startsWith('./') || specifier.startsWith('../')) {
     const trailingSlash = specifier.endsWith('/');
-    resolved = await resolvePath(resolve(parent, '..', specifier) + (trailingSlash ? '/' : ''), parent, job);
+    resolved = await resolvePath(resolve(parent, '..', specifier) + (trailingSlash ? '/' : ''), parent, job, filesToEmit);
   }
   else if (specifier[0] === '#') {
-    resolved = await packageImportsResolve(specifier, parent, job, cjsResolve);
+    resolved = await packageImportsResolve(specifier, parent, job, cjsResolve, filesToEmit);
   }
   else {
-    resolved = await resolvePackage(specifier, parent, job, cjsResolve);
+    resolved = await resolvePackage(specifier, parent, job, cjsResolve, filesToEmit);
   }
+  
+  await Promise.all(filesToEmit.map(async (item) => {
+    await job.emitFile(item.file, item.type, item.parent)
+  }))
+
+  let result: string | string[]
 
   if (Array.isArray(resolved)) {
-    return Promise.all(resolved.map(resolved => job.realpath(resolved, parent)))
+    result = await Promise.all(resolved.map(resolved => job.realpath(resolved, parent)))
   } else if (resolved.startsWith('node:')) {
-    return resolved;
+    result = resolved;
   } else {
-    return job.realpath(resolved, parent);
+    result = await job.realpath(resolved, parent);
   }
+  ;(job as any).resolveCache.set(cacheKey, {
+    result,
+    filesToEmit
+  })
+  return result
 };
 
-async function resolvePath (path: string, parent: string, job: Job): Promise<string> {
-  const result = await resolveFile(path, parent, job) || await resolveDir(path, parent, job);
+async function resolvePath (path: string, parent: string, job: Job, filesToEmit: FilesToEmit): Promise<string> {
+  const result = await resolveFile(path, parent, job) || await resolveDir(path, parent, job, filesToEmit);
   if (!result) {
     throw new NotFoundError(path, parent);
   }
@@ -46,14 +75,14 @@ async function resolveFile (path: string, parent: string, job: Job): Promise<str
   return undefined;
 }
 
-async function resolveDir (path: string, parent: string, job: Job) {
+async function resolveDir (path: string, parent: string, job: Job, filesToEmit: FilesToEmit) {
   if (path.endsWith('/')) path = path.slice(0, -1);
   if (!await job.isDir(path)) return;
   const pkgCfg = await getPkgCfg(path, job);
   if (pkgCfg && typeof pkgCfg.main === 'string') {
     const resolved = await resolveFile(resolve(path, pkgCfg.main), parent, job) || await resolveFile(resolve(path, pkgCfg.main, 'index'), parent, job);
     if (resolved) {
-      await job.emitFile(path + sep + 'package.json', 'resolve', parent);
+      filesToEmit.push({file: path + sep + 'package.json', parent, type: 'resolve'})
       return resolved;
     }
   }
@@ -162,7 +191,7 @@ function resolveExportsImports (pkgPath: string, obj: PackageTarget, subpath: st
   return undefined;
 }
 
-async function packageImportsResolve (name: string, parent: string, job: Job, cjsResolve: boolean): Promise<string> {
+async function packageImportsResolve (name: string, parent: string, job: Job, cjsResolve: boolean, filesToEmit: FilesToEmit): Promise<string> {
   if (name !== '#' && !name.startsWith('#/') && job.conditions) {
     const pjsonBoundary = await job.getPjsonBoundary(parent);
     if (pjsonBoundary) {
@@ -172,11 +201,11 @@ async function packageImportsResolve (name: string, parent: string, job: Job, cj
         let importsResolved = resolveExportsImports(pjsonBoundary, pkgImports, name, job, true, cjsResolve);
         if (importsResolved) {
           if (cjsResolve)
-            importsResolved = await resolveFile(importsResolved, parent, job) || await resolveDir(importsResolved, parent, job);
+            importsResolved = await resolveFile(importsResolved, parent, job) || await resolveDir(importsResolved, parent, job, filesToEmit);
           else if (!await job.isFile(importsResolved))
             throw new NotFoundError(importsResolved, parent);
           if (importsResolved) {
-            await job.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', parent);
+            filesToEmit.push({ file: pjsonBoundary + sep + 'package.json', parent, type: 'resolve' })
             return importsResolved;
           }
         }
@@ -186,7 +215,7 @@ async function packageImportsResolve (name: string, parent: string, job: Job, cj
   throw new NotFoundError(name, parent);
 }
 
-async function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boolean): Promise<string | string []> {
+async function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boolean, filesToEmit: FilesToEmit): Promise<string | string []> {
   let packageParent = parent;
   if (nodeBuiltins.has(name)) return 'node:' + name;
 
@@ -203,12 +232,12 @@ async function resolvePackage (name: string, parent: string, job: Job, cjsResolv
         selfResolved = resolveExportsImports(pjsonBoundary, pkgExports, '.' + name.slice(pkgName.length), job, false, cjsResolve);
         if (selfResolved) {
           if (cjsResolve)
-            selfResolved = await resolveFile(selfResolved, parent, job) || await resolveDir(selfResolved, parent, job);
+            selfResolved = await resolveFile(selfResolved, parent, job) || await resolveDir(selfResolved, parent, job, filesToEmit);
           else if (!await job.isFile(selfResolved))
             throw new NotFoundError(selfResolved, parent);
         }
         if (selfResolved)
-          await job.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', parent);
+          filesToEmit.push({ file: pjsonBoundary + sep + 'package.json', parent, type: 'resolve' })
       }
     }
   }
@@ -225,16 +254,16 @@ async function resolvePackage (name: string, parent: string, job: Job, cjsResolv
     if (job.conditions && pkgExports !== undefined && pkgExports !== null && !selfResolved) {
       let legacyResolved;
       if (!job.exportsOnly)
-        legacyResolved = await resolveFile(nodeModulesDir + sep + name, parent, job) || await resolveDir(nodeModulesDir + sep + name, parent, job);
+        legacyResolved = await resolveFile(nodeModulesDir + sep + name, parent, job) || await resolveDir(nodeModulesDir + sep + name, parent, job, filesToEmit);
       let resolved = resolveExportsImports(nodeModulesDir + sep + pkgName, pkgExports, '.' + name.slice(pkgName.length), job, false, cjsResolve);
       if (resolved) {
         if (cjsResolve)
-          resolved = await resolveFile(resolved, parent, job) || await resolveDir(resolved, parent, job);
+          resolved = await resolveFile(resolved, parent, job) || await resolveDir(resolved, parent, job, filesToEmit);
         else if (!await job.isFile(resolved))
           throw new NotFoundError(resolved, parent);
       }
       if (resolved) {
-        await job.emitFile(nodeModulesDir + sep + pkgName + sep + 'package.json', 'resolve', parent);
+        filesToEmit.push({ file: nodeModulesDir + sep + pkgName + sep + 'package.json', parent, type: 'resolve' })
         if (legacyResolved && legacyResolved !== resolved)
           return [resolved, legacyResolved];
         return resolved;
@@ -243,7 +272,7 @@ async function resolvePackage (name: string, parent: string, job: Job, cjsResolv
         return legacyResolved;
     }
     else {
-      const resolved = await resolveFile(nodeModulesDir + sep + name, parent, job) || await resolveDir(nodeModulesDir + sep + name, parent, job);
+      const resolved = await resolveFile(nodeModulesDir + sep + name, parent, job) || await resolveDir(nodeModulesDir + sep + name, parent, job, filesToEmit);
       if (resolved) {
         if (selfResolved && selfResolved !== resolved)
           return [resolved, selfResolved];
@@ -258,7 +287,7 @@ async function resolvePackage (name: string, parent: string, job: Job, cjsResolv
   for (const path of Object.keys(job.paths)) {
     if (path.endsWith('/') && name.startsWith(path)) {
       const pathTarget = job.paths[path] + name.slice(path.length);
-      const resolved = await resolveFile(pathTarget, parent, job) || await resolveDir(pathTarget, parent, job);
+      const resolved = await resolveFile(pathTarget, parent, job) || await resolveDir(pathTarget, parent, job, filesToEmit);
       if (!resolved) {
         throw new NotFoundError(name, parent);
       }
