@@ -106,7 +106,6 @@ for (const { testName, isRoot } of unitTests) {
     expect(nftCache.symlinkCache).toBeDefined()
     expect(nftCache.analysisCache).toBeDefined()
     expect(nftCache.globCache).toBeDefined()
-    expect(nftCache.pjsonBoundaryCache).toBeDefined()
     expect(nftCache.resolveCache).toBeDefined()
     await doTrace()
 

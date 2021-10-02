@@ -12,7 +12,8 @@ export type FilesToEmit = Array<{
 // custom implementation to emit only needed package.json files for resolver
 // (package.json files are emitted as they are hit)
 export default async function resolveDependency (specifier: string, parent: string, job: Job, cjsResolve = true): Promise<string | string[]> {
-  const cacheKey = specifier + parent
+  const { conditions } = job;
+  const cacheKey = JSON.stringify({ specifier, parent, conditions })
   const cacheItem = (job as any).resolveCache.get(cacheKey)
   
   if (cacheItem) {

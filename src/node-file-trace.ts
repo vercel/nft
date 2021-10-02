@@ -68,7 +68,6 @@ export class Job {
   private symlinkCache: Map<string, string | null>;
   private analysisCache: Map<string, AnalyzeResult>;
   private globCache: Map<string, string[] | null>;
-  private pjsonBoundaryCache: Map<string, string | null>;
   private resolveCache: Map<string, { result: string | string[], toEmit: [] }>;
   public fileList: Set<string>;
   public esmFileList: Set<string>;
@@ -146,7 +145,6 @@ export class Job {
     this.symlinkCache = cache && cache.symlinkCache || new Map();
     this.analysisCache = cache && cache.analysisCache || new Map();
     this.globCache = cache && cache.globCache || new Map();
-    this.pjsonBoundaryCache = cache && cache.pjsonBoundaryCache || new Map();
     this.resolveCache = cache && cache.resolveCache || new Map();
 
     if (cache) {
@@ -155,7 +153,6 @@ export class Job {
       cache.symlinkCache = this.symlinkCache;
       cache.analysisCache = this.analysisCache;
       cache.globCache = this.globCache;
-      cache.pjsonBoundaryCache = this.pjsonBoundaryCache;
       cache.resolveCache = this.resolveCache;
     }
 
@@ -284,20 +281,14 @@ export class Job {
   }
 
   async getPjsonBoundary (path: string) {
-    const initialPath = path
-    const cacheItem = this.pjsonBoundaryCache.get(path)
-    if (typeof cacheItem !== 'undefined') return cacheItem
-    
     const rootSeparatorIndex = path.indexOf(sep);
     let separatorIndex: number;
     while ((separatorIndex = path.lastIndexOf(sep)) > rootSeparatorIndex) {
       path = path.substr(0, separatorIndex);
       if (await this.isFile(path + sep + 'package.json')) {
-        this.pjsonBoundaryCache.set(initialPath, path)
         return path;
       }
     }
-    this.pjsonBoundaryCache.set(initialPath, null)
     return undefined;
   }
 
