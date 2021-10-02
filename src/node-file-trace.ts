@@ -3,7 +3,7 @@ import { basename, dirname, extname, relative, resolve, sep } from 'path';
 import fs from 'fs';
 import { promisify } from 'util'
 import analyze, { AnalyzeResult } from './analyze';
-import resolveDependency from './resolve-dependency';
+import resolveDependency, { FilesToEmit } from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
 import { join } from 'path';
@@ -67,6 +67,8 @@ export class Job {
   private statCache: Map<string, Stats | null>;
   private symlinkCache: Map<string, string | null>;
   private analysisCache: Map<string, AnalyzeResult>;
+  private globCache: Map<string, string[] | null>;
+  private resolveCache: Map<string, { result: string | string[], toEmit: [] }>;
   public fileList: Set<string>;
   public esmFileList: Set<string>;
   public processed: Set<string>;
@@ -142,12 +144,16 @@ export class Job {
     this.statCache = cache && cache.statCache || new Map();
     this.symlinkCache = cache && cache.symlinkCache || new Map();
     this.analysisCache = cache && cache.analysisCache || new Map();
+    this.globCache = cache && cache.globCache || new Map();
+    this.resolveCache = cache && cache.resolveCache || new Map();
 
     if (cache) {
       cache.fileCache = this.fileCache;
       cache.statCache = this.statCache;
       cache.symlinkCache = this.symlinkCache;
       cache.analysisCache = this.analysisCache;
+      cache.globCache = this.globCache;
+      cache.resolveCache = this.resolveCache;
     }
 
     this.fileList = new Set();
@@ -228,7 +234,7 @@ export class Job {
     }
   }
 
-  async realpath (path: string, parent?: string, seen = new Set()): Promise<string> {
+  async realpath (path: string, parent?: string, seen = new Set(), filesToEmit ?: FilesToEmit): Promise<string> {
     if (seen.has(path)) throw new Error('Recursive symlink detected resolving ' + path);
     seen.add(path);
     const symlink = await this.readlink(path);
@@ -236,10 +242,15 @@ export class Job {
     if (symlink) {
       const parentPath = dirname(path);
       const resolved = resolve(parentPath, symlink);
-      const realParent = await this.realpath(parentPath, parent);
-      if (inPath(path, realParent))
-        await this.emitFile(path, 'resolve', parent, true);
-      return this.realpath(resolved, parent, seen);
+      const realParent = await this.realpath(parentPath, parent, undefined, filesToEmit);
+      if (inPath(path, realParent)) {
+        if (filesToEmit) {
+          filesToEmit.push({file: path, type: 'resolve', parent: parent!, isRealpath: true})
+        } else {
+          await this.emitFile(path, 'resolve', parent, true);
+        }
+      }
+      return this.realpath(resolved, parent, seen, filesToEmit);
     }
     // keep backtracking for realpath, emitting folder symlinks within base
     if (!inPath(path, this.base))
@@ -274,8 +285,9 @@ export class Job {
     let separatorIndex: number;
     while ((separatorIndex = path.lastIndexOf(sep)) > rootSeparatorIndex) {
       path = path.substr(0, separatorIndex);
-      if (await this.isFile(path + sep + 'package.json'))
+      if (await this.isFile(path + sep + 'package.json')) {
         return path;
+      }
     }
     return undefined;
   }
