@@ -416,13 +416,13 @@ export default async function analyze(id: string, code: string, job: Job): Promi
 
   async function processRequireArg (expression: Node, isImport = false) {
     if (expression.type === 'ConditionalExpression') {
-      processRequireArg(expression.consequent, isImport);
-      processRequireArg(expression.alternate, isImport);
+      await processRequireArg(expression.consequent, isImport);
+      await processRequireArg(expression.alternate, isImport);
       return;
     }
     if (expression.type === 'LogicalExpression') {
-      processRequireArg(expression.left, isImport);
-      processRequireArg(expression.right, isImport);
+      await processRequireArg(expression.left, isImport);
+      await processRequireArg(expression.right, isImport);
       return;
     }
 
@@ -506,7 +506,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         await backtrack(parent, this);
       }
       else if (node.type === 'ImportExpression') {
-        processRequireArg(node.source, true);
+        await processRequireArg(node.source, true);
         return;
       }
       // Call expression cases and asset triggers
@@ -518,7 +518,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       else if (node.type === 'CallExpression') {
         if ((!isESM || job.mixedModules) && node.callee.type === 'Identifier' && node.arguments.length) {
           if (node.callee.name === 'require' && knownBindings.require.shadowDepth === 0) {
-            processRequireArg(node.arguments[0]);
+            await processRequireArg(node.arguments[0]);
             return;
           }
         }
@@ -531,7 +531,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             !node.callee.computed &&
             node.callee.property.name === 'require' &&
             node.arguments.length) {
-          processRequireArg(node.arguments[0]);
+          await processRequireArg(node.arguments[0]);
           return;
         }
 
@@ -555,7 +555,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                   node.arguments[0].type === 'Literal' &&
                   node.callee.type === 'Identifier' &&
                   knownBindings.require.shadowDepth === 0) {
-                processRequireArg(node.arguments[0]);
+                await processRequireArg(node.arguments[0]);
               }
             break;
             // require('bindings')(...)
@@ -620,7 +620,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                   node.arguments[0].type === 'Literal' &&
                   node.arguments[0].value === 'view engine' &&
                   !definedExpressEngines) {
-                processRequireArg(node.arguments[1]);
+                await processRequireArg(node.arguments[1]);
                 return this.skip();
               }
             break;
