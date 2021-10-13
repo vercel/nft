@@ -294,13 +294,34 @@ export class Job {
   }
 
   async emitDependency (path: string, parent?: string, filesToEmit?: FilesToEmit) {
-    if (this.processed.has(path)) return;
-    this.processed.add(path);
-
+    if (this.processed.has(path) && this.emitDependencyCache.has(path)) {
+      const cacheItem = this.emitDependencyCache.get(path)
+      
+      if (filesToEmit && cacheItem) {
+        this.emitDependencyCache.set(path, cacheItem.then(res => {
+          res.files.forEach(file => filesToEmit.files.push(file))
+          Object.assign(filesToEmit.reasons, res.reasons)
+          return res
+        }))
+      }
+      return
+    }
+    this.processed.add(path)
+    
     if (this.emitDependencyCache.has(path)) {
       const toEmit = await this.emitDependencyCache.get(path)!
+      
       toEmit.files.forEach(file => this.fileList.add(file))
       Object.assign(this.reasons, toEmit.reasons)
+      
+      if (filesToEmit) {
+        toEmit.files.forEach(file => {
+          if (!filesToEmit.reasons[file]) {
+            filesToEmit.files.push(file)
+          }
+        })  
+        Object.assign(filesToEmit.reasons, toEmit.reasons)
+      }
       return
     }
     const emitDependencyPromise = new Promise<FilesToEmit>(async (resolve, reject) => {
@@ -320,15 +341,24 @@ export class Job {
                 return emitResult
               }
             }
+            
+            if (prop === 'realpath') {
+              return async (path: string, parent?: string, seen?: Set<string>) => {
+                return this.realpath(path, parent, seen, job)
+              }
+            }
+            
             return Reflect.get(target, prop, receiver)
           }
         })
         
         const propagateFilesToEmit = () => {
           if (filesToEmit) {
-            curFilesToEmit.files.forEach(
-              item => filesToEmit.files.push(item)
-            )   
+            curFilesToEmit.files.forEach(item => {
+              if (!filesToEmit.reasons[item]) {
+                filesToEmit.files.push(item)
+              }
+            })   
             Object.assign(filesToEmit.reasons, curFilesToEmit.reasons)
           }
           resolve(curFilesToEmit)
@@ -350,7 +380,7 @@ export class Job {
         }
 
         let analyzeResult: AnalyzeResult;
-
+        
         const cachedAnalysis = this.analysisCache.get(path);
         if (cachedAnalysis) {
           analyzeResult = cachedAnalysis;
@@ -363,7 +393,7 @@ export class Job {
         }
 
         const { deps, imports, assets, isESM } = analyzeResult!;
-
+        
         if (isESM)
           this.esmFileList.add(relative(this.base, path));
         
@@ -384,6 +414,7 @@ export class Job {
               this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
               return;
             }
+            
             if (Array.isArray(resolved)) {
               for (const item of resolved) {
                 // ignore builtins
