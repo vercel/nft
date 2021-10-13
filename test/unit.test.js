@@ -44,14 +44,20 @@ for (const { testName, isRoot } of unitTests) {
       return this.constructor.prototype.readFile.apply(this, arguments);
     });
 
-    let inputFileName = "input.js";
-
-    if (testName === "tsx-input") {
-      inputFileName = "input.tsx";
-    }
     const nftCache = {}
     
-    const doTrace = async () => {
+    const doTrace = async (cached = false) => {
+      let inputFileName = "input.js";
+      let outputFileName = "output.js";
+      
+      if (testName === "tsx-input") {
+        inputFileName = "input.tsx";
+      }
+      if (testName === "processed-dependency" && cached) {
+        inputFileName = "input-cached.js"
+        outputFileName = "output-cached.js"
+      }
+      
       const { fileList, reasons } = await nodeFileTrace([join(unitPath, inputFileName)], {
         base: isRoot ? '/' : `${__dirname}/../`,
         processCwd: unitPath,
@@ -75,7 +81,7 @@ for (const { testName, isRoot } of unitTests) {
       });
       let expected;
       try {
-        expected = JSON.parse(fs.readFileSync(join(unitPath, 'output.js')).toString());
+        expected = JSON.parse(fs.readFileSync(join(unitPath, outputFileName)).toString());
         if (process.platform === 'win32') {
           // When using Windows, the expected output should use backslash
           expected = expected.map(str => str.replace(/\//g, '\\'));
@@ -106,7 +112,7 @@ for (const { testName, isRoot } of unitTests) {
     expect(nftCache.symlinkCache).toBeDefined()
     expect(nftCache.analysisCache).toBeDefined()
     expect(nftCache.emitDependencyCache).toBeDefined()
-    await doTrace()
+    await doTrace(true)
 
     if (testName === "tsx-input") {
       expect(readFileMock.mock.calls.length).toBe(2);
