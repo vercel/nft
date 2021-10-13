@@ -299,7 +299,11 @@ export class Job {
     if (this.processed.has(path)) {
       if (filesToEmit && cacheItem) {
         this.emitDependencyCache.set(path, cacheItem.then(res => {
-          res.files.forEach(file => filesToEmit.files.push(file))
+          res.files.forEach(file => {
+            if (!filesToEmit.reasons[file]) {
+              filesToEmit.files.push(file)
+            }
+          })
           Object.assign(filesToEmit.reasons, res.reasons)
           return res
         }))
