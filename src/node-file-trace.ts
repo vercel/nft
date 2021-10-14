@@ -52,11 +52,6 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
   return result;
 };
 
-type FilesToEmit = {
-  files: string[],
-  reasons: NodeFileTraceReasons
-}
-
 export class Job {
   public ts: boolean;
   public base: string;
@@ -72,7 +67,6 @@ export class Job {
   private statCache: Map<string, Stats | null>;
   private symlinkCache: Map<string, string | null>;
   private analysisCache: Map<string, AnalyzeResult>;
-  private emitDependencyCache: Map<string, Promise<FilesToEmit>>
   public fileList: Set<string>;
   public esmFileList: Set<string>;
   public processed: Set<string>;
@@ -148,14 +142,12 @@ export class Job {
     this.statCache = cache && cache.statCache || new Map();
     this.symlinkCache = cache && cache.symlinkCache || new Map();
     this.analysisCache = cache && cache.analysisCache || new Map();
-    this.emitDependencyCache = cache && cache.emitDependencyCache || new Map();
 
     if (cache) {
       cache.fileCache = this.fileCache;
       cache.statCache = this.statCache;
       cache.symlinkCache = this.symlinkCache;
       cache.analysisCache = this.analysisCache;
-      cache.emitDependencyCache = this.emitDependencyCache;
     }
 
     this.fileList = new Set();
@@ -236,30 +228,28 @@ export class Job {
     }
   }
 
-  async realpath (path: string, parent?: string, seen = new Set(), _job?: Job): Promise<string> {
+  async realpath (path: string, parent?: string, seen = new Set()): Promise<string> {
     if (seen.has(path)) throw new Error('Recursive symlink detected resolving ' + path);
     seen.add(path);
-    const job = _job || this
-    const symlink = await job.readlink(path);
+    const symlink = await this.readlink(path);
     // emit direct symlink paths only
     if (symlink) {
       const parentPath = dirname(path);
       const resolved = resolve(parentPath, symlink);
-      const realParent = await job.realpath(parentPath, parent, undefined, job);
+      const realParent = await this.realpath(parentPath, parent);
       if (inPath(path, realParent))
-        await job.emitFile(path, 'resolve', parent, true, job);
-      return job.realpath(resolved, parent, seen, job);
+        await this.emitFile(path, 'resolve', parent, true);
+      return this.realpath(resolved, parent, seen);
     }
     // keep backtracking for realpath, emitting folder symlinks within base
     if (!inPath(path, this.base))
       return path;
-    return join(await job.realpath(dirname(path), parent, seen, job), basename(path));
+    return join(await this.realpath(dirname(path), parent, seen), basename(path));
   }
 
-  async emitFile (path: string, reason: string, parent?: string, isRealpath = false, _job?: Job) {
-    const job = _job || this
+  async emitFile (path: string, reason: string, parent?: string, isRealpath = false) {
     if (!isRealpath)
-      path = await job.realpath(path, parent, undefined, job);
+      path = await this.realpath(path, parent);
     if (this.fileList.has(path)) return;
     path = relative(this.base, path);
     if (parent)
@@ -276,10 +266,7 @@ export class Job {
       return false;
     }
     this.fileList.add(path);
-    return {
-      path,
-      reasonEntry
-    };
+    return true;
   }
 
   async getPjsonBoundary (path: string) {
@@ -293,172 +280,91 @@ export class Job {
     return undefined;
   }
 
-  async emitDependency (path: string, parent?: string, filesToEmit?: FilesToEmit) {
-    const cacheItem = this.emitDependencyCache.get(path)
-    
-    if (this.processed.has(path)) {
-      if (filesToEmit && cacheItem) {
-        this.emitDependencyCache.set(path, cacheItem.then(res => {
-          res.files.forEach(file => {
-            if (!filesToEmit.reasons[file]) {
-              filesToEmit.files.push(file)
-            }
-          })
-          Object.assign(filesToEmit.reasons, res.reasons)
-          return res
-        }))
-      }
-      return
+  async emitDependency (path: string, parent?: string) {
+    if (this.processed.has(path)) return;
+    this.processed.add(path);
+
+    const emitted = await this.emitFile(path, 'dependency', parent);
+    if (!emitted) return;
+    if (path.endsWith('.json')) return;
+    if (path.endsWith('.node')) return await sharedLibEmit(path, this);
+
+    // js files require the "type": "module" lookup, so always emit the package.json
+    if (path.endsWith('.js')) {
+      const pjsonBoundary = await this.getPjsonBoundary(path);
+      if (pjsonBoundary)
+        await this.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
     }
-    this.processed.add(path)
-    
-    if (cacheItem) {
-      const toEmit = await cacheItem
-      
-      toEmit.files.forEach(file => this.fileList.add(file))
-      Object.assign(this.reasons, toEmit.reasons)
-      
-      if (filesToEmit) {
-        toEmit.files.forEach(file => {
-          if (!filesToEmit.reasons[file]) {
-            filesToEmit.files.push(file)
-          }
-        })  
-        Object.assign(filesToEmit.reasons, toEmit.reasons)
-      }
-      return
+
+    let analyzeResult: AnalyzeResult;
+
+    const cachedAnalysis = this.analysisCache.get(path);
+    if (cachedAnalysis) {
+      analyzeResult = cachedAnalysis;
     }
-    const emitDependencyPromise = new Promise<FilesToEmit>(async (resolve, reject) => {
-      try {
-        const curFilesToEmit: FilesToEmit = { files: [], reasons: {} }
-        const job = new Proxy(this, {
-          get: (target, prop, receiver) => {
-            if (prop === 'emitFile') {
-              return async (path: string, reason: string, parent?: string, isRealpath?: boolean) => {
-                const emitResult = await this.emitFile(path, reason, parent, isRealpath, job)
-                
-                if (emitResult) {
-                  curFilesToEmit.files.push(emitResult.path)
-                  curFilesToEmit.reasons[emitResult.path] = 
-                    emitResult.reasonEntry
-                }
-                return emitResult
-              }
-            }
-            
-            if (prop === 'realpath') {
-              return async (path: string, parent?: string, seen?: Set<string>) => {
-                return this.realpath(path, parent, seen, job)
-              }
-            }
-            
-            return Reflect.get(target, prop, receiver)
+    else {
+      const source = await this.readFile(path);
+      if (source === null) throw new Error('File ' + path + ' does not exist.');
+      analyzeResult = await analyze(path, source.toString(), this);
+      this.analysisCache.set(path, analyzeResult);
+    }
+
+    const { deps, imports, assets, isESM } = analyzeResult;
+
+    if (isESM)
+      this.esmFileList.add(relative(this.base, path));
+    
+    await Promise.all([
+      ...[...assets].map(async asset => {
+        const ext = extname(asset);
+        if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '' ||
+            this.ts && (ext === '.ts' || ext === '.tsx') && asset.startsWith(this.base) && asset.substr(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
+          await this.emitDependency(asset, path);
+        else
+          await this.emitFile(asset, 'asset', path);
+      }),
+      ...[...deps].map(async dep => {
+        try {
+          var resolved = await this.resolve(dep, path, this, !isESM);
+        }
+        catch (e) {
+          this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
+          return;
+        }
+        if (Array.isArray(resolved)) {
+          for (const item of resolved) {
+            // ignore builtins
+            if (item.startsWith('node:')) return;
+            await this.emitDependency(item, path);
           }
-        })
-        
-        const propagateFilesToEmit = () => {
-          if (filesToEmit) {
-            curFilesToEmit.files.forEach(item => {
-              if (!filesToEmit.reasons[item]) {
-                filesToEmit.files.push(item)
-              }
-            })   
-            Object.assign(filesToEmit.reasons, curFilesToEmit.reasons)
-          }
-          resolve(curFilesToEmit)
-        }
-        
-        const emitted = await job.emitFile(path, 'dependency', parent);
-        if (!emitted) return propagateFilesToEmit()
-        if (path.endsWith('.json')) return propagateFilesToEmit()
-        if (path.endsWith('.node')) {
-          await sharedLibEmit(path, job);
-          return propagateFilesToEmit()
-        }
-
-        // js files require the "type": "module" lookup, so always emit the package.json
-        if (path.endsWith('.js')) {
-          const pjsonBoundary = await this.getPjsonBoundary(path);
-          if (pjsonBoundary)
-            await job.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
-        }
-
-        let analyzeResult: AnalyzeResult;
-
-        const cachedAnalysis = this.analysisCache.get(path);
-        if (cachedAnalysis) {
-          analyzeResult = cachedAnalysis;
         }
         else {
-          const source = await this.readFile(path);
-          if (source === null) throw new Error('File ' + path + ' does not exist.');
-          analyzeResult = await analyze(path, source.toString(), job);
-          this.analysisCache.set(path, analyzeResult);
+          // ignore builtins
+          if (resolved.startsWith('node:')) return;
+          await this.emitDependency(resolved, path);
         }
-
-        const { deps, imports, assets, isESM } = analyzeResult!;
-
-        if (isESM)
-          this.esmFileList.add(relative(this.base, path));
-        
-        await Promise.all([
-          ...[...assets].map(async asset => {
-            const ext = extname(asset);
-            if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '' ||
-                this.ts && (ext === '.ts' || ext === '.tsx') && asset.startsWith(this.base) && asset.substr(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
-              await this.emitDependency(asset, path, curFilesToEmit);
-            else
-              await job.emitFile(asset, 'asset', path);
-          }),
-          ...[...deps].map(async dep => {
-            try {
-              var resolved = await this.resolve(dep, path, job, !isESM);
-            }
-            catch (e) {
-              this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
-              return;
-            }
-            if (Array.isArray(resolved)) {
-              for (const item of resolved) {
-                // ignore builtins
-                if (item.startsWith('node:')) return;
-                await this.emitDependency(item, path, curFilesToEmit);
-              }
-            }
-            else {
-              // ignore builtins
-              if (resolved.startsWith('node:')) return;
-              await this.emitDependency(resolved, path, curFilesToEmit);
-            }
-          }),
-          ...[...imports].map(async dep => {
-            try {
-              var resolved = await this.resolve(dep, path, job, false);
-            }
-            catch (e) {
-              this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
-              return;
-            }
-            if (Array.isArray(resolved)) {
-              for (const item of resolved) {
-                // ignore builtins
-                if (item.startsWith('node:')) return;
-                await this.emitDependency(item, path, curFilesToEmit);
-              }
-            }
-            else {
-              // ignore builtins
-              if (resolved.startsWith('node:')) return;
-              await this.emitDependency(resolved, path, curFilesToEmit);
-            }
-          })
-        ]);
-        propagateFilesToEmit()
-      } catch (err) {
-        reject(err)
-      }
-    });
-    this.emitDependencyCache.set(path, emitDependencyPromise)
-    return emitDependencyPromise
+      }),
+      ...[...imports].map(async dep => {
+        try {
+          var resolved = await this.resolve(dep, path, this, false);
+        }
+        catch (e) {
+          this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
+          return;
+        }
+        if (Array.isArray(resolved)) {
+          for (const item of resolved) {
+            // ignore builtins
+            if (item.startsWith('node:')) return;
+            await this.emitDependency(item, path);
+          }
+        }
+        else {
+          // ignore builtins
+          if (resolved.startsWith('node:')) return;
+          await this.emitDependency(resolved, path);
+        }
+      })
+    ]);
   }
 }

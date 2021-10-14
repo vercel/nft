@@ -111,7 +111,6 @@ for (const { testName, isRoot } of unitTests) {
     expect(nftCache.statCache).toBeDefined()
     expect(nftCache.symlinkCache).toBeDefined()
     expect(nftCache.analysisCache).toBeDefined()
-    expect(nftCache.emitDependencyCache).toBeDefined()
     await doTrace(true)
 
     if (testName === "tsx-input") {
