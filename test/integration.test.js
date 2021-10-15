@@ -63,6 +63,6 @@ for (const integrationTest of readdirSync(integrationDir)) {
       // ignore other integration tests
       ignore: ['test/integration/**']
     });
-    expect([...cachedResult.fileList]).toEqual([...fileList])
+    expect([...cachedResult.fileList].sort()).toEqual([...fileList].sort())
   });
 }
