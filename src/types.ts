@@ -51,17 +51,15 @@ export interface NodeFileTraceOptions {
   resolve?: (id: string, parent: string, job: Job, cjsResolve: boolean) => Promise<string | string[]>;
 }
 
-export interface NodeFileTraceReasons {
-  [fileName: string]: {
-    type: string;
-    ignored: boolean;
-    parents: string[];
-  };
-}
+export interface NodeFileTraceReasons extends Map<string, {
+  type: string;
+  ignored: boolean;
+  parents: Set<string>;
+}> {}
 
 export interface NodeFileTraceResult {
-  fileList: string[];
-  esmFileList: string[];
+  fileList: Set<string>;
+  esmFileList: Set<string>;
   reasons: NodeFileTraceReasons;
-  warnings: Error[];
+  warnings: Set<Error>;
 }

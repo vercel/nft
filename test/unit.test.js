@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { join, isAbsolute, resolve } = require('path');
+const { join, relative } = require('path');
 const { nodeFileTrace } = require('../out/node-file-trace');
 
 global._unit = true;
@@ -47,38 +47,90 @@ for (const { testName, isRoot } of unitTests) {
     const nftCache = {}
     
     const doTrace = async (cached = false) => {
-      let inputFileName = "input.js";
+      let inputFileNames = ["input.js"];
       let outputFileName = "output.js";
       
       if (testName === "tsx-input") {
-        inputFileName = "input.tsx";
+        inputFileNames = ["input.tsx"];
       }
       if (testName === "processed-dependency" && cached) {
-        inputFileName = "input-cached.js"
+        inputFileNames = ["input-cached.js"]
         outputFileName = "output-cached.js"
       }
       
-      const { fileList, reasons } = await nodeFileTrace([join(unitPath, inputFileName)], {
-        base: isRoot ? '/' : `${__dirname}/../`,
-        processCwd: unitPath,
-        paths: {
-          dep: `${__dirname}/../test/unit/esm-paths/esm-dep.js`,
-          'dep/': `${__dirname}/../test/unit/esm-paths-trailer/`
-        },
-        cache: nftCache,
-        exportsOnly: testName.startsWith('exports-only'),
-        ts: true,
-        log: true,
-        // disable analysis for basic-analysis unit tests
-        analysis: !testName.startsWith('basic-analysis'),
-        mixedModules: true,
-        // Ignore unit test output "actual.js", and ignore GitHub Actions preinstalled packages
-        ignore: (str) => str.endsWith('/actual.js') || str.startsWith('usr/local'),
-        readFile: readFileMock,
-        resolve: testName.startsWith('resolve-hook')
-          ? (id, parent) => `custom-resolution-${id}`
-          : undefined,
-      });
+      if (testName === 'multi-input') {
+        inputFileNames.push('input-2.js', 'input-3.js')
+      }
+      
+      const { fileList, reasons } = await nodeFileTrace(
+        inputFileNames.map(file => join(unitPath, file)), 
+        {
+          base: isRoot ? '/' : `${__dirname}/../`,
+          processCwd: unitPath,
+          paths: {
+            dep: `${__dirname}/../test/unit/esm-paths/esm-dep.js`,
+            'dep/': `${__dirname}/../test/unit/esm-paths-trailer/`
+          },
+          cache: nftCache,
+          exportsOnly: testName.startsWith('exports-only'),
+          ts: true,
+          log: true,
+          // disable analysis for basic-analysis unit tests
+          analysis: !testName.startsWith('basic-analysis'),
+          mixedModules: true,
+          // Ignore unit test output "actual.js", and ignore GitHub Actions preinstalled packages
+          ignore: (str) => str.endsWith('/actual.js') || str.startsWith('usr/local'),
+          readFile: readFileMock,
+          resolve: testName.startsWith('resolve-hook')
+            ? (id, parent) => `custom-resolution-${id}`
+            : undefined,
+        }
+      );
+      
+      if (testName === 'multi-input') {
+        const collectFiles = (parent, files = new Set()) => {
+          fileList.forEach(file => {
+            if (files.has(file)) return
+            const reason = reasons.get(file)
+        
+            if (reason.parents && reason.parents.has(parent)) {
+              files.add(file)
+              collectFiles(file, files)
+            }
+          })
+          return files
+        }
+        
+        const normalizeFilesRoot = file => 
+          (isRoot ? relative(join('./', __dirname, '..'), file) : file).replace(/\\/g, '/')
+        
+        const normalizeInputRoot = file =>
+          isRoot ? join('./', unitPath, file) : join('test/unit', testName, file)
+        
+        
+        expect([...collectFiles(normalizeInputRoot('input.js'))].map(normalizeFilesRoot).sort()).toEqual([
+          "package.json",
+          "test/unit/multi-input/asset-2.txt",
+          "test/unit/multi-input/asset.txt",
+          "test/unit/multi-input/child-1.js",
+          "test/unit/multi-input/child-2.js",
+          "test/unit/multi-input/input-2.js",
+        ])
+        expect([...collectFiles(normalizeInputRoot('input-2.js'))].map(normalizeFilesRoot).sort()).toEqual([
+          "package.json",
+          "test/unit/multi-input/asset-2.txt",
+          "test/unit/multi-input/asset.txt",
+          "test/unit/multi-input/child-1.js",
+          "test/unit/multi-input/child-2.js",
+          "test/unit/multi-input/input-2.js",
+        ])
+        expect([...collectFiles(normalizeInputRoot('input-3.js'))].map(normalizeFilesRoot).sort()).toEqual([
+          "package.json",
+          "test/unit/multi-input/asset.txt",
+          "test/unit/multi-input/child-3.js",
+        ])
+      }
+      
       let expected;
       try {
         expected = JSON.parse(fs.readFileSync(join(unitPath, outputFileName)).toString());
@@ -97,11 +149,11 @@ for (const { testName, isRoot } of unitTests) {
         expected = [];
       }
       try {
-        expect(fileList).toEqual(expected);
+        expect([...fileList].sort()).toEqual(expected);
       }
       catch (e) {
         console.warn(reasons);
-        fs.writeFileSync(join(unitPath, 'actual.js'), JSON.stringify(fileList, null, 2));
+        fs.writeFileSync(join(unitPath, 'actual.js'), JSON.stringify([...fileList].sort(), null, 2));
         throw e;
       }
     }
@@ -111,7 +163,6 @@ for (const { testName, isRoot } of unitTests) {
     expect(nftCache.statCache).toBeDefined()
     expect(nftCache.symlinkCache).toBeDefined()
     expect(nftCache.analysisCache).toBeDefined()
-    expect(nftCache.emitDependencyCache).toBeDefined()
     await doTrace(true)
 
     if (testName === "tsx-input") {

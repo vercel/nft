@@ -36,11 +36,11 @@ async function runTests(importPath) {
           log: true,
           mixedModules: true
         });
-        if (warnings.length > 0) {
+        if (warnings.size > 0) {
           console.log(warnings);
         }
-        expect(warnings.length).toBe(0);
-        expect(fileList.length).toBe(1);
+        expect(warnings.size).toBe(0);
+        expect(fileList.size).toBe(1);
       });
     }
   }
