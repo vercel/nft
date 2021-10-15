@@ -20,14 +20,14 @@ async function cli(
   };
 
   const { fileList, esmFileList, warnings } = await nodeFileTrace(files, opts);
-  const allFiles = fileList.concat(esmFileList);
+  const allFiles = [...fileList].concat([...esmFileList]).sort();
   const stdout = [];
 
   if (action === 'print') {
     stdout.push('FILELIST:')
     stdout.push(...allFiles);
     stdout.push('\n');
-    if (warnings.length > 0) {
+    if (warnings.size > 0) {
       stdout.push('WARNINGS:');
       stdout.push(...warnings);
     }

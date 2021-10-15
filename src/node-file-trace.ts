@@ -33,7 +33,7 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
     job.resolve = opts.resolve
 
   job.ts = true;
-
+  
   await Promise.all(files.map(async file => {
     const path = resolve(file);
     await job.emitFile(path, 'initial');
@@ -42,12 +42,12 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
     }
     return undefined;
   }));
-
+  
   const result: NodeFileTraceResult = {
-    fileList: [...job.fileList].sort(),
-    esmFileList: [...job.esmFileList].sort(),
+    fileList: job.fileList,
+    esmFileList: job.esmFileList,
     reasons: job.reasons,
-    warnings: [...job.warnings]
+    warnings: job.warnings
   };
   return result;
 };
@@ -71,7 +71,7 @@ export class Job {
   public esmFileList: Set<string>;
   public processed: Set<string>;
   public warnings: Set<Error>;
-  public reasons: NodeFileTraceReasons = Object.create(null);
+  public reasons: NodeFileTraceReasons = new Map()
 
   constructor ({
     base = process.cwd(),
@@ -248,22 +248,32 @@ export class Job {
   }
 
   async emitFile (path: string, reason: string, parent?: string, isRealpath = false) {
-    if (!isRealpath)
+    if (!isRealpath) {
       path = await this.realpath(path, parent);
-    if (this.fileList.has(path)) return;
+    }
     path = relative(this.base, path);
-    if (parent)
+    
+    if (parent) {
       parent = relative(this.base, parent);
-    const reasonEntry = this.reasons[path] || (this.reasons[path] = {
-      type: reason,
-      ignored: false,
-      parents: []
-    });
-    if (parent && reasonEntry.parents.indexOf(parent) === -1)
-      reasonEntry.parents.push(parent);
+    }
+    let reasonEntry = this.reasons.get(path)
+    
+    if (!reasonEntry) {
+      reasonEntry = {
+        type: reason,
+        ignored: false,
+        parents: new Set()
+      };
+      this.reasons.set(path, reasonEntry)
+    }
     if (parent && this.ignoreFn(path, parent)) {
-      if (reasonEntry) reasonEntry.ignored = true;
+      if (!this.fileList.has(path) && reasonEntry) {
+        reasonEntry.ignored = true;
+      }
       return false;
+    }
+    if (parent) {
+      reasonEntry.parents.add(parent);
     }
     this.fileList.add(path);
     return true;
@@ -281,7 +291,12 @@ export class Job {
   }
 
   async emitDependency (path: string, parent?: string) {
-    if (this.processed.has(path)) return;
+    if (this.processed.has(path)) {
+      if (parent) {
+        await this.emitFile(path, 'dependency', parent)
+      }
+      return
+    };
     this.processed.add(path);
 
     const emitted = await this.emitFile(path, 'dependency', parent);

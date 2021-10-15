@@ -30,7 +30,7 @@ for (const integrationTest of readdirSync(integrationDir)) {
     const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-${randomTmpId}`);
     rimraf.sync(tmpdir);
     mkdirSync(tmpdir);
-    await Promise.all(fileList.map(async file => {
+    await Promise.all([...fileList].map(async file => {
       const inPath = path.resolve(__dirname, '..', file);
       const outPath = path.resolve(tmpdir, file);
       try {
@@ -54,15 +54,5 @@ for (const integrationTest of readdirSync(integrationDir)) {
     const code = await new Promise(resolve => ps.on('close', resolve));
     expect(code).toBe(fails ? 1 : 0);
     rimraf.sync(tmpdir);
-    
-    const cachedResult = await nodeFileTrace([`${integrationDir}/${integrationTest}`], {
-      log: true,
-      cache: nftCache,
-      base: path.resolve(__dirname, '..'),
-      processCwd: integrationDir,
-      // ignore other integration tests
-      ignore: ['test/integration/**']
-    });
-    expect(cachedResult.fileList).toEqual(fileList)
   });
 }
