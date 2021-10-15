@@ -33,7 +33,7 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
     job.resolve = opts.resolve
 
   job.ts = true;
-  
+
   await Promise.all(files.map(async file => {
     const path = resolve(file);
     await job.emitFile(path, 'initial');
@@ -42,7 +42,7 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
     }
     return undefined;
   }));
-  
+
   const result: NodeFileTraceResult = {
     fileList: job.fileList,
     esmFileList: job.esmFileList,
