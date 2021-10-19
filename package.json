@@ -124,7 +124,7 @@
     "typescript": "^3.9.6",
     "uglify-js": "^3.6.0",
     "unified": "^10.1.0",
-    "vm2": "^3.8.2",
+    "vm2": "^3.9.4",
     "vue": "^2.6.10",
     "vue-server-renderer": "^2.6.10",
     "when": "^3.7.8"
