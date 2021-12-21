@@ -214,6 +214,11 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(dirname(id), 'browsers.json'));
     }
   },
+  'geo-tz'({ id, emitAsset }) {
+    if (id.endsWith('geo-tz/dist/geo-tz.js')) {
+      emitAsset(resolve(dirname(id), '../data/geo.dat'));
+    }
+  },
 };
 
 interface SpecialCaseOpts {
