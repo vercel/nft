@@ -101,7 +101,7 @@
     "pdfkit": "^0.10.0",
     "pg": "^7.11.0",
     "phantomjs-prebuilt": "^2.1.16",
-    "playwright-core": "^1.11.1",
+    "playwright-core": "^1.17.1",
     "polyfill-library": "3.93.0",
     "prismjs": "^1.24.1",
     "pug": "^3.0.1",
