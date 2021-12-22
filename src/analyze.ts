@@ -25,9 +25,9 @@ const asyncWalk: typeof import('../node_modules/estree-walker').asyncWalk = requ
 
 // Note: these should be deprecated over time as they ship in Acorn core
 const acorn = Parser.extend(
-  require("acorn-class-fields"),
-  require("acorn-static-class-features"),
-  require("acorn-private-class-elements")
+  //require("acorn-class-fields"),
+  //require("acorn-static-class-features"),
+  //require("acorn-private-class-elements")
 );
 
 import os from 'os';
