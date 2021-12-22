@@ -45,6 +45,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -73,6 +74,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -102,9 +104,10 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
-      },
-    ],
+      }
+    ]
   },
   {
     name: 'Object static methods',
@@ -145,6 +148,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -182,6 +186,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -219,7 +224,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: "Object.getOwnPropertyDescriptors doesn't provide undefined descriptors",
@@ -246,9 +252,10 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
-      },
-    ],
+          rhino1_7_13: false
+        }
+      }
+    ]
   },
   {
     name: 'Array.prototype.includes',
@@ -286,6 +293,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: true
         }
       },
       {
@@ -334,6 +342,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -364,9 +373,10 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
-      },
-    ],
+      }
+    ]
   },
   {
     name: 'String padding',
@@ -408,6 +418,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: true
         }
       },
       {
@@ -444,6 +455,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: true
         }
       }
     ]
@@ -481,6 +493,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -508,9 +521,10 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: true
         }
-      },
-    ],
+      }
+    ]
   },
   {
     name: 'async functions',
@@ -557,6 +571,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -597,6 +612,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -626,6 +642,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -654,7 +671,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'await',
@@ -689,6 +707,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -726,6 +745,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -754,6 +774,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -788,6 +809,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -817,6 +839,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -856,6 +879,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -895,6 +919,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -935,6 +960,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -971,6 +997,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1002,7 +1029,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'async function prototype, Symbol.toStringTag',
@@ -1030,7 +1058,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'async function constructor',
@@ -1068,8 +1097,9 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
-      },
+          rhino1_7_13: false
+        }
+      }
     ]
   },
   {
@@ -1091,7 +1121,7 @@ exports.tests = [
           edge17: {
             val: false,
             note_id: 'edg-shared-memory-spectre',
-            note_html: 'The feature was temporarily disabled to mitigate the Meltdown and Spectre CPU bugs.',
+            note_html: 'The feature was temporarily disabled to mitigate the Meltdown and Spectre CPU bugs.'
           },
           firefox2: false,
           firefox46: firefox.nightly,
@@ -1101,19 +1131,19 @@ exports.tests = [
           firefox57: {
             val: "flagged",
             note_id: 'fx-shared-memory-spectre',
-            note_html: 'The feature was <a href="https://blog.mozilla.org/security/2018/01/03/mitigations-landing-new-class-timing-attack/">temporarily disabled</a> to mitigate the Meltdown and Spectre CPU bugs. It can be enabled via <code>javascript.options.shared_memory</code> setting under <code>about:config</code>',
+            note_html: 'The feature was <a href="https://blog.mozilla.org/security/2018/01/03/mitigations-landing-new-class-timing-attack/">temporarily disabled</a> to mitigate the Meltdown and Spectre CPU bugs. It can be enabled via <code>javascript.options.shared_memory</code> setting under <code>about:config</code>'
           },
           firefox72: firefox.nightly,
           firefox74: firefox.beta,
           firefox77: {
             val: false,
             note_id: "fx-shared-memory-esr-disable",
-            note_html: 'The feature was intentionally disabled to prepare for Firefox 78 ESR',
+            note_html: 'The feature was intentionally disabled to prepare for Firefox 78 ESR'
           },
           firefox79: {
             val: true,
             note_id: "fx-shared-memory-cors-isolation",
-            note_html: 'The feature is available with <a href="https://hacks.mozilla.org/2020/07/safely-reviving-shared-memory/">properly set CORS isolation headers</a> or via enabling <code>dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled</code> setting under <code>about:config</code>',
+            note_html: 'The feature is available with <a href="https://hacks.mozilla.org/2020/07/safely-reviving-shared-memory/">properly set CORS isolation headers</a> or via enabling <code>dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled</code> setting under <code>about:config</code>'
           },
           opera10_50: false,
           chrome48: chrome.sharedmem,
@@ -1121,22 +1151,24 @@ exports.tests = [
           chrome63: {
             val: false,
             note_id: 'chr-shared-memory-spectre',
-            note_html: 'The feature was temporarily disabled to mitigate the Meltdown and Spectre CPU bugs.',
+            note_html: 'The feature was temporarily disabled to mitigate the Meltdown and Spectre CPU bugs.'
           },
           chrome68: true,
           safari10_1: true,
           safari11: {
             val: false,
             note_id: 'sf-shared-memory-spectre',
-            note_html: 'The feature was <a href="https://webkit.org/blog/8048/what-spectre-and-meltdown-mean-for-webkit/">temporarily disabled</a> to mitigate the Meltdown and Spectre CPU bugs.',
+            note_html: 'The feature was <a href="https://webkit.org/blog/8048/what-spectre-and-meltdown-mean-for-webkit/">temporarily disabled</a> to mitigate the Meltdown and Spectre CPU bugs.'
           },
-          safaritp: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1164,13 +1196,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11: { val: false, note_id: 'sf-shared-memory-spectre' },
-          safaritp: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1201,13 +1235,15 @@ exports.tests = [
           chrome63: { val: false, note_id: 'chr-shared-memory-spectre' },
           chrome68: true,
           safari11: { val: false, note_id: 'sf-shared-memory-spectre' },
-          safaritp: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1237,13 +1273,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11: { val: false, note_id: 'sf-shared-memory-spectre' },
-          safaritp: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1273,13 +1311,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11: { val: false, note_id: 'sf-shared-memory-spectre' },
-          safaritp: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1310,12 +1350,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1346,12 +1389,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1382,12 +1428,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1418,12 +1467,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1454,12 +1506,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1490,12 +1545,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: false,
           graalvm20: false,
           graalvm20_1: false,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1526,12 +1584,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1562,12 +1623,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1598,12 +1662,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1634,12 +1701,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1670,12 +1740,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -1706,12 +1779,15 @@ exports.tests = [
           chrome68: true,
           safari10_1: true,
           safari11_1: { val: false, note_id: 'sf-shared-memory-spectre' },
+          safari15_2: true,
+          safaritp: true,
           duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       }
     ]
@@ -1725,7 +1801,7 @@ exports.tests = [
     links: [
       {
         note_id: 'new-gen-fn',
-        note_html: '<a href="https://github.com/rwaldron/tc39-notes/blob/master/es7/2015-07/july-28.md#67-new--generatorfunction">TC39 meeting notes from July 28, 2015.</a>',
+        note_html: '<a href="https://github.com/rwaldron/tc39-notes/blob/master/es7/2015-07/july-28.md#67-new--generatorfunction">TC39 meeting notes from July 28, 2015.</a>'
       }
     ],
     exec: function(){/*
@@ -1752,6 +1828,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
+      rhino1_7_13: false
     }
   },
   {
@@ -1763,7 +1840,7 @@ exports.tests = [
     links: [
       {
         note_id: 'gen-throw',
-        note_html: '<a href="https://github.com/tc39/ecma262/issues/293">\'Semantics of yield* in throw case\' GitHub issue in ECMA-262 repo.</a>',
+        note_html: '<a href="https://github.com/tc39/ecma262/issues/293">\'Semantics of yield* in throw case\' GitHub issue in ECMA-262 repo.</a>'
       }
     ],
     exec: function(){/*
@@ -1801,6 +1878,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
+      rhino1_7_13: true
     }
   },
   {
@@ -1811,8 +1889,8 @@ exports.tests = [
     links: [
       {
         note_id: 'strict-fn-non-strict-params',
-        note_html: '<a href="https://github.com/rwaldron/tc39-notes/blob/master/es7/2015-07/july-29.md#611-the-scope-of-use-strict-with-respect-to-destructuring-in-parameter-lists">TC39 meeting notes from July 29, 2015.</a>',
-      },
+        note_html: '<a href="https://github.com/rwaldron/tc39-notes/blob/master/es7/2015-07/july-29.md#611-the-scope-of-use-strict-with-respect-to-destructuring-in-parameter-lists">TC39 meeting notes from July 29, 2015.</a>'
+      }
     ],
     exec: function(){/*
      function foo(...a){}
@@ -1836,6 +1914,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
+      rhino1_7_13: false
     }
   },
   {
@@ -1847,7 +1926,7 @@ exports.tests = [
     links: [
       {
         note_id: 'nested-rest-destruct-decl',
-        note_html: '<a href="https://github.com/rwaldron/tc39-notes/blob/master/es7/2015-07/july-28.md#66-bindingrestelement-should-allow-a-bindingpattern-ala-assignmentrestelement">TC39 meeting notes from July 28, 2015.</a>',
+        note_html: '<a href="https://github.com/rwaldron/tc39-notes/blob/master/es7/2015-07/july-28.md#66-bindingrestelement-should-allow-a-bindingpattern-ala-assignmentrestelement">TC39 meeting notes from July 28, 2015.</a>'
       }
     ],
     exec: function(){/*
@@ -1872,6 +1951,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
+      rhino1_7_13: false
     }
   },
   {
@@ -1882,8 +1962,8 @@ exports.tests = [
     links: [
       {
         note_id: 'nested-rest-destruct-params',
-        note_html: '<a href="https://github.com/rwaldron/tc39-notes/blob/master/es7/2015-07/july-28.md#66-bindingrestelement-should-allow-a-bindingpattern-ala-assignmentrestelement">TC39 meeting notes from July 28, 2015.</a>',
-      },
+        note_html: '<a href="https://github.com/rwaldron/tc39-notes/blob/master/es7/2015-07/july-28.md#66-bindingrestelement-should-allow-a-bindingpattern-ala-assignmentrestelement">TC39 meeting notes from July 28, 2015.</a>'
+      }
     ],
     exec: function(){/*
      return function([x, ...[y, ...z]]) {
@@ -1908,6 +1988,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
+      rhino1_7_13: false
     }
   },
   {
@@ -1919,8 +2000,8 @@ exports.tests = [
     links: [
       {
         note_id: 'proxy-enumerate-removed',
-        note_html: '<a href="https://github.com/tc39/ecma262/pull/367">\'Normative: Remove [[Enumerate]] and associated reflective capabilities\' GitHub Pull Request in ECMA-262 repo.</a>',
-      },
+        note_html: '<a href="https://github.com/tc39/ecma262/pull/367">\'Normative: Remove [[Enumerate]] and associated reflective capabilities\' GitHub Pull Request in ECMA-262 repo.</a>'
+      }
     ],
     exec: function() {/*
      var passed = true;
@@ -1949,7 +2030,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'Proxy internal calls, Array.prototype.includes',
@@ -1983,7 +2065,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'Object.prototype getter/setter methods',
@@ -2023,6 +2106,7 @@ exports.tests = [
         graalvm20: true,
         graalvm20_1: true,
         hermes0_7_0: true,
+        rhino1_7_13: true
       }
     },
       {
@@ -2057,6 +2141,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -2091,7 +2176,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: true
+        }
       },
       {
         name: '__defineSetter__',
@@ -2126,7 +2212,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: true
+        }
       },
       {
         name: '__defineSetter__, symbols',
@@ -2160,7 +2247,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '__defineSetter__, ToObject(this)',
@@ -2194,7 +2282,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: true
+        }
       },
       {
         name: '__lookupGetter__',
@@ -2230,7 +2319,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: true
+        }
       },
       {
         name: '__lookupGetter__, prototype chain',
@@ -2266,7 +2356,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: true
+        }
       },
       {
         name: '__lookupGetter__, symbols',
@@ -2302,7 +2393,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '__lookupGetter__, ToObject(this)',
@@ -2334,7 +2426,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '__lookupGetter__, data properties can shadow accessors',
@@ -2366,7 +2459,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: true
+        }
       },
       {
         name: '__lookupSetter__',
@@ -2402,7 +2496,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: true
+        }
       },
       {
         name: '__lookupSetter__, prototype chain',
@@ -2438,7 +2533,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: true
+        }
       },
       {
         name: '__lookupSetter__, symbols',
@@ -2474,7 +2570,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '__lookupSetter__, ToObject(this)',
@@ -2506,7 +2603,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '__lookupSetter__, data properties can shadow accessors',
@@ -2538,7 +2636,8 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: true
+        }
       }
     ]
   },
@@ -2571,6 +2670,7 @@ exports.tests = [
         graalvm20: true,
         graalvm20_1: true,
         hermes0_7_0: true,
+        rhino1_7_13: false
       }
     },
       {
@@ -2597,6 +2697,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -2629,6 +2730,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -2661,6 +2763,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       }
     ]
@@ -2690,13 +2793,15 @@ exports.tests = [
       firefox57: true,
       firefox70: true,
       safari13: true,
+      duktape2_0: false,
       jerryscript2_3_0: false,
       jerryscript2_4_0: true,
       graalvm19: false,
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'RegExp "u" flag, case folding',
@@ -2724,7 +2829,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: false,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'assignments allowed in for-in head in non-strict mode',
@@ -2761,7 +2867,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: true
+    }
   },
   {
     name: 'arguments.caller removed',
@@ -2785,13 +2892,15 @@ exports.tests = [
       node8: true,
       safari10_1: true,
       duktape2_0: false,
+      duktape2_4: true,
       jerryscript2_3_0: false,
       jerryscript2_4_0: true,
       graalvm19: true,
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: false,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'object rest/spread properties',
@@ -2811,8 +2920,9 @@ exports.tests = [
           closure20181028: {
             val: false,
             note_id: 'closure-object-assign',
-            note_html: 'Requires native support for <code>Object.assign</code>',
+            note_html: 'Requires native support for <code>Object.assign</code>'
           },
+          closure20210906: true,
           typescript2_1corejs2: true,
           jsx: true,
           ie11: false,
@@ -2832,6 +2942,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -2846,8 +2957,9 @@ exports.tests = [
           closure: true,
           closure20190121: {
             val: false,
-            note_id: 'closure-object-assign',
+            note_id: 'closure-object-assign'
           },
+          closure20210906: true,
           jsx: true,
           ie11: false,
           firefox2: false,
@@ -2867,9 +2979,10 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
-      },
-    ],
+      }
+    ]
   },
   {
     name: 'Promise.prototype.finally',
@@ -2924,13 +3037,14 @@ exports.tests = [
           safari11_1: true,
           safaritp: true,
           webkit: true,
-          duktape2_2: false,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -2971,13 +3085,14 @@ exports.tests = [
           safari11_1: true,
           safaritp: true,
           webkit: true,
-          duktape2_2: false,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -3020,13 +3135,14 @@ exports.tests = [
           chrome61: chrome.promise,
           chrome63: true,
           webkit: true,
-          duktape2_2: false,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       }
     ]
@@ -3063,6 +3179,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
+      rhino1_7_13: false
     }
   },
   {
@@ -3097,11 +3214,10 @@ exports.tests = [
       safari11_1: true,
       safaritp: true,
       webkit: true,
-      rhino1_7: null,
       xs6: null,
       jxa: null,
       node0_10: null,
-      duktape2_0: null,
+      duktape2_0: false,
       duktape2_2: false,
       jerryscript2_3_0: false,
       jerryscript2_4_0: true,
@@ -3111,7 +3227,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'RegExp named capture groups',
@@ -3146,6 +3263,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: false,
+      rhino1_7_13: false
     }
   },
   {
@@ -3173,6 +3291,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: true,
+      rhino1_7_13: false
     }
   },
   {
@@ -3202,6 +3321,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: false,
+      rhino1_7_13: false
     }
   },
   {
@@ -3242,6 +3362,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -3287,6 +3408,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       }
     ]
@@ -3322,14 +3444,15 @@ exports.tests = [
           safari11_1: true,
           safaritp: true,
           webkit: true,
-          duktape2_2: false,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'await',
@@ -3357,14 +3480,15 @@ exports.tests = [
           safari11_1: true,
           safaritp: true,
           webkit: true,
-          duktape2_2: false,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'yield',
@@ -3395,12 +3519,13 @@ exports.tests = [
           safari11_1: true,
           safaritp: true,
           webkit: true,
-          duktape2_2: false,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       }
     ]
@@ -3409,7 +3534,7 @@ exports.tests = [
     name: 'Symbol.prototype.description',
     spec: 'https://github.com/tc39/proposal-Symbol-description',
     mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/description',
-    category: '2019 misc',
+    category: '2019 features',
     significance: 'small',
     subtests: [
       {
@@ -3433,13 +3558,15 @@ exports.tests = [
           safari11: false,
           safari12: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'empty description',
@@ -3462,13 +3589,15 @@ exports.tests = [
           safari11: false,
           safari12: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'undefined description',
@@ -3492,14 +3621,16 @@ exports.tests = [
           safari12: false,
           safari12_1: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
-      },
+          rhino1_7_13: false
+        }
+      }
     ]
   },
   {
@@ -3528,7 +3659,8 @@ exports.tests = [
         graalvm20: true,
         graalvm20_1: true,
         hermes0_7_0: false,
-      },
+        rhino1_7_13: false
+      }
     }, {
       name: 'arrows',
       exec: function(){/*
@@ -3553,7 +3685,8 @@ exports.tests = [
         graalvm20: true,
         graalvm20_1: true,
         hermes0_7_0: false,
-      },
+        rhino1_7_13: false
+      }
     }, {
       name: '[native code]',
       exec: function(){/*
@@ -3578,7 +3711,8 @@ exports.tests = [
         graalvm20: true,
         graalvm20_1: true,
         hermes0_7_0: true,
-      },
+        rhino1_7_13: true
+      }
     }, {
       name: 'class expression with implicit constructor',
       exec: function(){/*
@@ -3600,7 +3734,8 @@ exports.tests = [
         graalvm20: true,
         graalvm20_1: true,
         hermes0_7_0: false,
-      },
+        rhino1_7_13: false
+      }
     }, {
       name: 'class expression with explicit constructor',
       exec: function(){/*
@@ -3622,7 +3757,8 @@ exports.tests = [
         graalvm20: true,
         graalvm20_1: true,
         hermes0_7_0: false,
-      },
+        rhino1_7_13: false
+      }
     }, {
       name: 'unicode escape sequences in identifiers',
       exec: function(){/*
@@ -3642,7 +3778,8 @@ exports.tests = [
         graalvm20: true,
         graalvm20_1: true,
         hermes0_7_0: false,
-      },
+        rhino1_7_13: false
+      }
     }, {
       name: 'methods and computed property names',
       exec: function(){/*
@@ -3664,7 +3801,8 @@ exports.tests = [
         graalvm20: true,
         graalvm20_1: true,
         hermes0_7_0: false,
-      },
+        rhino1_7_13: false
+      }
     }]
   },
   {
@@ -3689,13 +3827,15 @@ exports.tests = [
           chrome66: true,
           safari11: false,
           safari12: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'PARAGRAPH SEPARATOR can appear in string literals',
@@ -3713,14 +3853,16 @@ exports.tests = [
           chrome66: true,
           safari11: false,
           safari12: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
-      },
+          rhino1_7_13: false
+        }
+      }
     ]
   },
   {
@@ -3746,6 +3888,7 @@ exports.tests = [
       firefox63: true,
       safari12_1: true,
       safaritp: true,
+      duktape2_0: false,
       jerryscript2_3_0: false,
       jerryscript2_4_0: true,
       graalvm19: true,
@@ -3754,6 +3897,7 @@ exports.tests = [
       chrome73: true,
       chrome74: true,
       hermes0_7_0: true,
+      rhino1_7_13: false
     }
   },
   {
@@ -3783,12 +3927,14 @@ exports.tests = [
       safari1: false,
       safari12_1: true,
       safaritp: true,
+      duktape2_0: false,
       jerryscript2_3_0: false,
       jerryscript2_4_0: true,
       graalvm19: true,
       graalvm20: true,
       graalvm20_1: true,
       hermes0_7_0: false,
+      rhino1_7_13: false
     }
   },
   {
@@ -3818,7 +3964,6 @@ exports.tests = [
           konq4_4: false,
           konq4_9: true,
           besen: false,
-          rhino1_7: false,
           phantom: true,
           node0_12: true,
           safari3: false,
@@ -3838,6 +3983,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: true
         }
       },
       {
@@ -3861,7 +4007,6 @@ exports.tests = [
           konq4_4: false,
           konq4_9: true,
           besen: false,
-          rhino1_7: false,
           phantom: true,
           node0_12: true,
           safari3: false,
@@ -3881,6 +4026,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: true
         }
       },
       {
@@ -3894,7 +4040,7 @@ exports.tests = [
           closure20190325: {
             val: false,
             note_id: 'closure-string-trimstart',
-            note_html: 'Requires native support for String.prototype.trimLeft.',
+            note_html: 'Requires native support for String.prototype.trimLeft.'
           },
           closure20190709: true,
           typescript1corejs2: typescript.corejs,
@@ -3913,6 +4059,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: true
         }
       },
       {
@@ -3926,7 +4073,7 @@ exports.tests = [
           closure20190325: {
             val: false,
             note_id: 'closure-string-trimend',
-            note_html: 'Requires native support for String.prototype.trimRight.',
+            note_html: 'Requires native support for String.prototype.trimRight.'
           },
           closure20190709: true,
           typescript1corejs2: typescript.corejs,
@@ -3945,6 +4092,7 @@ exports.tests = [
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: true
         }
       }
     ]
@@ -3957,7 +4105,7 @@ exports.tests = [
     links: [
       {
         note_id: 'flatten-compat-issue',
-        note_html: 'Name of <code>Array.prototype.flatten()</code> changed to <code>Array.prototype.flat()</code> due to <a href="https://github.com/tc39/proposal-flatMap/pull/56">web compatibility issues.</a>',
+        note_html: 'Name of <code>Array.prototype.flatten()</code> changed to <code>Array.prototype.flat()</code> due to <a href="https://github.com/tc39/proposal-flatMap/pull/56">web compatibility issues.</a>'
       }
     ],
     subtests: [
@@ -3986,13 +4134,14 @@ exports.tests = [
           opera10_50: false,
           safari12: true,
           safaritp: true,
-          duktape2_2: false,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -4015,13 +4164,14 @@ exports.tests = [
           chrome69: true,
           opera10_50: false,
           safari12: true,
-          duktape2_2: false,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -4047,15 +4197,16 @@ exports.tests = [
           opera10_50: false,
           safari12: false,
           safari13: true,
-          duktape2_2: false,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
-      },
+      }
     ]
   },
   {
@@ -4103,7 +4254,8 @@ exports.tests = [
           graalvm20: graalvm.es2020flag,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'throws on non-global regex',
@@ -4142,9 +4294,10 @@ exports.tests = [
           graalvm20: graalvm.es2020flag,
           graalvm20_1: true,
           hermes0_7_0: true,
-        },
-      },
-    ],
+          rhino1_7_13: false
+        }
+      }
+    ]
   },
   {
     name: 'BigInt',
@@ -4168,13 +4321,15 @@ exports.tests = [
           chrome67: true,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'constructor',
@@ -4191,13 +4346,15 @@ exports.tests = [
           chrome67: true,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'BigInt.asUintN',
@@ -4214,12 +4371,14 @@ exports.tests = [
           chrome67: true,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'BigInt.asIntN',
@@ -4236,12 +4395,14 @@ exports.tests = [
           chrome67: true,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'BigInt64Array',
@@ -4258,14 +4419,17 @@ exports.tests = [
           firefox67: false,
           firefox68: true,
           chrome67: true,
+          safari15: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'BigUint64Array',
@@ -4282,14 +4446,17 @@ exports.tests = [
           firefox67: false,
           firefox68: true,
           chrome67: true,
+          safari15: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'DataView.prototype.getBigInt64',
@@ -4307,14 +4474,17 @@ exports.tests = [
           firefox67: firefox.bigint,
           firefox68: true,
           chrome67: true,
+          safari15: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: 'DataView.prototype.getBigUint64',
@@ -4332,16 +4502,19 @@ exports.tests = [
           firefox67: firefox.bigint,
           firefox68: true,
           chrome67: true,
+          safari15: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           jerryscript2_4_0: true,
           graalvm19: true,
           graalvm20: true,
           graalvm20_1: true,
           hermes0_7_0: false,
-        },
-      },
-    ],
+          rhino1_7_13: false
+        }
+      }
+    ]
   },
   {
     name: 'Promise.allSettled',
@@ -4375,11 +4548,13 @@ exports.tests = [
       firefox71: true,
       chrome76: true,
       safari13: true,
+      duktape2_0: false,
       jerryscript2_3_0: false,
       graalvm19: false,
       graalvm20: graalvm.es2020flag,
       graalvm20_1: true,
       hermes0_7_0: false,
+      rhino1_7_13: false
     }
   },
   {
@@ -4422,13 +4597,14 @@ exports.tests = [
         node8_3: false,
         node8_7: false,
         duktape2_0: false,
-        duktape2_1: false,
+        duktape2_5: true,
         jerryscript2_3_0: false,
         jerryscript2_4_0: true,
         graalvm19: true,
         graalvm20: true,
         graalvm20_1: true,
         hermes0_7_0: true,
+        rhino1_7_13: false
       }
     }, {
       name: '"globalThis" global property has correct property descriptor',
@@ -4468,13 +4644,14 @@ exports.tests = [
         node8_3: false,
         node8_7: false,
         duktape2_0: false,
-        duktape2_1: false,
+        duktape2_5: true,
         jerryscript2_3_0: false,
         jerryscript2_4_0: true,
         graalvm19: true,
         graalvm20: true,
         graalvm20_1: true,
         hermes0_7_0: true,
+        rhino1_7_13: false
       }
     }]
   },
@@ -4506,11 +4683,13 @@ exports.tests = [
           chrome80: true,
           safari13_1: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: false,
           graalvm20: graalvm.es2020flag,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -4534,11 +4713,13 @@ exports.tests = [
           chrome80: true,
           safari13_1: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: false,
           graalvm20: graalvm.es2020flag,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -4562,11 +4743,13 @@ exports.tests = [
           chrome80: true,
           safari13_1: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: false,
           graalvm20: graalvm.es2020flag,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -4592,11 +4775,13 @@ exports.tests = [
           chrome80: true,
           safari13_1: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm19: false,
           graalvm20: graalvm.es2020flag,
           graalvm20_1: true,
           hermes0_7_0: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -4618,8 +4803,12 @@ exports.tests = [
           chrome77: false,
           chrome80: false,
           chrome89: false,
+          chrome90: false,
+          chrome91: true,
           safari13_1: true,
           safaritp: true,
+          duktape2_0: false,
+          rhino1_7_13: false
         }
       }
     ]
@@ -4652,12 +4841,14 @@ exports.tests = [
       chrome80: true,
       safari13_1: true,
       safaritp: true,
+      duktape2_0: false,
       jerryscript2_3_0: false,
       jerryscript2_4_0: true,
       graalvm19: false,
       graalvm20: graalvm.es2020flag,
       graalvm20_1: true,
       hermes0_7_0: true,
+      rhino1_7_13: false
     }
   },
   {
@@ -4672,6 +4863,7 @@ exports.tests = [
     res: {
       babel6corejs2: false,
       babel7corejs3: babel.corejs,
+      closure20210808: true,
       typescript1corejs2: typescript.fallthrough,
       typescript3_2corejs3: typescript.corejs,
       ie11: false,
@@ -4685,6 +4877,7 @@ exports.tests = [
       chrome85: true,
       safari13_1: true,
       safaritp: true,
+      duktape2_0: false,
       jerryscript2_3_0: false,
       jerryscript2_4_0: true,
       graalvm19: false,
@@ -4693,6 +4886,7 @@ exports.tests = [
       graalvm21: true,
       ios13_4: true,
       hermes0_7_0: true,
+      rhino1_7_13: false
     }
   },
   {
@@ -4716,6 +4910,7 @@ exports.tests = [
         res: {
           babel6corejs2: false,
           babel7corejs3: babel.corejs,
+          closure20210808: true,
           typescript1corejs2: typescript.fallthrough,
           typescript3_2corejs3: typescript.corejs,
           ie11: false,
@@ -4728,10 +4923,12 @@ exports.tests = [
           chrome85: true,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm20_3: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -4748,6 +4945,7 @@ exports.tests = [
         res: {
           babel6corejs2: false,
           babel7corejs3: babel.corejs,
+          closure20210808: true,
           typescript1corejs2: typescript.fallthrough,
           typescript3_2corejs3: typescript.corejs,
           ie11: false,
@@ -4760,17 +4958,20 @@ exports.tests = [
           chrome85: true,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           hermes0_7_0: false,
+          rhino1_7_13: false,
           jerryscript2_3_0: false,
           graalvm20_3: graalvm.es2021flag,
-          graalvm21: true,
+          graalvm21: true
         }
       }
-    ],
+    ]
   },
   {
     name: 'WeakReferences',
     spec: 'https://github.com/tc39/proposal-weakrefs',
+    mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakRef',
     category: '2021 features',
     significance: 'large',
     subtests: [
@@ -4804,6 +5005,7 @@ exports.tests = [
           graalvm20: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -4833,6 +5035,7 @@ exports.tests = [
           graalvm20_3: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: false,
+          rhino1_7_13: false
         }
       }
     ]
@@ -4845,6 +5048,7 @@ exports.tests = [
     subtests: [
       {
         name: '||= basic support',
+        mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_OR_assignment',
         exec: function () {/*
         let a;
         let b = 0;
@@ -4856,6 +5060,7 @@ exports.tests = [
       */},
         res: {
           babel7corejs2: true,
+          closure20210808: true,
           ie11: false,
           firefox60: false,
           firefox76: false,
@@ -4867,11 +5072,13 @@ exports.tests = [
           safari13: false,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm20_3: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '||= short-circuiting behaviour',
@@ -4883,6 +5090,7 @@ exports.tests = [
       */},
         res: {
           babel7corejs2: true,
+          closure20210808: true,
           ie11: false,
           firefox60: false,
           firefox76: false,
@@ -4894,11 +5102,13 @@ exports.tests = [
           safari13: false,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm20_3: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '||= setter not unecessarily invoked',
@@ -4910,6 +5120,7 @@ exports.tests = [
       */},
         res: {
           babel7corejs2: true,
+          closure20210808: true,
           ie11: false,
           firefox60: false,
           firefox76: false,
@@ -4921,14 +5132,17 @@ exports.tests = [
           safari13: false,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm20_3: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '&&= basic support',
+        mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_AND_assignment',
         exec: function () {/*
         let a;
         let b = 0;
@@ -4940,6 +5154,7 @@ exports.tests = [
       */},
         res: {
           babel7corejs2: true,
+          closure20210808: true,
           ie11: false,
           firefox60: false,
           firefox76: false,
@@ -4951,11 +5166,13 @@ exports.tests = [
           safari13: false,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm20_3: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '&&= short-circuiting behaviour',
@@ -4967,6 +5184,7 @@ exports.tests = [
       */},
         res: {
           babel7corejs2: true,
+          closure20210808: true,
           ie11: false,
           firefox60: false,
           firefox76: false,
@@ -4978,11 +5196,13 @@ exports.tests = [
           safari13: false,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm20_3: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '&&= setter not unecessarily invoked',
@@ -4994,6 +5214,7 @@ exports.tests = [
       */},
         res: {
           babel7corejs2: true,
+          closure20210808: true,
           ie11: false,
           firefox60: false,
           firefox76: false,
@@ -5005,14 +5226,17 @@ exports.tests = [
           safari13: false,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm20_3: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '??= basic support',
+        mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_nullish_assignment',
         exec: function () {/*
         let a;
         let b = 0;
@@ -5024,6 +5248,7 @@ exports.tests = [
       */},
         res: {
           babel7corejs2: true,
+          closure20210808: true,
           ie11: false,
           firefox60: false,
           firefox76: false,
@@ -5035,11 +5260,13 @@ exports.tests = [
           safari13: false,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm20_3: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '??= short-circuiting behaviour',
@@ -5051,6 +5278,7 @@ exports.tests = [
       */},
         res: {
           babel7corejs2: true,
+          closure20210808: true,
           ie11: false,
           firefox60: false,
           firefox76: false,
@@ -5062,11 +5290,13 @@ exports.tests = [
           safari13: false,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm20_3: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: true,
-        },
+          rhino1_7_13: false
+        }
       },
       {
         name: '??= setter not unecessarily invoked',
@@ -5078,6 +5308,7 @@ exports.tests = [
       */},
         res: {
           babel7corejs2: true,
+          closure20210808: true,
           ie11: false,
           firefox60: false,
           firefox76: false,
@@ -5089,12 +5320,14 @@ exports.tests = [
           safari13: false,
           safari14: true,
           safaritp: true,
+          duktape2_0: false,
           jerryscript2_3_0: false,
           graalvm20_3: graalvm.es2021flag,
           graalvm21: true,
           hermes0_7_0: true,
-        },
-      },
+          rhino1_7_13: false
+        }
+      }
     ]
   },
   {
@@ -5108,6 +5341,7 @@ exports.tests = [
     */},
     res : {
       babel7corejs2: true,
+      closure20210808: true,
       typescript1corejs2: false,
       typescript2_7corejs2: true,
       ie11: false,
@@ -5121,12 +5355,14 @@ exports.tests = [
       chrome75: true,
       safari13: true,
       safaritp: true,
+      duktape2_0: false,
       jerryscript2_3_0: false,
       jerryscript2_4_0: true,
       graalvm19: false,
       graalvm20: graalvm.es2020flag,
       graalvm20_1: true,
       hermes0_7_0: true,
+      rhino1_7_13: false
     }
   },
   {
@@ -5161,6 +5397,7 @@ exports.tests = [
           graalvm19: false,
           graalvm20: true,
           graalvm20_1: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -5194,6 +5431,7 @@ exports.tests = [
           graalvm19: false,
           graalvm20: true,
           graalvm20_1: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -5223,6 +5461,7 @@ exports.tests = [
           graalvm19: false,
           graalvm20: true,
           graalvm20_1: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -5249,12 +5488,14 @@ exports.tests = [
           safari13_1: false,
           safari14_1: true,
           safaritp: true,
+          duktape2_0: false,
           opera10_50: false,
           graalvm20: false,
           graalvm20_1: false,
           graalvm20_3: true,
           babel7corejs3: false,
           typescript3_8corejs3: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -5283,11 +5524,13 @@ exports.tests = [
           safari14_1: true,
           safaritp: true,
           opera10_50: false,
+          duktape2_0: false,
           graalvm20: false,
           graalvm20_1: false,
           graalvm20_3: true,
           babel7corejs3: false,
           typescript3_8corejs3: false,
+          rhino1_7_13: false
         }
       },
       {
@@ -5313,8 +5556,9 @@ exports.tests = [
           graalvm19: false,
           graalvm20: true,
           graalvm20_1: true,
+          rhino1_7_13: false
         }
-      },
+      }
     ]
   },
   {
@@ -5349,6 +5593,7 @@ exports.tests = [
           graalvm19: false,
           graalvm20: true,
           graalvm20_1: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -5377,6 +5622,7 @@ exports.tests = [
           graalvm19: false,
           graalvm20: true,
           graalvm20_1: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -5401,8 +5647,9 @@ exports.tests = [
           graalvm19: false,
           graalvm20: true,
           graalvm20_1: true,
+          rhino1_7_13: false
         }
-      },
+      }
     ]
   },
   {
@@ -5439,9 +5686,11 @@ exports.tests = [
           chrome84: true,
           duktape2_0: false,
           safari13: false,
+          safari15: true,
           safaritp: true,
           graalvm20: false,
           graalvm20_1: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -5471,9 +5720,11 @@ exports.tests = [
           chrome84: true,
           duktape2_0: false,
           safari13: false,
+          safari15: true,
           safaritp: true,
           graalvm20: false,
           graalvm20_1: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -5506,9 +5757,11 @@ exports.tests = [
           chrome84: true,
           duktape2_0: false,
           safari13: false,
+          safari15: true,
           safaritp: true,
           graalvm20: false,
           graalvm20_1: true,
+          rhino1_7_13: false
         }
       },
       {
@@ -5541,13 +5794,590 @@ exports.tests = [
           chrome84: true,
           duktape2_0: false,
           safari13: false,
+          safari15: true,
           safaritp: true,
           graalvm20: false,
           graalvm20_1: true,
+          rhino1_7_13: false
         }
       }
     ]
   },
+  {
+    name: 'Ergonomic brand checks for private fields',
+    category: '2022 features',
+    significance: 'small',
+    spec: 'https://github.com/tc39/proposal-private-fields-in-in',
+    exec: function () {/*
+      class A {
+        #x;
+        static check(obj) {
+          return #x in obj;
+        }
+      }
+      return A.check(new A) && !A.check({});
+    */},
+    res: {
+      babel6corejs2: false,
+      babel7corejs2: true,
+      babel7corejs3: true,
+      chrome1: false,
+      chrome91: true,
+      edge18: false,
+      firefox2: false,
+      firefox90: true,
+      ie11: false,
+      opera10_50: false,
+      safari12: false,
+      safari15: true,
+      duktape2_0: false,
+      rhino1_7_13: false
+    }
+  },
+  {
+    name: '.at() method on the built-in indexables',
+    category: '2022 features',
+    significance: 'tiny',
+    spec: 'https://github.com/tc39/proposal-relative-indexing-method/',
+    subtests: [
+      {
+        name: 'Array.prototype.at()',
+        exec: function() {/*
+        var arr = [1, 2, 3];
+        return arr.at(0) === 1
+          && arr.at(-3) === 1
+          && arr.at(1) === 2
+          && arr.at(-2) === 2
+          && arr.at(2) === 3
+          && arr.at(-1) === 3
+          && arr.at(3) === undefined
+          && arr.at(-4) === undefined;
+      */},
+        res: {
+          ie11: false,
+          firefox68: false,
+          firefox85: firefox.nightly,
+          firefox90: true,
+          chrome85: false,
+          chrome92: true,
+          safari14_1: {
+            val: 'flagged',
+            note_id: 'safari-at-method',
+            note_html: 'The feature has to be enabled via <code>jscOptions=--useAtMethod=true</code> flag.'
+          },
+          safaritp: true,
+          duktape2_0: false,
+          babel7corejs3: babel.corejs,
+          typescript4corejs3: typescript.corejs,
+          graalvm21: graalvm.es2022flag,
+          rhino1_7_13: false
+        }
+      },
+      {
+        name: 'String.prototype.at()',
+        exec: function() {/*
+        var str = 'abc';
+        return str.at(0) === 'a'
+          && str.at(-3) === 'a'
+          && str.at(1) === 'b'
+          && str.at(-2) === 'b'
+          && str.at(2) === 'c'
+          && str.at(-1) === 'c'
+          && str.at(3) === undefined
+          && str.at(-4) === undefined;
+      */},
+        res: {
+          ie11: false,
+          firefox68: false,
+          firefox85: firefox.nightly,
+          firefox90: true,
+          chrome85: false,
+          chrome92: true,
+          safari14_1: {
+            val: 'flagged',
+            note_id: 'safari-at-method'
+          },
+          safaritp: true,
+          duktape2_0: false,
+          babel7corejs3: babel.corejs,
+          typescript4corejs3: typescript.corejs,
+          graalvm21: graalvm.es2022flag,
+          rhino1_7_13: false
+        }
+      },
+      {
+        name: '%TypedArray%.prototype.at()',
+        exec: function() {/*
+         return [
+           'Int8Array',
+           'Uint8Array',
+           'Uint8ClampedArray',
+           'Int16Array',
+           'Uint16Array',
+           'Int32Array',
+           'Uint32Array',
+           'Float32Array',
+           'Float64Array'
+         ].every(function (TypedArray) {
+           var Constructor = globalThis[TypedArray];
+           if (typeof Constructor !== 'function') {
+             return false;
+           }
+           var arr = new Constructor([1, 2, 3]);
+           return arr.at(0) === 1
+             && arr.at(-3) === 1
+             && arr.at(1) === 2
+             && arr.at(-2) === 2
+             && arr.at(2) === 3
+             && arr.at(-1) === 3
+             && arr.at(3) === undefined
+             && arr.at(-4) === undefined;
+         });
+      */},
+        res: {
+          ie11: false,
+          firefox68: false,
+          firefox85: firefox.nightly,
+          firefox90: true,
+          chrome85: false,
+          chrome92: true,
+          safari14_1: {
+            val: 'flagged',
+            note_id: 'safari-at-method'
+          },
+          safaritp: true,
+          duktape2_0: false,
+          babel7corejs3: babel.corejs,
+          typescript4corejs3: typescript.corejs,
+          graalvm21: graalvm.es2022flag,
+          rhino1_7_13: false
+        }
+      }
+    ]
+  },
+  {
+    name: 'Object.hasOwn',
+    category: '2022 features',
+    significance: 'small',
+    spec: 'https://github.com/tc39/proposal-accessible-object-hasownproperty',
+    mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwn',
+    subtests: [
+      {
+        name: "Basic functionality",
+        exec: function () {/*
+        return Object.hasOwn({ x: 2 }, "x") === true;
+      */},
+        res: {
+          babel7corejs3: babel.corejs,
+          typescript3_2corejs3: typescript.corejs,
+          ie11: false,
+          chrome1: false,
+          chrome90: false,
+          chrome93: true,
+          edge18: false,
+          firefox2: false,
+          firefox90: false,
+          firefox91: firefox.nightly,
+          firefox92: true,
+          opera10_50: false,
+          safari12: false,
+          safaritp: true,
+          duktape2_0: false,
+          rhino1_7_13: false
+        }
+      },
+      {
+        name: "ToObject called before ToPropertyKey",
+        exec: function () {/*
+        var ok = !!Object.hasOwn;
+        try {
+          Object.hasOwn(null, { toString: function () { ok = false } });
+          return false;
+        } catch (e) {
+          return ok;
+        }
+      */},
+        res: {
+          babel7corejs3: babel.corejs,
+          typescript3_2corejs3: typescript.corejs,
+          ie11: false,
+          chrome1: false,
+          chrome90: false,
+          chrome93: true,
+          edge18: false,
+          firefox2: false,
+          firefox90: false,
+          firefox91: firefox.nightly,
+          firefox92: true,
+          opera10_50: false,
+          safari12: false,
+          safaritp: true,
+          duktape2_0: false,
+          rhino1_7_13: false
+        }
+      }
+    ]
+  },
+  {
+    name: 'Class static initialization blocks',
+    category: '2022 features',
+    significance: 'small',
+    spec: 'https://github.com/tc39/proposal-class-static-block',
+    exec: function () {/*
+    let ok = false;
+    class A {
+      static { ok = true; }
+    }
+    return ok;
+  */},
+    res: {
+      babel6corejs2: false,
+      babel7corejs2: true,
+      babel7corejs3: true,
+      chrome1: false,
+      chrome91: {
+        val: 'flagged',
+        note_id: 'ch-static-init-blocks',
+        note_html: 'The feature has to be enabled via <code>harmony_class_static_blocks</code> flag.'
+      },
+      chrome94: true,
+      safari13: false,
+      edge18: false,
+      firefox2: false,
+      firefox87: false,
+      firefox90: {
+        val: 'flagged',
+        note_id: 'ff-static-init-blocks',
+        note_html: 'The feature has to be enabled via <code>javascript.options.experimental.class_static_blocks=true</code> flag.'
+      },
+      firefox93: true,
+      ie11: false,
+      opera10_50: false,
+      safari12: false,
+      duktape2_0: false,
+      rhino1_7_13: false
+    },
+  },
+  {
+    name: 'Error.cause property',
+    category: '2022 features',
+    significance: 'small',
+    spec: 'https://github.com/tc39/proposal-error-cause',
+    subtests: [
+      {
+        name: "Error has cause",
+        exec: function () {/*
+        var error = new Error('error', { cause: 'cause' })
+        return error.hasOwnProperty('cause') && error.cause === 'cause';
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+          duktape2_0: false,
+        }
+      },
+      {
+        name: "Error.prototype lacks cause",
+        exec: function () {/*
+        return !('cause' in Error.prototype);
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: false,
+          chrome94: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+        }
+      },
+      {
+        name: "EvalError has cause",
+        exec: function () {/*
+        var error = new EvalError('error', { cause: 'cause' })
+        return error.hasOwnProperty('cause') && error.cause === 'cause';
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+          duktape2_0: false,
+        }
+      },
+      {
+        name: "EvalError.prototype lacks cause",
+        exec: function () {/*
+        return !('cause' in EvalError.prototype);
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: false,
+          chrome94: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+        }
+      },
+      {
+        name: "RangeError has cause",
+        exec: function () {/*
+        var error = new RangeError('error', { cause: 'cause' })
+        return error.hasOwnProperty('cause') && error.cause === 'cause';
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+          duktape2_0: false,
+        }
+      },
+      {
+        name: "RangeError.prototype lacks cause",
+        exec: function () {/*
+        return !('cause' in RangeError.prototype);
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: false,
+          chrome94: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+        }
+      },
+      {
+        name: "ReferenceError has cause",
+        exec: function () {/*
+        var error = new ReferenceError('error', { cause: 'cause' })
+        return error.hasOwnProperty('cause') && error.cause === 'cause';
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+          duktape2_0: false,
+        }
+      },
+      {
+        name: "ReferenceError.prototype lacks cause",
+        exec: function () {/*
+        return !('cause' in ReferenceError.prototype);
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: false,
+          chrome94: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+        }
+      },
+      {
+        name: "SyntaxError has cause",
+        exec: function () {/*
+        var error = new SyntaxError('error', { cause: 'cause' })
+        return error.hasOwnProperty('cause') && error.cause === 'cause';
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+          duktape2_0: false,
+        }
+      },
+      {
+        name: "SyntaxError.prototype lacks cause",
+        exec: function () {/*
+        return !('cause' in SyntaxError.prototype);
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: false,
+          chrome94: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+        }
+      },
+      {
+        name: "TypeError has cause",
+        exec: function () {/*
+        var error = new TypeError('error', { cause: 'cause' })
+        return error.hasOwnProperty('cause') && error.cause === 'cause';
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+          duktape2_0: false,
+        }
+      },
+      {
+        name: "TypeError.prototype lacks cause",
+        exec: function () {/*
+        return !('cause' in TypeError.prototype);
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: false,
+          chrome94: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+        }
+      },
+      {
+        name: "URIError has cause",
+        exec: function () {/*
+        var error = new URIError('error', { cause: 'cause' })
+        return error.hasOwnProperty('cause') && error.cause === 'cause';
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+          duktape2_0: false,
+        }
+      },
+      {
+        name: "URIError.prototype lacks cause",
+        exec: function () {/*
+        return !('cause' in URIError.prototype);
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: false,
+          chrome94: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+        }
+      },
+      {
+        name: "AggregateError has cause",
+        exec: function () {/*
+        var error = new AggregateError([], 'error', { cause: 'cause' })
+        return error.hasOwnProperty('cause') && error.cause === 'cause';
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+          duktape2_0: false,
+        }
+      },
+      {
+        name: "AggregateError.prototype lacks cause",
+        exec: function () {/*
+        return !('cause' in AggregateError.prototype);
+        */},
+        res: {
+          ie11: false,
+          chrome1: false,
+          chrome92: false,
+          chrome93: false,
+          chrome94: true,
+          edge90: false,
+          firefox45: false,
+          firefox90: false,
+          firefox91: true,
+          safari14: false,
+          safari15: true,
+        }
+      },
+    ]
+  }
 ];
 
 //Shift annex B features to the bottom

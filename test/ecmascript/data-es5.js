@@ -25,7 +25,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -35,7 +35,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -54,7 +54,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -64,8 +64,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
-    },
+      hermes0_7_0: true
+    }
   },
   {
     name: 'Trailing commas in object literals',
@@ -82,7 +82,7 @@ exports.tests = [
       opera12_10: true,
       konq4_3: null,
       besen: null,
-      rhino1_7: null,
+      rhino1_7_13: true,
       ejs: null,
       android4_0: null,
       duktape2_0: true,
@@ -93,8 +93,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
-    },
+      hermes0_7_0: true
+    }
   },
   {
     name: 'Trailing commas in array literals',
@@ -111,7 +111,7 @@ exports.tests = [
       opera12_10: true,
       konq4_3: null,
       besen: null,
-      rhino1_7: null,
+      rhino1_7_13: true,
       ejs: null,
       android4_0: null,
       duktape2_0: true,
@@ -122,8 +122,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
-    },
+      hermes0_7_0: true
+    }
   },
   {
     name: 'Reserved words as property names',
@@ -144,7 +144,7 @@ exports.tests = [
       opera12: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: false,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -155,8 +155,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
-    },
+      hermes0_7_0: true
+    }
   }],
   separator: 'after'
 },
@@ -179,7 +179,7 @@ exports.tests = [
       opera12: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -190,7 +190,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -221,7 +221,7 @@ exports.tests = [
       opera12: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -232,7 +232,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -251,7 +251,7 @@ exports.tests = [
       opera12: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -262,7 +262,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -283,7 +283,7 @@ exports.tests = [
       konq4_9: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -294,7 +294,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -316,7 +316,7 @@ exports.tests = [
       konq4_9: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -327,7 +327,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -346,7 +346,7 @@ exports.tests = [
       opera12: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -357,7 +357,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -376,7 +376,7 @@ exports.tests = [
       opera12: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -387,7 +387,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -406,7 +406,7 @@ exports.tests = [
       opera12: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -417,7 +417,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -436,7 +436,7 @@ exports.tests = [
       opera12: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -447,7 +447,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -466,7 +466,7 @@ exports.tests = [
       opera12: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -477,7 +477,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -496,7 +496,7 @@ exports.tests = [
       opera12: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -507,7 +507,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -534,7 +534,7 @@ exports.tests = [
       opera12: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -545,7 +545,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -566,7 +566,7 @@ exports.tests = [
       konq4_9: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -577,7 +577,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     },
     separator: 'after'
   }],
@@ -603,7 +603,7 @@ exports.tests = [
       konq4_9: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -614,7 +614,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -633,7 +633,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -644,7 +644,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -663,7 +663,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -674,7 +674,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -693,7 +693,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -704,7 +704,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -723,7 +723,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -734,7 +734,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -753,7 +753,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -764,7 +764,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -783,7 +783,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -794,7 +794,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -813,7 +813,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -824,7 +824,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -843,7 +843,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -854,7 +854,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -873,7 +873,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -884,8 +884,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
-    },
+      hermes0_7_0: true
+    }
   }, {
     name: 'Array.prototype.sort: compareFn must be function or undefined',
     exec: function () {
@@ -929,7 +929,7 @@ exports.tests = [
       konq4_9: null,
       konq4_13: null,
       besen: null,
-      rhino1_7: null,
+      rhino1_7_13: true,
       ejs: null,
       android4_0: false,
       duktape2_0: true,
@@ -940,8 +940,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
-    },
+      hermes0_7_0: true
+    }
   },
   {
     name: 'Array.prototype.sort: compareFn may be explicit undefined',
@@ -966,7 +966,7 @@ exports.tests = [
       konq4_9: null,
       konq4_13: null,
       besen: null,
-      rhino1_7: null,
+      rhino1_7_13: true,
       ejs: null,
       android4_0: true,
       duktape2_0: true,
@@ -977,8 +977,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
-    },
+      hermes0_7_0: true
+    }
   }],
 },
 {
@@ -1000,7 +1000,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -1011,7 +1011,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -1057,10 +1057,12 @@ exports.tests = [
       safari5: false,
       safari5_1: true,
       safari13: true,
+      duktape2_0: true,
       graalvm20_3: true,
       jerryscript1_0: false,
       jerryscript2_2_0: true,
       hermes0_7_0: true,
+      rhino1_7_13: false
     }
   },
   {
@@ -1081,7 +1083,7 @@ exports.tests = [
       konq4_9: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -1092,7 +1094,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     },
     separator: 'after'
   }
@@ -1117,7 +1119,7 @@ exports.tests = [
       opera10_50: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: false,
       android4_0: true,
       duktape2_0: true,
@@ -1128,7 +1130,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -1146,7 +1148,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -1157,7 +1159,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -1187,7 +1189,7 @@ exports.tests = [
       opera12_10: true,
       konq4_3: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_0: true,
       duktape2_0: true,
@@ -1198,7 +1200,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   }]
 },
@@ -1220,7 +1222,7 @@ exports.tests = [
     opera12: true,
     konq4_13: true,
     besen: true,
-    rhino1_7: true,
+    rhino1_7_13: true,
     phantom: true,
     ejs: true,
     ios7: true,
@@ -1233,7 +1235,7 @@ exports.tests = [
     graalvm20: true,
     graalvm20_1: true,
     jerryscript1_0: true,
-    hermes0_7_0: true,
+    hermes0_7_0: true
   },
 },
 {
@@ -1257,7 +1259,7 @@ exports.tests = [
     konq4_9: true,
     konq4_13: true,
     besen: true,
-    rhino1_7: true,
+    rhino1_7_13: true,
     phantom: true,
     ejs: true,
     ios7: true,
@@ -1270,7 +1272,7 @@ exports.tests = [
     graalvm20: true,
     graalvm20_1: true,
     jerryscript1_0: true,
-    hermes0_7_0: true,
+    hermes0_7_0: true
   },
   separator: 'after'
 },
@@ -1299,7 +1301,7 @@ exports.tests = [
       konq4_9: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: false,
       android4_1: true,
       duktape2_0: true,
@@ -1310,7 +1312,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -1334,7 +1336,7 @@ exports.tests = [
       konq4_9: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: false,
       android4_1: true,
       duktape2_0: true,
@@ -1345,7 +1347,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -1369,7 +1371,7 @@ exports.tests = [
       konq4_9: true,
       konq4_13: true,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: false,
       android4_1: true,
       duktape2_0: true,
@@ -1380,9 +1382,96 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   }]
+},
+{
+  name: 'Number methods',
+  significance: 'small',
+  subtests: [{
+    name: 'Number.prototype.toExponential rounds properly',
+    exec: function () {
+      return (-6.9e-11).toExponential(4) === '-6.9000e-11' // Edge <= 17
+        && (25).toExponential(0) === '3e+1' // FF <= 86
+        && (1.255).toExponential(2) === '1.25e+0'; // IE <= 11 && Edge <= 14
+    },
+    res: {
+      ie6: false,
+      ie7: false,
+      ie8: false,
+      ie9: false,
+      ie10: false,
+      ie11: false,
+      chrome15: true,
+      firefox3: true,
+      firefox3_6: false,
+      firefox86: false,
+      firefox87: true,
+      opera10_10: true,
+      safari4: true,
+      edge13: false,
+      edge14: false,
+      edge15: false,
+      edge16: false,
+      edge17: false,
+      edge18: true,
+      edge80: true,
+      duktape2_0: true
+    }
+  }, {
+    name: 'Number.prototype.toExponential throws on ±Infinity fractionDigits',
+    exec: function () {
+      try {
+        (1).toExponential(Infinity);
+        (1).toExponential(-Infinity);
+        return false;
+      } catch (e) {
+        return true;
+      }
+    },
+    res: {
+      ie6: false,
+      ie7: false,
+      ie8: false,
+      ie9: true,
+      ie10: true,
+      ie11: true,
+      chrome15: true,
+      firefox3: true,
+      opera10_10: true,
+      safari4: true,
+      edge15: true,
+      edge16: true,
+      edge17: true,
+      edge18: true,
+      edge80: true,
+      duktape2_0: true
+    }
+  }, {
+    name: 'Number.prototype.toExponential does not throw on edge cases',
+    exec: function () {
+      try {
+        NaN.toExponential(Infinity);
+        Infinity.toExponential(Infinity);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+    res: {
+      chrome37: true,
+      firefox3: false,
+      firefox3_6: false,
+      firefox49: false,
+      firefox50: true,
+      ie6: true,
+      ie8: true,
+      edge11: true,
+      safari10: false,
+      safari11: true
+    }
+  }],
 },
 {
   name: 'Miscellaneous',
@@ -1409,7 +1498,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: null,
       besen: null,
-      rhino1_7: null,
+      rhino1_7_13: true,
       ejs: null,
       android4_0: null,
       duktape2_0: true,
@@ -1420,8 +1509,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
-    },
+      hermes0_7_0: true
+    }
   },
   {
     name: 'parseInt ignores leading zeros',
@@ -1441,7 +1530,7 @@ exports.tests = [
       konq4_9: false,
       konq4_13: false,
       besen: true,
-      rhino1_7: false,
+      rhino1_7_13: true,
       ejs: true,
       android4_4: true,
       duktape2_0: true,
@@ -1452,7 +1541,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -1473,7 +1562,7 @@ exports.tests = [
       opera12: true,
       konq4_3: null,
       besen: null,
-      rhino1_7: null,
+      rhino1_7_13: true,
       ejs: null,
       android4_0: null,
       duktape2_0: true,
@@ -1484,8 +1573,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
-    },
+      hermes0_7_0: true
+    }
   },
   {
     name: 'Arguments toStringTag is "Arguments"',
@@ -1506,7 +1595,7 @@ exports.tests = [
       opera12: true,
       konq4_3: null,
       besen: null,
-      rhino1_7: null,
+      rhino1_7_13: true,
       ejs: null,
       android4_0: null,
       duktape2_0: true,
@@ -1517,8 +1606,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
-    },
+      hermes0_7_0: true
+    }
   },
   {
     name: 'Zero-width chars in identifiers',
@@ -1542,7 +1631,7 @@ exports.tests = [
       konq4_9: false,
       konq4_13: false,
       besen: true,
-      rhino1_7: true,
+      rhino1_7_13: true,
       ejs: true,
       android4_1: true,
       duktape2_0: true,
@@ -1554,7 +1643,7 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: false,
       jerryscript2_2_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -1575,7 +1664,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: null,
       besen: null,
-      rhino1_7: null,
+      rhino1_7_13: true,
       ejs: null,
       android4_0: null,
       duktape2_0: true,
@@ -1586,7 +1675,7 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
+      hermes0_7_0: true
     }
   },
   {
@@ -1617,7 +1706,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: null,
       besen: null,
-      rhino1_7: null,
+      rhino1_7_13: false,
       ejs: null,
       android4_0: null,
       duktape2_0: false,
@@ -1629,7 +1718,7 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: false,
       jerryscript2_0: true,
-      hermes0_7_0: false,
+      hermes0_7_0: false
     }
   },
   {
@@ -1653,7 +1742,7 @@ exports.tests = [
       opera10_50: true,
       konq4_3: null,
       besen: null,
-      rhino1_7: null,
+      rhino1_7_13: true,
       ejs: null,
       android4_0: null,
       duktape2_0: true,
@@ -1664,8 +1753,8 @@ exports.tests = [
       graalvm20: true,
       graalvm20_1: true,
       jerryscript1_0: true,
-      hermes0_7_0: true,
-    },
+      hermes0_7_0: true
+    }
   }]
 },
 {
@@ -1704,7 +1793,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: hermes.evalStrictMode,
-    },
+      rhino1_7_13: true
+    }
   },
   {
     name: '"this" is undefined in functions',
@@ -1737,7 +1827,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: '"this" is not coerced to object in primitive methods',
@@ -1768,7 +1859,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: '"this" is not coerced to object in primitive accessors',
@@ -1812,7 +1904,8 @@ exports.tests = [
       jerryscript1_0: false,
       jerryscript2_3_0: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'legacy octal is a SyntaxError',
@@ -1844,7 +1937,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: hermes.evalStrictMode,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'assignment to unresolvable identifiers is a ReferenceError',
@@ -1874,7 +1968,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: hermes.evalStrictMode,
-    },
+      rhino1_7_13: true
+    }
   },
   {
     name: 'assignment to eval or arguments is a SyntaxError',
@@ -1908,7 +2003,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: hermes.evalStrictMode,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'assignment to non-writable properties is a TypeError',
@@ -1940,7 +2036,8 @@ exports.tests = [
       jerryscript1_0: false,
       jerryscript2_0: true,
       hermes0_7_0: false,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'eval or arguments bindings is a SyntaxError',
@@ -1976,7 +2073,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: hermes.evalStrictMode,
-    },
+      rhino1_7_13: true
+    }
   },
   {
     name: 'arguments.caller removed or is a TypeError',
@@ -2009,7 +2107,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: true
+    }
   },
   {
     name: 'arguments.callee is a TypeError',
@@ -2040,7 +2139,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: true
+    }
   },
   {
     name: '(function(){}).caller and (function(){}).arguments is a TypeError',
@@ -2072,7 +2172,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'arguments is unmapped',
@@ -2108,7 +2209,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: true
+    }
   },
   {
     name: 'eval() can\'t create bindings',
@@ -2138,7 +2240,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: hermes.evalLexicalScopeSuccess,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'deleting bindings is a SyntaxError',
@@ -2168,7 +2271,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: hermes.evalStrictMode,
-    },
+      rhino1_7_13: false
+    }
   },
   {
     name: 'deleting non-configurable properties is a TypeError',
@@ -2198,7 +2302,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: true
+    }
   },
   {
     name: '"with" is a SyntaxError',
@@ -2228,7 +2333,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: true,
-    },
+      rhino1_7_13: true
+    }
   },
   {
     name: 'repeated parameter names is a SyntaxError',
@@ -2258,7 +2364,8 @@ exports.tests = [
       graalvm20_1: true,
       jerryscript1_0: true,
       hermes0_7_0: hermes.evalStrictMode,
-    },
+      rhino1_7_13: true
+    }
   },
   {
     name: 'function expressions with matching name and argument are valid',
@@ -2294,6 +2401,7 @@ exports.tests = [
       jerryscript1_0: false,
       jerryscript2_0: true,
       hermes0_7_0: true,
+      rhino1_7_13: true
     }
   }]
 }

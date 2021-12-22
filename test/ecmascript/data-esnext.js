@@ -2,15 +2,15 @@ var common = require('./data-common');
 
 var babel = common.babel;
 var typescript = common.typescript;
-var firefox = common.firefox;
-var graalvm = common.graalvm;
+// var firefox = common.firefox;
+// var graalvm = common.graalvm;
 
 exports.name = 'ES Next';
 exports.target_file = 'esnext/index.html';
 exports.skeleton_file = 'esnext/skeleton.html';
 
-var STAGE2 = 'draft (stage 2)';
-var STAGE3 = 'candidate (stage 3)';
+var STAGE2 = 'Stage 2';
+var STAGE3 = 'Stage 3';
 
 exports.tests = [
 {
@@ -37,6 +37,7 @@ exports.tests = [
     graalvm19: false,
     graalvm20: false,
     graalvm20_1: false,
+    rhino1_7_13: false
   }
 },
 {
@@ -70,13 +71,14 @@ exports.tests = [
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
-    },
+    }
   ],
 },
 {
   name: 'Realms',
-  category: STAGE2,
+  category: STAGE3,
   significance: 'large',
   spec: 'https://github.com/tc39/proposal-realms',
   exec: function () {/*
@@ -95,6 +97,7 @@ exports.tests = [
     graalvm19: false,
     graalvm20: false,
     graalvm20_1: false,
+    rhino1_7_13: false
   }
 },
 {
@@ -121,9 +124,11 @@ exports.tests = [
         firefox52: false,
         opera10_50: false,
         chrome77: false,
+        duktape2_0: false,
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
     },
     {
@@ -148,9 +153,11 @@ exports.tests = [
         firefox52: false,
         opera10_50: false,
         chrome77: false,
+        duktape2_0: false,
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
     },
     {
@@ -170,9 +177,11 @@ exports.tests = [
         firefox52: false,
         opera10_50: false,
         chrome77: false,
+        duktape2_0: false,
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
     },
     {
@@ -192,11 +201,13 @@ exports.tests = [
         firefox52: false,
         opera10_50: false,
         chrome77: false,
+        duktape2_0: false,
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
-    },
+    }
   ]
 },
 {
@@ -221,9 +232,11 @@ exports.tests = [
         ie11: false,
         firefox2: false,
         chrome77: false,
+        duktape2_0: false,
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
     },
     {
@@ -243,9 +256,11 @@ exports.tests = [
         ie11: false,
         firefox2: false,
         chrome77: false,
+        duktape2_0: false,
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
     },
     {
@@ -264,9 +279,11 @@ exports.tests = [
         ie11: false,
         firefox2: false,
         chrome77: false,
+        duktape2_0: false,
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
     },
     {
@@ -285,9 +302,11 @@ exports.tests = [
         ie11: false,
         firefox2: false,
         chrome77: false,
+        duktape2_0: false,
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
     },
     {
@@ -303,9 +322,11 @@ exports.tests = [
         ie11: false,
         firefox2: false,
         chrome77: false,
+        duktape2_0: false,
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
     },
     {
@@ -321,9 +342,11 @@ exports.tests = [
         ie11: false,
         firefox2: false,
         chrome77: false,
+        duktape2_0: false,
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
     },
     {
@@ -339,11 +362,13 @@ exports.tests = [
         ie11: false,
         firefox2: false,
         chrome77: false,
+        duktape2_0: false,
         graalvm19: false,
         graalvm20: false,
         graalvm20_1: false,
+        rhino1_7_13: false
       }
-    },
+    }
   ]
 },
 {
@@ -366,7 +391,9 @@ exports.tests = [
         firefox52: false,
         chrome70: false,
         safari12: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'ArrayBuffer.prototype.realloc()',
@@ -382,8 +409,10 @@ exports.tests = [
         firefox52: false,
         chrome70: false,
         safari12: false,
-      },
-    },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
+    }
   ]
 },
 {
@@ -410,7 +439,7 @@ exports.tests = [
         safari3_1: true,
         konq4_4: true,
         besen: false,
-        rhino1_7: true,
+        rhino1_7_13: true,
         phantom: true,
         android4_0: true,
         duktape2_0: false,
@@ -419,8 +448,8 @@ exports.tests = [
         nashorn10: true,
         graalvm19: true,
         graalvm20: true,
-        graalvm20_1: true,
-      },
+        graalvm20_1: true
+      }
     },
     {
       name: 'RegExp.$1-$9',
@@ -441,7 +470,7 @@ exports.tests = [
         safari3_1: true,
         konq4_4: true,
         besen: false,
-        rhino1_7: true,
+        rhino1_7_13: true,
         phantom: true,
         android4_0: true,
         duktape2_0: false,
@@ -450,9 +479,9 @@ exports.tests = [
         nashorn10: true,
         graalvm19: true,
         graalvm20: true,
-        graalvm20_1: true,
-      },
-    },
+        graalvm20_1: true
+      }
+    }
   ]
 },
 {
@@ -478,7 +507,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'WeakMap.prototype.upsert',
@@ -498,8 +529,10 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
-    },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
+    }
   ]
 },
 {
@@ -520,6 +553,8 @@ exports.tests = [
     firefox10: false,
     firefox60: false,
     chrome77: false,
+    duktape2_0: false,
+    rhino1_7_13: false
   }
 },
 {
@@ -542,7 +577,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'extends Iterator',
@@ -560,7 +597,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.from, iterable',
@@ -579,7 +618,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.from, iterator',
@@ -603,7 +644,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.asIndexedPairs',
@@ -619,7 +662,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.drop',
@@ -635,7 +680,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.every',
@@ -651,7 +698,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.filter',
@@ -667,7 +716,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.find',
@@ -683,7 +734,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.flatMap',
@@ -699,7 +752,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.forEach',
@@ -717,7 +772,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.map',
@@ -733,7 +790,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.reduce',
@@ -749,7 +808,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.some',
@@ -765,7 +826,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.take',
@@ -781,7 +844,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype.toArray',
@@ -798,7 +863,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'Iterator.prototype[@@toStringTag]',
@@ -814,7 +881,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'instanceof AsyncIterator',
@@ -830,7 +899,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'extends AsyncIterator',
@@ -848,7 +919,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.from, async iterable',
@@ -876,7 +949,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.from, iterable',
@@ -904,7 +979,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.from, iterator',
@@ -932,7 +1009,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.asIndexedPairs',
@@ -956,7 +1035,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.drop',
@@ -980,7 +1061,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.every',
@@ -998,7 +1081,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.filter',
@@ -1022,7 +1107,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.find',
@@ -1040,7 +1127,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.flatMap',
@@ -1064,7 +1153,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.forEach',
@@ -1083,7 +1174,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.map',
@@ -1107,7 +1200,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.reduce',
@@ -1125,7 +1220,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.some',
@@ -1143,7 +1240,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.take',
@@ -1167,7 +1266,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype.toArray',
@@ -1185,7 +1286,9 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
     },
     {
       name: 'AsyncIterator.prototype[@@toStringTag]',
@@ -1201,8 +1304,10 @@ exports.tests = [
         firefox10: false,
         firefox60: false,
         chrome77: false,
-      },
-    },
+        duktape2_0: false,
+        rhino1_7_13: false
+      }
+    }
   ]
 },
 {
@@ -1229,195 +1334,27 @@ exports.tests = [
     safari1: false,
     safari13: false,
     safari13_1: true,
+    duktape2_0: false,
     graalvm19: false,
     graalvm20: false,
     graalvm20_1: true,
     babel7corejs3: false,
     typescript3_2corejs3: false,
-    closure: false
+    closure: false,
+    rhino1_7_13: false
   }
 },
 {
-  name: '.at() method on the built-in indexables',
+  name: 'Array find from last',
   category: STAGE3,
-  significance: 'tiny',
-  spec: 'https://github.com/tc39/proposal-relative-indexing-method/',
+  significance: 'small',
+  spec: 'https://github.com/tc39/proposal-array-find-from-last',
   subtests: [
     {
-      name: 'Array.prototype.at()',
-      exec: function() {/*
-        var arr = [1, 2, 3];
-        return arr.at(0) === 1
-          && arr.at(-3) === 1
-          && arr.at(1) === 2
-          && arr.at(-2) === 2
-          && arr.at(2) === 3
-          && arr.at(-1) === 3
-          && arr.at(3) === undefined
-          && arr.at(-4) === undefined;
-      */},
-      res: {
-        ie11: false,
-        firefox68: false,
-        firefox85: firefox.nightly,
-        chrome85: false,
-        safari14_1: {
-          val: 'flagged',
-          note_id: 'safari-at-method',
-          note_html: 'The feature has to be enabled via <code>jscOptions=--useAtMethod=true</code> flag.'
-        },
-        safaritp: {
-          val: 'flagged',
-          note_id: 'safari-at-method',
-        },
-        babel7corejs3: babel.corejs,
-        typescript4corejs3: typescript.corejs,
-        graalvm21: graalvm.es2022flag,
-      }
-    },
-    {
-      name: 'String.prototype.at()',
-      exec: function() {/*
-        var str = 'abc';
-        return str.at(0) === 'a'
-          && str.at(-3) === 'a'
-          && str.at(1) === 'b'
-          && str.at(-2) === 'b'
-          && str.at(2) === 'c'
-          && str.at(-1) === 'c'
-          && str.at(3) === undefined
-          && str.at(-4) === undefined;
-      */},
-      res: {
-        ie11: false,
-        firefox68: false,
-        firefox85: firefox.nightly,
-        chrome85: false,
-        safari14_1: {
-          val: 'flagged',
-          note_id: 'safari-at-method',
-        },
-        safaritp: {
-          val: 'flagged',
-          note_id: 'safari-at-method',
-        },
-        graalvm21: graalvm.es2022flag,
-      }
-    },
-    {
-      name: '%TypedArray%.prototype.at()',
-      exec: function() {/*
-         return [
-           'Int8Array',
-           'Uint8Array',
-           'Uint8ClampedArray',
-           'Int16Array',
-           'Uint16Array',
-           'Int32Array',
-           'Uint32Array',
-           'Float32Array',
-           'Float64Array',
-         ].every(function (TypedArray) {
-           var Constructor = globalThis[TypedArray];
-           if (typeof Constructor !== 'function') {
-             return false;
-           }
-           var arr = new Constructor([1, 2, 3]);
-           return arr.at(0) === 1
-             && arr.at(-3) === 1
-             && arr.at(1) === 2
-             && arr.at(-2) === 2
-             && arr.at(2) === 3
-             && arr.at(-1) === 3
-             && arr.at(3) === undefined
-             && arr.at(-4) === undefined;
-         });
-      */},
-      res: {
-        ie11: false,
-        firefox68: false,
-        firefox85: firefox.nightly,
-        chrome85: false,
-        safari14_1: {
-          val: 'flagged',
-          note_id: 'safari-at-method',
-        },
-        safaritp: {
-          val: 'flagged',
-          note_id: 'safari-at-method',
-        },
-        babel7corejs3: babel.corejs,
-        typescript4corejs3: typescript.corejs,
-        graalvm21: graalvm.es2022flag,
-      }
-    },
-  ]
-},
-{
-  name: 'Class static initialization blocks',
-  category: STAGE3,
-  significance: 'small',
-  spec: 'https://github.com/tc39/proposal-class-static-block',
-  exec: function () {/*
-    let ok = false;
-    class A {
-      static { ok = true; }
-    }
-    return ok;
-  */},
-  res: {
-    babel6corejs2: false,
-    babel7corejs2: true,
-    babel7corejs3: true,
-    chrome1: false,
-    chrome91: true,
-    safari13: false,
-    edge18: false,
-    firefox2: false,
-    firefox87: false,
-    ie11: false,
-    opera10_50: false,
-    safari12: false,
-  }
-},
-{
-  name: 'Ergonomic brand checks for private fields',
-  category: STAGE3,
-  significance: 'small',
-  spec: 'https://github.com/tc39/proposal-private-fields-in-in',
-  exec: function () {/*
-    class A {
-      #x;
-      static check(obj) {
-        return #x in obj;
-      }
-    }
-    return A.check(new A) && !A.check({});
-  */},
-  res: {
-    babel6corejs2: false,
-    babel7corejs2: true,
-    babel7corejs3: true,
-    chrome1: false,
-    chrome91: true,
-    edge18: false,
-    firefox2: false,
-    firefox90: true,
-    ie11: false,
-    opera10_50: false,
-    safari12: false,
-  }
-},
-{
-  name: 'Object.hasOwn',
-  category: STAGE3,
-  significance: 'small',
-  spec: 'https://github.com/tc39/proposal-accessible-object-hasownproperty',
-  subtests: [
-    {
-      name: "Basic functionality",
+      name: "Array.prototype.findLast",
       exec: function () {/*
-        return Object.hasOwn({ x: 2 }, "x") === true;
+        var arr = [{ x: 1 }, { x: 2 }, { x: 1 }, { x: 2 }];
+        return arr.findLast(function (o) { return o.x === 1; }) === arr[2];
       */},
       res: {
         babel7corejs3: babel.corejs,
@@ -1427,21 +1364,19 @@ exports.tests = [
         chrome90: false,
         edge18: false,
         firefox2: false,
-        firefox90: false,
+        firefox89: false,
         opera10_50: false,
         safari12: false,
+        safaritp: true,
+        duktape2_0: false,
+        rhino1_7_13: false
       }
     },
     {
-      name: "ToObject called before ToPropertyKey",
+      name: "Array.prototype.findLastIndex",
       exec: function () {/*
-        var ok = !!Object.hasOwn;
-        try {
-          Object.hasOwn(null, { toString: function () { ok = false } });
-          return false;
-        } catch (e) {
-          return ok;
-        }
+        var arr = [{ x: 1 }, { x: 2 }, { x: 1 }, { x: 2 }];
+        return arr.findLastIndex(function (o) { return o.x === 1; }) === 2;
       */},
       res: {
         babel7corejs3: babel.corejs,
@@ -1451,13 +1386,16 @@ exports.tests = [
         chrome90: false,
         edge18: false,
         firefox2: false,
-        firefox90: false,
+        firefox89: false,
         opera10_50: false,
         safari12: false,
+        safaritp: true,
+        duktape2_0: false,
+        rhino1_7_13: false
       }
     }
   ]
-}
+},
 ];
 
 
