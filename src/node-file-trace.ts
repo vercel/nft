@@ -12,9 +12,6 @@ const fsReadFile = promisify(fs.readFile)
 const fsReadlink = promisify(fs.readlink)
 const fsStat = promisify(fs.stat)
 
-const { gracefulify } = require('graceful-fs');
-gracefulify(fs);
-
 function inPath (path: string, parent: string) {
   const pathWithSep = join(parent, sep);
   return path.startsWith(pathWithSep) && path !== pathWithSep;
