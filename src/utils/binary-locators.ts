@@ -1,5 +1,5 @@
 import path from 'path';
-import fs from 'fs';
+import fs from 'graceful-fs';
 
 // pregyp
 const versioning = require("node-pre-gyp/lib/util/versioning.js");

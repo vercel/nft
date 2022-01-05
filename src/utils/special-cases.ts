@@ -1,7 +1,7 @@
 import { resolve, dirname, relative } from 'path';
 import resolveDependency from '../resolve-dependency';
 import { getPackageName } from './get-package-base';
-import { readFileSync } from 'fs';
+import { readFileSync } from 'graceful-fs';
 import { Job } from '../node-file-trace';
 import { Ast } from './types';
 type Node = Ast['body'][0]

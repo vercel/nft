@@ -1,6 +1,6 @@
 import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats } from './types';
 import { basename, dirname, extname, relative, resolve, sep } from 'path';
-import fs from 'fs';
+import fs from 'graceful-fs';
 import { promisify } from 'util'
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency from './resolve-dependency';
