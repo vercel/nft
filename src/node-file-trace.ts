@@ -1,16 +1,15 @@
 import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats } from './types';
 import { basename, dirname, extname, relative, resolve, sep } from 'path';
 import fs from 'graceful-fs';
-import { promisify } from 'util'
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
 import { join } from 'path';
 
-const fsReadFile = promisify(fs.readFile)
-const fsReadlink = promisify(fs.readlink)
-const fsStat = promisify(fs.stat)
+const fsReadFile = fs.promises.readFile;
+const fsReadlink = fs.promises.readlink;
+const fsStat = fs.promises.stat;
 
 function inPath (path: string, parent: string) {
   const pathWithSep = join(parent, sep);
