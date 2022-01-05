@@ -6,6 +6,7 @@
   "node_modules/prop-types/factoryWithTypeCheckers.js",
   "node_modules/prop-types/index.js",
   "node_modules/prop-types/lib/ReactPropTypesSecret.js",
+  "node_modules/prop-types/lib/has.js",
   "node_modules/prop-types/package.json",
   "node_modules/react-is/cjs/react-is.development.js",
   "node_modules/react-is/cjs/react-is.production.min.js",

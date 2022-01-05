@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { join, dirname } from 'path';
-import { promises, statSync, lstatSync } from 'fs';
+import { promises, statSync, lstatSync } from 'graceful-fs';
 const { copyFile, mkdir } = promises;
 const rimraf = require('rimraf');
 import { nodeFileTrace } from './node-file-trace';
