@@ -2,9 +2,7 @@ const { promises, readdirSync, mkdirSync } = require('fs');
 const path = require('path');
 const { nodeFileTrace } = require('../out/node-file-trace');
 const os = require('os');
-const { promisify } = require('util');
 const rimraf = require('rimraf');
-const mkdirp = promisify(require('mkdirp'));
 const { readFile, writeFile, readlink, symlink } = promises;
 const { fork } = require('child_process');
 
@@ -39,7 +37,7 @@ for (const integrationTest of readdirSync(integrationDir)) {
       catch (e) {
         if (e.code !== 'EINVAL' && e.code !== 'UNKNOWN') throw e;
       }
-      mkdirp.sync(path.dirname(outPath));
+      mkdirSync(path.dirname(outPath), { recursive: true });
       if (symlinkPath) {
         await symlink(symlinkPath, outPath);
       }
