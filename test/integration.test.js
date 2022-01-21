@@ -11,6 +11,9 @@ jest.setTimeout(200_000);
 const integrationDir = `${__dirname}${path.sep}integration`;
 
 for (const integrationTest of readdirSync(integrationDir)) {
+  if (integrationTest !== 'esbuild.js') {
+    continue; // TODO: removeme
+  }
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
     console.log('Tracing and executing ' + integrationTest);
     const nftCache = {}

@@ -29,6 +29,16 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(dirname(id), 'camaro.wasm'));
     }
   },
+  'esbuild' ({ id, emitAssetDirectory }) {
+    if (id.endsWith('esbuild/lib/main.js')) {
+      const file = resolve(id, '..', '..', 'package.json');
+      const pkg = JSON.parse(readFileSync(file, 'utf8'));
+      for (const dep of Object.keys(pkg.optionalDependencies || {})) {
+        const dir = resolve(id, '..', '..', '..', dep);
+        emitAssetDirectory(dir);
+      }
+    }
+  },
   'google-gax' ({ id, ast, emitAssetDirectory }) {
     if (id.endsWith('google-gax/build/src/grpc.js')) {
       // const googleProtoFilesDir = path.normalize(google_proto_files_1.getProtoPath('..'));
