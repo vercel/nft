@@ -66,6 +66,8 @@ const fsSymbols = {
   lstat: FS_FN,
   lstatSync: FS_FN,
   open: FS_FN,
+  readdir: FS_FN,
+  readdirSync: FS_FN,
   readFile: FS_FN,
   readFileSync: FS_FN,
   stat: FS_FN,
@@ -826,9 +828,6 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       wildcardSuffix = path.sep + WILDCARD;
     else if (assetPath.endsWith(WILDCARD))
       wildcardSuffix = WILDCARD;
-    // do not emit __dirname
-    if (assetPath === dir + wildcardSuffix)
-      return false;
     // do not emit cwd
     if (assetPath === cwd + wildcardSuffix)
       return false;
