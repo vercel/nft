@@ -828,9 +828,6 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       wildcardSuffix = path.sep + WILDCARD;
     else if (assetPath.endsWith(WILDCARD))
       wildcardSuffix = WILDCARD;
-    // do not emit cwd
-    if (assetPath === cwd + wildcardSuffix)
-      return false;
     // do not emit node_modules
     if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
       return false;
