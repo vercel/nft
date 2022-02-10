@@ -53,6 +53,7 @@ const NBIND_INIT = Symbol();
 const SET_ROOT_DIR = Symbol();
 const PKG_INFO = Symbol();
 const FS_FN = Symbol();
+const FS_DIR_FN = Symbol();
 const BINDINGS = Symbol();
 const NODE_GYP_BUILD = Symbol();
 const fsSymbols = {
@@ -66,8 +67,8 @@ const fsSymbols = {
   lstat: FS_FN,
   lstatSync: FS_FN,
   open: FS_FN,
-  readdir: FS_FN,
-  readdirSync: FS_FN,
+  readdir: FS_DIR_FN,
+  readdirSync: FS_DIR_FN,
   readFile: FS_FN,
   readFileSync: FS_FN,
   stat: FS_FN,
@@ -631,12 +632,18 @@ export default async function analyze(id: string, code: string, job: Job): Promi
               definedExpressEngines = true;
             break;
             case FS_FN:
+            case FS_DIR_FN:
               if (node.arguments[0] && job.analysis.computeFileReferences) {
                 staticChildValue = await computePureStaticValue(node.arguments[0], true);
                 // if it computes, then we start backtracking
                 if (staticChildValue) {
                   staticChildNode = node.arguments[0];
-                  await backtrack(parent, this);
+                  if (calleeValue.value === FS_DIR_FN && node.arguments[0].type === 'Identifier' && node.arguments[0].name === '__dirname') {
+                    // Special case `fs.readdirSync(__dirname)` to emit right away
+                    emitAssetDirectory(dir);
+                  } else {
+                    await backtrack(parent, this);
+                  }
                   return this.skip();
                 }
               }
@@ -828,6 +835,12 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       wildcardSuffix = path.sep + WILDCARD;
     else if (assetPath.endsWith(WILDCARD))
       wildcardSuffix = WILDCARD;
+    // do not emit __dirname
+    if (assetPath === dir + wildcardSuffix)
+    return false;
+    // do not emit cwd
+    if (assetPath === cwd + wildcardSuffix)
+      return false;
     // do not emit node_modules
     if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
       return false;
