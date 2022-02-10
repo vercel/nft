@@ -1,2 +1,3 @@
 const fs = require('fs');
-console.log(fs.readdirSync(__dirname));
+const files = fs.readdirSync(__dirname);
+console.log(files);
