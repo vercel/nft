@@ -10,7 +10,7 @@ This is similar to [@vercel/ncc](https://npmjs.com/package/@vercel/ncc) except t
 ## Usage
 
 ### Installation
-```bash
+```git bash
 npm i @vercel/nft
 ```
 
