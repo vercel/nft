@@ -54,7 +54,7 @@ export interface NodeFileTraceOptions {
 export type NodeFileTraceReasonType = 'initial' | 'resolve' | 'dependency' | 'asset' | 'sharedlib';
 
 export interface NodeFileTraceReasons extends Map<string, {
-  type: NodeFileTraceReasonType;
+  type: NodeFileTraceReasonType[];
   ignored: boolean;
   parents: Set<string>;
 }> {}
