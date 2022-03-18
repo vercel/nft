@@ -107,6 +107,7 @@ for (const { testName, isRoot } of unitTests) {
         const normalizeInputRoot = file =>
           isRoot ? join('./', unitPath, file) : join('test/unit', testName, file)
         
+        const getReasonType = file => reasons.get(normalizeInputRoot(file)).type
         
         expect([...collectFiles(normalizeInputRoot('input.js'))].map(normalizeFilesRoot).sort()).toEqual([
           "package.json",
@@ -136,17 +137,17 @@ for (const { testName, isRoot } of unitTests) {
           "test/unit/multi-input/style.module.css",
         ])
 
-        expect(reasons.get('test/unit/multi-input/input.js').type).toEqual(['initial', 'dependency'])
-        expect(reasons.get('test/unit/multi-input/input-2.js').type).toEqual(['initial', 'dependency'])
-        expect(reasons.get('test/unit/multi-input/input-3.js').type).toEqual(['initial', 'dependency'])
-        expect(reasons.get('test/unit/multi-input/input-4.js').type).toEqual(['initial', 'dependency'])
-        expect(reasons.get('test/unit/multi-input/child-1.js').type).toEqual(['dependency'])
-        expect(reasons.get('test/unit/multi-input/child-2.js').type).toEqual(['dependency'])
-        expect(reasons.get('test/unit/multi-input/child-3.js').type).toEqual(['dependency'])
-        expect(reasons.get('test/unit/multi-input/child-4.js').type).toEqual(['dependency'])
-        expect(reasons.get('test/unit/multi-input/asset.txt').type).toEqual(['asset'])
-        expect(reasons.get('test/unit/multi-input/asset-2.txt').type).toEqual(['asset'])
-        expect(reasons.get('test/unit/multi-input/style.module.css').type).toEqual(['dependency', 'asset'])
+        expect(getReasonType('input.js')).toEqual(['initial', 'dependency'])
+        expect(getReasonType('input-2.js')).toEqual(['initial', 'dependency'])
+        expect(getReasonType('input-3.js')).toEqual(['initial', 'dependency'])
+        expect(getReasonType('input-4.js')).toEqual(['initial', 'dependency'])
+        expect(getReasonType('child-1.js')).toEqual(['dependency'])
+        expect(getReasonType('child-2.js')).toEqual(['dependency'])
+        expect(getReasonType('child-3.js')).toEqual(['dependency'])
+        expect(getReasonType('child-4.js')).toEqual(['dependency'])
+        expect(getReasonType('asset.txt')).toEqual(['asset'])
+        expect(getReasonType('asset-2.txt')).toEqual(['asset'])
+        expect(getReasonType('style.module.css')).toEqual(['dependency', 'asset'])
 
       }
       
