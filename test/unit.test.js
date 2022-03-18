@@ -59,7 +59,7 @@ for (const { testName, isRoot } of unitTests) {
       }
       
       if (testName === 'multi-input') {
-        inputFileNames.push('input-2.js', 'input-3.js')
+        inputFileNames.push('input-2.js', 'input-3.js', 'input-4.js');
       }
       
       const { fileList, reasons } = await nodeFileTrace(
@@ -129,6 +129,25 @@ for (const { testName, isRoot } of unitTests) {
           "test/unit/multi-input/asset.txt",
           "test/unit/multi-input/child-3.js",
         ])
+
+        expect([...collectFiles(normalizeInputRoot('input-4.js'))].map(normalizeFilesRoot).sort()).toEqual([
+          "package.json",
+          "test/unit/multi-input/child-4.js",
+          "test/unit/multi-input/style.module.css",
+        ])
+
+        expect(reasons.get('test/unit/multi-input/input.js').type).toEqual(['initial', 'dependency'])
+        expect(reasons.get('test/unit/multi-input/input-2.js').type).toEqual(['initial', 'dependency'])
+        expect(reasons.get('test/unit/multi-input/input-3.js').type).toEqual(['initial', 'dependency'])
+        expect(reasons.get('test/unit/multi-input/input-4.js').type).toEqual(['initial', 'dependency'])
+        expect(reasons.get('test/unit/multi-input/child-1.js').type).toEqual(['dependency'])
+        expect(reasons.get('test/unit/multi-input/child-2.js').type).toEqual(['dependency'])
+        expect(reasons.get('test/unit/multi-input/child-3.js').type).toEqual(['dependency'])
+        expect(reasons.get('test/unit/multi-input/child-4.js').type).toEqual(['dependency'])
+        expect(reasons.get('test/unit/multi-input/asset.txt').type).toEqual(['asset'])
+        expect(reasons.get('test/unit/multi-input/asset-2.txt').type).toEqual(['asset'])
+        expect(reasons.get('test/unit/multi-input/style.module.css').type).toEqual(['dependency', 'asset'])
+
       }
       
       let expected;
