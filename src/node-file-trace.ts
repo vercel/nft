@@ -256,11 +256,13 @@ export class Job {
     
     if (!reasonEntry) {
       reasonEntry = {
-        type: reasonType,
+        type: [reasonType],
         ignored: false,
         parents: new Set()
       };
       this.reasons.set(path, reasonEntry)
+    } else if (!reasonEntry.type.includes(reasonType)) {
+      reasonEntry.type.push(reasonType)
     }
     if (parent && this.ignoreFn(path, parent)) {
       if (!this.fileList.has(path) && reasonEntry) {

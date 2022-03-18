@@ -5,7 +5,10 @@
   "test/unit/multi-input/child-1.js",
   "test/unit/multi-input/child-2.js",
   "test/unit/multi-input/child-3.js",
+  "test/unit/multi-input/child-4.js",
   "test/unit/multi-input/input-2.js",
   "test/unit/multi-input/input-3.js",
-  "test/unit/multi-input/input.js"
+  "test/unit/multi-input/input-4.js",
+  "test/unit/multi-input/input.js",
+  "test/unit/multi-input/style.module.css"
 ]
