@@ -1,4 +1,4 @@
-import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats } from './types';
+import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats, NodeFileTraceReasonType } from './types';
 import { basename, dirname, extname, relative, resolve, sep } from 'path';
 import fs from 'graceful-fs';
 import analyze, { AnalyzeResult } from './analyze';
@@ -243,7 +243,7 @@ export class Job {
     return join(await this.realpath(dirname(path), parent, seen), basename(path));
   }
 
-  async emitFile (path: string, reason: string, parent?: string, isRealpath = false) {
+  async emitFile (path: string, reasonType: NodeFileTraceReasonType, parent?: string, isRealpath = false) {
     if (!isRealpath) {
       path = await this.realpath(path, parent);
     }
@@ -256,7 +256,7 @@ export class Job {
     
     if (!reasonEntry) {
       reasonEntry = {
-        type: reason,
+        type: reasonType,
         ignored: false,
         parents: new Set()
       };

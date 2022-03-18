@@ -51,8 +51,10 @@ export interface NodeFileTraceOptions {
   resolve?: (id: string, parent: string, job: Job, cjsResolve: boolean) => Promise<string | string[]>;
 }
 
+export type NodeFileTraceReasonType = 'initial' | 'resolve' | 'dependency' | 'asset' | 'sharedlib';
+
 export interface NodeFileTraceReasons extends Map<string, {
-  type: string;
+  type: NodeFileTraceReasonType;
   ignored: boolean;
   parents: Set<string>;
 }> {}
