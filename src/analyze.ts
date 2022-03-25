@@ -219,8 +219,8 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     if (!job.analysis.emitGlobs) return;
     const wildcardIndex = wildcardPath.indexOf(WILDCARD);
     const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardIndex);
-    const assetDirPath = wildcardPath.substr(0, dirIndex);
-    const patternPath = wildcardPath.substr(dirIndex);
+    const assetDirPath = wildcardPath.substring(0, dirIndex);
+    const patternPath = wildcardPath.slice(dirIndex);
     const wildcardPattern = patternPath.replace(wildcardRegEx, (_match, index) => {
       return patternPath[index - 1] === path.sep ? '**/*' : '*';
     }).replace(repeatGlobRegEx, '/**/*') || '/**/*';
@@ -389,8 +389,8 @@ export default async function analyze(id: string, code: string, job: Job): Promi
 
     const wildcardIndex = wildcardRequire.indexOf(WILDCARD);
     const dirIndex = wildcardIndex === -1 ? wildcardRequire.length : wildcardRequire.lastIndexOf(path.sep, wildcardIndex);
-    const wildcardDirPath = wildcardRequire.substr(0, dirIndex);
-    const patternPath = wildcardRequire.substr(dirIndex);
+    const wildcardDirPath = wildcardRequire.substring(0, dirIndex);
+    const patternPath = wildcardRequire.slice(dirIndex);
     let wildcardPattern = patternPath.replace(wildcardRegEx, (_match, index) => {
       return patternPath[index - 1] === path.sep ? '**/*' : '*';
     }) || '/**/*';
@@ -806,7 +806,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     // verify the asset file / directory exists
     const wildcardIndex = assetPath.indexOf(WILDCARD);
     const dirIndex = wildcardIndex === -1 ? assetPath.length : assetPath.lastIndexOf(path.sep, wildcardIndex);
-    const basePath = assetPath.substr(0, dirIndex);
+    const basePath = assetPath.substring(0, dirIndex);
     try {
       var stats = await job.stat(basePath);
       if (stats === null) {
@@ -845,11 +845,11 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
       return false;
     // do not emit directories above __dirname
-    if (dir.startsWith(assetPath.substr(0, assetPath.length - wildcardSuffix.length) + path.sep))
+    if (dir.startsWith(assetPath.slice(0, assetPath.length - wildcardSuffix.length) + path.sep))
       return false;
     // do not emit asset directories higher than the node_modules base if a package
     if (pkgBase) {
-      const nodeModulesBase = id.substr(0, id.indexOf(path.sep + 'node_modules')) + path.sep + 'node_modules' + path.sep;
+      const nodeModulesBase = id.substring(0, id.indexOf(path.sep + 'node_modules')) + path.sep + 'node_modules' + path.sep;
       if (!assetPath.startsWith(nodeModulesBase)) {
         if (job.log) console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
         return false;

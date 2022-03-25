@@ -38,8 +38,8 @@ async function resolveFile (path: string, parent: string, job: Job): Promise<str
   if (path.endsWith('/')) return undefined;
   path = await job.realpath(path, parent);
   if (await job.isFile(path)) return path;
-  if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && await job.isFile(path + '.ts')) return path + '.ts';
-  if (job.ts && path.startsWith(job.base) && path.substr(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && await job.isFile(path + '.tsx')) return path + '.tsx';
+  if (job.ts && path.startsWith(job.base) && path.slice(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && await job.isFile(path + '.ts')) return path + '.ts';
+  if (job.ts && path.startsWith(job.base) && path.slice(job.base.length).indexOf(sep + 'node_modules' + sep) === -1 && await job.isFile(path + '.tsx')) return path + '.tsx';
   if (await job.isFile(path + '.js')) return path + '.js';
   if (await job.isFile(path + '.json')) return path + '.json';
   if (await job.isFile(path + '.node')) return path + '.node';
@@ -216,7 +216,7 @@ async function resolvePackage (name: string, parent: string, job: Job, cjsResolv
   let separatorIndex: number;
   const rootSeparatorIndex = packageParent.indexOf(sep);
   while ((separatorIndex = packageParent.lastIndexOf(sep)) > rootSeparatorIndex) {
-    packageParent = packageParent.substr(0, separatorIndex);
+    packageParent = packageParent.slice(0, separatorIndex);
     const nodeModulesDir = packageParent + sep + 'node_modules';
     const stat = await job.stat(nodeModulesDir);
     if (!stat || !stat.isDirectory()) continue;
