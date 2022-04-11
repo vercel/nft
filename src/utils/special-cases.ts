@@ -229,6 +229,11 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(dirname(id), '../data/geo.dat'));
     }
   },
+  'pixelmatch'({ id, emitAsset }) {
+    if (id.endsWith('pixelmatch/index.js')) {
+      emitAsset(resolve(dirname(id), 'bin/pixelmatch'))
+    }
+  }
 };
 
 interface SpecialCaseOpts {
