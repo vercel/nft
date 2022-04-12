@@ -8,8 +8,8 @@ import { nodeFileTrace } from './node-file-trace';
 import { NodeFileTraceReasons } from './types';
 
 function printStack(file: string, reasons: NodeFileTraceReasons, stdout: string[], cwd: string) {
-  stdout.push(file.slice(cwd.length))
-  const reason = reasons.get(file)
+  stdout.push(file);
+  const reason = reasons.get(file);
 
   if (
     !reason ||
@@ -20,7 +20,7 @@ function printStack(file: string, reasons: NodeFileTraceReasons, stdout: string[
   }
  
   for (let parent of reason.parents) {
-    printStack(parent, reasons, stdout, cwd)
+    printStack(parent, reasons, stdout, cwd);
   }
 }
 

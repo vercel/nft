@@ -1,6 +1,6 @@
 const { promisify } = require('util');
 const { existsSync } = require('fs');
-const { join, dirname } = require('path');
+const { join } = require('path');
 const cp = require('child_process');
 const exec = promisify(cp.exec);
 
