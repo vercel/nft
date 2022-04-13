@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { join, dirname, relative, isAbsolute } from 'path';
+import { join, dirname, relative, isAbsolute, sep } from 'path';
 import { promises, statSync, lstatSync } from 'graceful-fs';
 const { copyFile, mkdir } = promises;
 const rimraf = require('rimraf');
@@ -77,9 +77,9 @@ async function cli(
     if (!exitpoint) {
       throw new Error('Expected additional argument for "why" action');
     }
-    const normalizedExitPoint = isAbsolute(exitpoint)
+    const normalizedExitPoint = (isAbsolute(exitpoint)
       ? relative(cwd, exitpoint)
-      : exitpoint;
+      : exitpoint).replace(/[/\\]/g, sep);
 
     printStack(normalizedExitPoint, reasons, stdout, cwd);
   } else {

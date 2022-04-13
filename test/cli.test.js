@@ -47,7 +47,7 @@ it('should correctly show why from cli', async () => {
   if (stderr) {
     throw new Error(stderr);
   }
-  expect(stdout).toMatch('unit/wildcard/assets/asset1.txt\nunit/wildcard/input.js');
+  expect(stdout.replace(/\\/g, '/')).toMatch('unit/wildcard/assets/asset1.txt\nunit/wildcard/input.js');
 });
 
 it('should correctly print help when unknown action is used', async () => {
@@ -90,7 +90,7 @@ it('[codecov] should correctly show why from required cli', async () => {
   const exitpoint = join(__dirname, outputjs);
   const cwd = __dirname;
   const stdout = await cli('why', entrypoint, exitpoint, 'dist', cwd);
-  expect(stdout).toMatch('unit/wildcard/assets/asset1.txt\nunit/wildcard/input.js');
+  expect(stdout.replace(/\\/g, '/')).toMatch('unit/wildcard/assets/asset1.txt\nunit/wildcard/input.js');
 });
 
 it('[codecov] should correctly print help when unknown action is used', async () => {
