@@ -139,7 +139,7 @@ function resolveExportsImports (pkgPath: string, obj: PackageTarget, subpath: st
   } else {
     matchObj = obj;
   }
-  
+
   if (subpath in matchObj) {
     const target = getExportsTarget(matchObj[subpath], job.conditions, cjsResolve);
     if (typeof target === 'string' && target.startsWith('./'))
@@ -189,9 +189,10 @@ async function packageImportsResolve (name: string, parent: string, job: Job, cj
 async function resolvePackage (name: string, parent: string, job: Job, cjsResolve: boolean): Promise<string | string []> {
   let packageParent = parent;
   if (nodeBuiltins.has(name)) return 'node:' + name;
+  if (name.startsWith('node:')) return name;
 
   const pkgName = getPkgName(name) || '';
-  
+
   // package own name resolution
   let selfResolved: string | undefined;
   if (job.conditions) {
