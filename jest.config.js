@@ -1,5 +1,5 @@
 module.exports = {
-  collectCoverageFrom: ["out/**/*.js"],
+  collectCoverageFrom: ["out/**/{!(node-gyp-build-v3),}.js"],
   coverageReporters: ["html", "lcov"],
   coverageThreshold: {
     global: {
