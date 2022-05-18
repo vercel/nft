@@ -594,7 +594,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 let resolved: string | undefined;
                 try {
                   // use installed version of node-gyp-build since resolving
-                  // binaries can different among versions
+                  // binaries can diff among versions
                   const nodeGypBuildPath = resolveFrom(dir, 'node-gyp-build')
                   resolved = require(nodeGypBuildPath).path(dir)
                 }
