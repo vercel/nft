@@ -148,7 +148,20 @@ for (const { testName, isRoot } of unitTests) {
         expect(getReasonType('asset.txt')).toEqual(['asset'])
         expect(getReasonType('asset-2.txt')).toEqual(['asset'])
         expect(getReasonType('style.module.css')).toEqual(['dependency', 'asset'])
-
+      }
+      
+      if (testName === 'microtime-node-gyp') {
+        let foundMatchingBinary = false
+        
+        fileList.forEach(file => {
+          if (file.endsWith('/node-napi.node')) {
+            foundMatchingBinary = true
+            // remove from fileList for expected checking
+            // as it will differ per platform
+            fileList.delete(file)
+          }
+        })
+        expect(foundMatchingBinary).toBe(true) 
       }
       
       let expected;
