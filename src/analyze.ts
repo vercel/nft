@@ -593,12 +593,14 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                   node.arguments[0].name === '__dirname' && knownBindings.__dirname.shadowDepth === 0) {
                 let resolved: string | undefined;
                 try {
-                  resolved = nodeGypBuild.path(dir);
+                  // use installed version of node-gyp-build since resolving
+                  // binaries can different among versions
+                  const nodeGypBuildPath = resolveFrom(dir, 'node-gyp-build')
+                  resolved = require(nodeGypBuildPath).path(dir)
                 }
                 catch (e) {
                   try {
-                    // attempt v3 of node-gyp-build as a fallback
-                    resolved = require('./utils/node-gyp-build-v3').path(dir)
+                    resolved = nodeGypBuild.path(dir);
                   } catch (e) {}
                 }
                 if (resolved) {
