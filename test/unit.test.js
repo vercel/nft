@@ -148,7 +148,22 @@ for (const { testName, isRoot } of unitTests) {
         expect(getReasonType('asset.txt')).toEqual(['asset'])
         expect(getReasonType('asset-2.txt')).toEqual(['asset'])
         expect(getReasonType('style.module.css')).toEqual(['dependency', 'asset'])
-
+      }
+      let sortedFileList = [...fileList].sort()
+      
+      if (testName === 'microtime-node-gyp') {
+        let foundMatchingBinary = false
+        sortedFileList = sortedFileList.filter(file => {
+          if (file.endsWith('node-napi.node')) {
+            // remove from fileList for expected checking
+            // as it will differ per platform
+            foundMatchingBinary = true
+            fileList.delete(file)
+            return false
+          }
+          return true
+        })
+        expect(foundMatchingBinary).toBe(true) 
       }
       
       let expected;
@@ -169,11 +184,11 @@ for (const { testName, isRoot } of unitTests) {
         expected = [];
       }
       try {
-        expect([...fileList].sort()).toEqual(expected);
+        expect(sortedFileList).toEqual(expected);
       }
       catch (e) {
         console.warn(reasons);
-        fs.writeFileSync(join(unitPath, 'actual.js'), JSON.stringify([...fileList].sort(), null, 2));
+        fs.writeFileSync(join(unitPath, 'actual.js'), JSON.stringify(sortedFileList, null, 2));
         throw e;
       }
     }
