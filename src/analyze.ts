@@ -302,7 +302,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         value: {
           [FUNCTION] (specifier: string) {
             deps.add(specifier);
-            const m = staticModules[specifier];
+            const m = staticModules[specifier.startsWith('node:') ? specifier.slice(5) : specifier];
             return m.default;
           },
           resolve (specifier: string) {
@@ -342,7 +342,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       if (decl.type === 'ImportDeclaration') {
         const source = String(decl.source.value);
         deps.add(source);
-        const staticModule = staticModules[source];
+        const staticModule = staticModules[source.startsWith('node:') ? source.slice(5) : source];
         if (staticModule) {
           for (const impt of decl.specifiers) {
             if (impt.type === 'ImportNamespaceSpecifier')
