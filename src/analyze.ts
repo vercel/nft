@@ -598,7 +598,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 catch (e) {
                   try {
                     // attempt v3 of node-gyp-build as a fallback
-                    resolved = require('node-gyp-build-v3').path(dir)
+                    resolved = require('./utils/node-gyp-build-v3').path(dir)
                   } catch (e) {}
                 }
                 if (resolved) {
