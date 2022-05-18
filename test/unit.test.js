@@ -154,7 +154,7 @@ for (const { testName, isRoot } of unitTests) {
         let foundMatchingBinary = false
         
         fileList.forEach(file => {
-          if (file.endsWith('/node-napi.node')) {
+          if (file.endsWith('node-napi.node')) {
             foundMatchingBinary = true
             // remove from fileList for expected checking
             // as it will differ per platform
