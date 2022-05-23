@@ -415,6 +415,13 @@ const visitors: Record<string, (this: State, node: Node, walk: Walk) => Promise<
     }
     return { value: obj };
   },
+  'SequenceExpression': async function SequenceExpression(this: State, node: Node, walk: Walk) {
+    if ('expressions' in node && node.expressions.length === 2 && node.expressions[0].type === 'Literal' && node.expressions[0].value === 0 && node.expressions[1].type === 'MemberExpression') {
+      const arg = await walk(node.expressions[1]);
+      return arg;
+    }
+    return undefined;
+  },
   'TemplateLiteral': async function TemplateLiteral(this: State, node: Node, walk: Walk) {
     let val: StaticValue | ConditionalValue = { value: '' };
     for (var i = 0; i < node.expressions.length; i++) {
