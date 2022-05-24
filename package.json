@@ -9,7 +9,7 @@
     "nft": "./out/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r ./src/vendor ./out/vendor",
     "prepublishOnly": "tsc && rm out/utils/*.d.ts && rm out/tsconfig.tsbuildinfo",
     "test": "jest --verbose",
     "test-verbose": "tsc --sourceMap && jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\"",
@@ -27,7 +27,6 @@
     "graceful-fs": "^4.2.9",
     "micromatch": "^4.0.2",
     "node-gyp-build": "^4.2.2",
-    "node-pre-gyp": "^0.13.0",
     "resolve-from": "^5.0.0",
     "rollup-pluginutils": "^2.8.2"
   },
