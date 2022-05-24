@@ -1,5 +1,5 @@
 module.exports = {
-  collectCoverageFrom: ["out/**/*.js"],
+  collectCoverageFrom: ["out/**/*.js", "!out/vendor/**/*"],
   coverageReporters: ["html", "lcov"],
   coverageThreshold: {
     global: {
