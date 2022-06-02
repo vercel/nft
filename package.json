@@ -117,7 +117,7 @@
     "saslprep": "^1.0.3",
     "semver": "^7.1.1",
     "sequelize": "^5.9.3",
-    "sharp": "^0.30.0",
+    "sharp": "^0.30.5",
     "socket.io": "^2.4.0",
     "socket.io-client": "^2.2.0",
     "stripe": "^7.4.0",
