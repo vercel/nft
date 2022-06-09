@@ -50,6 +50,9 @@ for (const { testName, isRoot } of unitTests) {
       let inputFileNames = ["input.js"];
       let outputFileName = "output.js";
       
+      if (testName === "jsx-input") {
+        inputFileNames = ["input.jsx"];
+      }
       if (testName === "tsx-input") {
         inputFileNames = ["input.tsx"];
       }
