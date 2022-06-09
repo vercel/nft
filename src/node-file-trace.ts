@@ -33,10 +33,7 @@ export async function nodeFileTrace(files: string[], opts: NodeFileTraceOptions 
   await Promise.all(files.map(async file => {
     const path = resolve(file);
     await job.emitFile(path, 'initial');
-    if (path.endsWith('.js') || path.endsWith('.cjs') || path.endsWith('.mjs') || path.endsWith('.node') || job.ts && (path.endsWith('.ts') || path.endsWith('.tsx'))) {
-      return job.emitDependency(path);
-    }
-    return undefined;
+    return job.emitDependency(path);
   }));
 
   const result: NodeFileTraceResult = {
