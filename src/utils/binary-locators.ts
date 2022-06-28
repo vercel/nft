@@ -2,8 +2,8 @@ import path from 'path';
 import fs from 'graceful-fs';
 
 // pregyp
-const versioning = require("node-pre-gyp/lib/util/versioning.js");
-const napi = require("node-pre-gyp/lib/util/napi.js");
+const versioning = require("@mapbox/node-pre-gyp/lib/util/versioning.js");
+const napi = require("@mapbox/node-pre-gyp/lib/util/napi.js");
 const pregypFind = (package_json_path: string, opts: any) => {
   const package_json = JSON.parse(fs.readFileSync(package_json_path).toString());
   versioning.validate_config(package_json, opts);
