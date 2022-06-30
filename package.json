@@ -1,6 +1,6 @@
 {
   "name": "@vercel/nft",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "repository": "vercel/nft",
   "license": "MIT",
   "main": "./out/index.js",
@@ -27,7 +27,6 @@
     "graceful-fs": "^4.2.9",
     "micromatch": "^4.0.2",
     "node-gyp-build": "^4.2.2",
-    "node-pre-gyp": "^0.13.0",
     "resolve-from": "^5.0.0",
     "rollup-pluginutils": "^2.8.2"
   },
