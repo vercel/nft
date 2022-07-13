@@ -74,6 +74,15 @@ const fsSymbols = {
   stat: FS_FN,
   statSync: FS_FN
 };
+const fsExtraSymbols = {
+   ...fsSymbols,
+   pathExists: FS_FN,
+   pathExistsSync: FS_FN,
+   readJson: FS_FN,
+   readJSON: FS_FN,
+   readJsonSync: FS_FN,
+   readJSONSync: FS_FN,
+}
 const staticModules = Object.assign(Object.create(null), {
   bindings: {
     default: BINDINGS
@@ -88,6 +97,14 @@ const staticModules = Object.assign(Object.create(null), {
     }
   },
   fs: {
+    default: fsSymbols,
+    ...fsSymbols
+  },
+  'fs-extra': {
+    default: fsExtraSymbols,
+    ...fsExtraSymbols
+  },
+  'graceful-fs': {
     default: fsSymbols,
     ...fsSymbols
   },
