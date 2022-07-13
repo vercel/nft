@@ -6,5 +6,6 @@
   "node_modules/graceful-fs/polyfills.js",
   "package.json",
   "test/unit/asset-graceful-fs/asset.txt",
-  "test/unit/asset-graceful-fs/input.js"
+  "test/unit/asset-graceful-fs/input.js",
+  "test/unit/asset-graceful-fs/sub/asset.txt"
 ]
