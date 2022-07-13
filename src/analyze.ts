@@ -76,18 +76,6 @@ const fsSymbols = {
 };
 const fsExtraSymbols = {
    ...fsSymbols,
-   emptyDir: FS_DIR_FN,
-   emptyDirSync: FS_DIR_FN,
-   ensureDir: FS_DIR_FN,
-   ensureDirSync: FS_DIR_FN,
-   ensureFile: FS_FN,
-   ensureFileSync: FS_FN,
-   ensureSymlink: FS_FN,
-   ensureSymlinkSync: FS_FN,
-   mkdirp: FS_DIR_FN,
-   mkdirpSync: FS_DIR_FN,
-   mkdirs: FS_DIR_FN,
-   mkdirsSync: FS_DIR_FN,
    pathExists: FS_FN,
    pathExistsSync: FS_FN,
    readJson: FS_FN,
