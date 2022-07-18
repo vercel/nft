@@ -81,8 +81,8 @@ export class Job {
     ts = true,
     analysis = {},
     cache,
-    // 1024 may enough here, to prevent memory issues cause by too many concurrent file IO
-    // and do not hurt the performance much
+    // we use a default of 1024 concurrency to balance
+    // performance and memory usage for fs operations
     fileIOConcurrency = Number(process.env.FILE_IO_CONCURRENCY) || 1024,
   }: NodeFileTraceOptions) {
     this.ts = ts;
