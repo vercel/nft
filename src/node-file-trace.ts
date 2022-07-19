@@ -83,7 +83,7 @@ export class Job {
     cache,
     // we use a default of 1024 concurrency to balance
     // performance and memory usage for fs operations
-    fileIOConcurrency = Number(process.env.FILE_IO_CONCURRENCY) || 1024,
+    fileIOConcurrency = 1024,
   }: NodeFileTraceOptions) {
     this.ts = ts;
     base = resolve(base);
@@ -161,7 +161,7 @@ export class Job {
     await this.fileIOQueue.acquire();
     try {
       const link = await fsReadlink(path);
-      await this.fileIOQueue.release();
+      this.fileIOQueue.release();
       // also copy stat cache to symlink
       const stats = this.statCache.get(path);
       if (stats)
@@ -170,7 +170,7 @@ export class Job {
       return link;
     }
     catch (e) {
-      await this.fileIOQueue.release();
+      this.fileIOQueue.release();
       if (e.code !== 'EINVAL' && e.code !== 'ENOENT' && e.code !== 'UNKNOWN')
         throw e;
       this.symlinkCache.set(path, null);
@@ -198,12 +198,12 @@ export class Job {
     await this.fileIOQueue.acquire();
     try {
       const stats = await fsStat(path);
-      await this.fileIOQueue.release();
+      this.fileIOQueue.release();
       this.statCache.set(path, stats);
       return stats;
     }
     catch (e) {
-      await this.fileIOQueue.release();
+      this.fileIOQueue.release();
       if (e.code === 'ENOENT') {
         this.statCache.set(path, null);
         return null;
@@ -222,12 +222,12 @@ export class Job {
     await this.fileIOQueue.acquire();
     try {
       const source = (await fsReadFile(path)).toString();
+      this.fileIOQueue.release();
       this.fileCache.set(path, source);
-      await this.fileIOQueue.release();
       return source;
     }
     catch (e) {
-      await this.fileIOQueue.release();
+      this.fileIOQueue.release();
       if (e.code === 'ENOENT' || e.code === 'EISDIR') {
         this.fileCache.set(path, null);
         return null;
