@@ -103,6 +103,21 @@ for (const { testName, isRoot } of unitTests) {
         expect(dep1).toBeDefined()
         expect(dep1.parents).toEqual(new Set([normalizeInputRoot('input.js')]))
         expect(dep1.type).toEqual(['asset', 'dependency'])
+
+        const dep2 = reasons.get(normalizeInputRoot('more/dep2.js'));
+        expect(dep2).toBeDefined()
+        expect(dep2.parents).toEqual(new Set([normalizeInputRoot('lib/dep1.js')]))
+        expect(dep2.type).toEqual(['dependency'])
+
+        const file1 = reasons.get(normalizeInputRoot('asset/file1.js'));
+        expect(file1).toBeDefined()
+        expect(file1.parents).toEqual(new Set([normalizeInputRoot('lib/dep1.js')]))
+        expect(file1.type).toEqual(['asset'])
+
+        const file2 = reasons.get(normalizeInputRoot('asset/file2.js'));
+        expect(file2).toBeDefined()
+        expect(file2.parents).toEqual(new Set([normalizeInputRoot('more/dep2.js')]))
+        expect(file2.type).toEqual(['asset'])
       }
       
       if (testName === 'multi-input') {

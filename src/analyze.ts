@@ -430,7 +430,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         !excludeAssetFiles.has(path.basename(name)) &&
         !name.endsWith('/')
       )
-      .forEach(file => assets.add(file));
+      .forEach(file => deps.add(file));
     });
   }
 
