@@ -49,6 +49,7 @@ export interface NodeFileTraceOptions {
   stat?: (path: string) => Promise<Stats | null>;
   readlink?: (path: string) => Promise<string | null>;
   resolve?: (id: string, parent: string, job: Job, cjsResolve: boolean) => Promise<string | string[]>;
+  fileIOConcurrency?: number;
 }
 
 export type NodeFileTraceReasonType = 'initial' | 'resolve' | 'dependency' | 'asset' | 'sharedlib';

@@ -6,6 +6,7 @@ import resolveDependency from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
 import { join } from 'path';
+import { Sema } from 'async-sema';
 
 const fsReadFile = fs.promises.readFile;
 const fsReadlink = fs.promises.readlink;
@@ -65,6 +66,7 @@ export class Job {
   public processed: Set<string>;
   public warnings: Set<Error>;
   public reasons: NodeFileTraceReasons = new Map()
+  private fileIOQueue: Sema;
 
   constructor ({
     base = process.cwd(),
@@ -79,6 +81,9 @@ export class Job {
     ts = true,
     analysis = {},
     cache,
+    // we use a default of 1024 concurrency to balance
+    // performance and memory usage for fs operations
+    fileIOConcurrency = 1024,
   }: NodeFileTraceOptions) {
     this.ts = ts;
     base = resolve(base);
@@ -116,6 +121,7 @@ export class Job {
     this.paths = resolvedPaths;
     this.log = log;
     this.mixedModules = mixedModules;
+    this.fileIOQueue = new Sema(fileIOConcurrency);
 
     this.analysis = {};
     if (analysis !== false) {
@@ -152,6 +158,7 @@ export class Job {
   async readlink (path: string) {
     const cached = this.symlinkCache.get(path);
     if (cached !== undefined) return cached;
+    await this.fileIOQueue.acquire();
     try {
       const link = await fsReadlink(path);
       // also copy stat cache to symlink
@@ -166,6 +173,9 @@ export class Job {
         throw e;
       this.symlinkCache.set(path, null);
       return null;
+    }
+    finally {
+      this.fileIOQueue.release();
     }
   }
 
@@ -186,6 +196,7 @@ export class Job {
   async stat (path: string) {
     const cached = this.statCache.get(path);
     if (cached) return cached;
+    await this.fileIOQueue.acquire();
     try {
       const stats = await fsStat(path);
       this.statCache.set(path, stats);
@@ -198,6 +209,9 @@ export class Job {
       }
       throw e;
     }
+    finally {
+      this.fileIOQueue.release();
+    }
   }
 
   async resolve (id: string, parent: string, job: Job, cjsResolve: boolean): Promise<string | string[]> {
@@ -207,6 +221,7 @@ export class Job {
   async readFile (path: string): Promise<string | Buffer | null> {
     const cached = this.fileCache.get(path);
     if (cached !== undefined) return cached;
+    await this.fileIOQueue.acquire();
     try {
       const source = (await fsReadFile(path)).toString();
       this.fileCache.set(path, source);
@@ -218,6 +233,9 @@ export class Job {
         return null;
       }
       throw e;
+    }
+    finally {
+      this.fileIOQueue.release();
     }
   }
 

@@ -21,6 +21,7 @@
   "dependencies": {
     "@mapbox/node-pre-gyp": "^1.0.5",
     "acorn": "^8.6.0",
+    "async-sema": "^3.1.1",
     "bindings": "^1.4.0",
     "estree-walker": "2.0.2",
     "glob": "^7.1.3",
