@@ -122,7 +122,7 @@ layer requires separate integration into the `readFile` hook.
 
 In some large projects, the file tracing logic may process many files at the same time. In this case, if you do not limit the number of concurrent files IO, OOM problems are likely to occur.
 
-We use a default of 1024 concurrency to balance performance and memory usage for fs operations. You can increase this value to a higher number if you need to.
+We use a default of 1024 concurrency to balance performance and memory usage for fs operations. You can increase this value to a higher number for faster speed, but be aware of the memory issues if the concurrency is too high.
 
 ```js
 const { fileList } = await nodeFileTrace(files, {
