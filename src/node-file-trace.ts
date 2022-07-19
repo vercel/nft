@@ -161,7 +161,6 @@ export class Job {
     await this.fileIOQueue.acquire();
     try {
       const link = await fsReadlink(path);
-      this.fileIOQueue.release();
       // also copy stat cache to symlink
       const stats = this.statCache.get(path);
       if (stats)
@@ -170,11 +169,13 @@ export class Job {
       return link;
     }
     catch (e) {
-      this.fileIOQueue.release();
       if (e.code !== 'EINVAL' && e.code !== 'ENOENT' && e.code !== 'UNKNOWN')
         throw e;
       this.symlinkCache.set(path, null);
       return null;
+    }
+    finally {
+      this.fileIOQueue.release();
     }
   }
 
@@ -198,17 +199,18 @@ export class Job {
     await this.fileIOQueue.acquire();
     try {
       const stats = await fsStat(path);
-      this.fileIOQueue.release();
       this.statCache.set(path, stats);
       return stats;
     }
     catch (e) {
-      this.fileIOQueue.release();
       if (e.code === 'ENOENT') {
         this.statCache.set(path, null);
         return null;
       }
       throw e;
+    }
+    finally {
+      this.fileIOQueue.release();
     }
   }
 
@@ -222,17 +224,18 @@ export class Job {
     await this.fileIOQueue.acquire();
     try {
       const source = (await fsReadFile(path)).toString();
-      this.fileIOQueue.release();
       this.fileCache.set(path, source);
       return source;
     }
     catch (e) {
-      this.fileIOQueue.release();
       if (e.code === 'ENOENT' || e.code === 'EISDIR') {
         this.fileCache.set(path, null);
         return null;
       }
       throw e;
+    }
+    finally {
+      this.fileIOQueue.release();
     }
   }
 
