@@ -1,5 +1,5 @@
 import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats, NodeFileTraceReasonType } from './types';
-import { basename, dirname, extname, relative, resolve, sep } from 'path';
+import { basename, dirname, relative, resolve, sep } from 'path';
 import fs from 'graceful-fs';
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency from './resolve-dependency';
@@ -344,12 +344,7 @@ export class Job {
     
     await Promise.all([
       ...[...assets].map(async asset => {
-        const ext = extname(asset);
-        if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '' ||
-            this.ts && (ext === '.ts' || ext === '.tsx') && asset.startsWith(this.base) && asset.slice(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
-          await this.emitDependency(asset, path);
-        else
-          await this.emitFile(asset, 'asset', path);
+        await this.emitFile(asset, 'asset', path);
       }),
       ...[...deps].map(async dep => {
         try {
