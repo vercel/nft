@@ -6,7 +6,7 @@ import { Job } from '../node-file-trace';
 import { Ast } from './types';
 type Node = Ast['body'][0]
 
-const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
+const specialCases: Record<string, (o: SpecialCaseOpts) => Promise<void> | void> = {
   '@generated/photon' ({ id, emitAssetDirectory }) {
     if (id.endsWith('@generated/photon/index.js')) {
       emitAssetDirectory(resolve(dirname(id), 'runtime/'));
@@ -229,9 +229,10 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(dirname(id), '../data/geo.dat'));
     }
   },
-  'pixelmatch'({ id, emitAssetDirectory }) {
+  'pixelmatch': async function ({ id, job }) {
     if (id.endsWith('pixelmatch/index.js')) {
-      emitAssetDirectory(resolve(dirname(id), 'bin'))
+      const bin = resolve(dirname(id), 'bin/pixelmatch')
+      await job.emitDependency(bin, id);
     }
   }
 };
