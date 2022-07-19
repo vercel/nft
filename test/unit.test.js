@@ -89,6 +89,21 @@ for (const { testName, isRoot } of unitTests) {
             : undefined,
         }
       );
+
+      const normalizeFilesRoot = f => 
+        (isRoot ? relative(join('./', __dirname, '..'), f) : f).replace(/\\/g, '/');
+      
+      const normalizeInputRoot = f =>
+        isRoot ? join('./', unitPath, f) : join('test/unit', testName, f);
+      
+      const getReasonType = f => reasons.get(normalizeInputRoot(f)).type;
+
+      if (testName === 'fs-and-require') {
+        const dep1 = reasons.get(normalizeInputRoot('lib/dep1.js'));
+        expect(dep1).toBeDefined()
+        expect(dep1.parents).toEqual(new Set([normalizeInputRoot('input.js')]))
+        expect(dep1.type).toEqual(['asset', 'dependency'])
+      }
       
       if (testName === 'multi-input') {
         const collectFiles = (parent, files = new Set()) => {
@@ -103,14 +118,6 @@ for (const { testName, isRoot } of unitTests) {
           })
           return files
         }
-        
-        const normalizeFilesRoot = file => 
-          (isRoot ? relative(join('./', __dirname, '..'), file) : file).replace(/\\/g, '/')
-        
-        const normalizeInputRoot = file =>
-          isRoot ? join('./', unitPath, file) : join('test/unit', testName, file)
-        
-        const getReasonType = file => reasons.get(normalizeInputRoot(file)).type
         
         expect([...collectFiles(normalizeInputRoot('input.js'))].map(normalizeFilesRoot).sort()).toEqual([
           "package.json",
