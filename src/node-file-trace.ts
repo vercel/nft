@@ -340,6 +340,9 @@ export class Job {
     else {
       const source = await this.readFile(path);
       if (source === null) throw new Error('File ' + path + ' does not exist.');
+      // analyze should not have any side-effects e.g. calling `job.emitFile` 
+      // directly as this will not be included in the cachedAnalysis and won't
+      // be emit for successive runs that leverage the cache
       analyzeResult = await analyze(path, source.toString(), this);
       this.analysisCache.set(path, analyzeResult);
     }
