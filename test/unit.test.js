@@ -102,7 +102,7 @@ for (const { testName, isRoot } of unitTests) {
         const dep1 = reasons.get(normalizeInputRoot('lib/dep1.js'));
         expect(dep1).toBeDefined()
         expect(dep1.parents).toEqual(new Set([normalizeInputRoot('input.js')]))
-        expect(dep1.type).toEqual(['asset', 'dependency'])
+        expect(dep1.type.sort()).toEqual(['asset', 'dependency'])
 
         const dep2 = reasons.get(normalizeInputRoot('more/dep2.js'));
         expect(dep2).toBeDefined()
@@ -223,7 +223,12 @@ for (const { testName, isRoot } of unitTests) {
     expect(nftCache.statCache).toBeDefined()
     expect(nftCache.symlinkCache).toBeDefined()
     expect(nftCache.analysisCache).toBeDefined()
-    await doTrace(true)
+    
+    try {
+      await doTrace(true)
+    } finally {
+      console.error(`Failed for cached run`)
+    }
 
     if (testName === "tsx-input") {
       expect(readFileMock.mock.calls.length).toBe(2);

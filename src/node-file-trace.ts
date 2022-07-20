@@ -317,12 +317,19 @@ export class Job {
     if (path.endsWith('.json')) return;
     if (path.endsWith('.node')) return await sharedLibEmit(path, this);
 
-    // js files require the "type": "module" lookup, so always emit the package.json
-    if (path.endsWith('.js')) {
-      const pjsonBoundary = await this.getPjsonBoundary(path);
-      if (pjsonBoundary)
-        await this.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
-    }
+    const handlePjsonBoundary = async (item: string) => {
+      // js files require the "type": "module" lookup, so always emit the package.json
+      if (item.endsWith(".js")) {
+        const pjsonBoundary = await this.getPjsonBoundary(item);
+        if (pjsonBoundary)
+          await this.emitFile(
+            pjsonBoundary + sep + "package.json",
+            "resolve",
+            item
+          );
+      }
+    };
+    await handlePjsonBoundary(path);
 
     let analyzeResult: AnalyzeResult;
 
@@ -344,6 +351,7 @@ export class Job {
     
     await Promise.all([
       ...[...assets].map(async asset => {
+        await handlePjsonBoundary(asset)
         await this.emitFile(asset, 'asset', path);
       }),
       ...[...deps].map(async dep => {
