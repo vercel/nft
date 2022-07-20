@@ -226,8 +226,9 @@ for (const { testName, isRoot } of unitTests) {
     
     try {
       await doTrace(true)
-    } finally {
+    } catch (err) {
       console.error(`Failed for cached run`)
+      throw err
     }
 
     if (testName === "tsx-input") {
