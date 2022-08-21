@@ -553,6 +553,17 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             node.arguments.length) {
           await processRequireArg(node.arguments[0]);
           return;
+        } else if ((!isESM || job.mixedModules) &&
+            node.callee.type === 'MemberExpression' &&
+            node.callee.object.type === 'Identifier' &&
+            node.callee.object.name === 'require' &&
+            knownBindings.require.shadowDepth === 0 &&
+            node.callee.property.type === 'Identifier' &&
+            !node.callee.computed &&
+            node.callee.property.name === 'resolve' &&
+            node.arguments.length) {
+          await processRequireArg(node.arguments[0]);
+          return;
         }
 
         const calleeValue = job.analysis.evaluatePureExpressions && await computePureStaticValue(node.callee, false);
