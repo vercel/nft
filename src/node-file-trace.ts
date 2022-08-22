@@ -1,5 +1,5 @@
 import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats, NodeFileTraceReasonType } from './types';
-import { basename, dirname, extname, relative, resolve, sep } from 'path';
+import { basename, dirname, relative, resolve, sep } from 'path';
 import fs from 'graceful-fs';
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency from './resolve-dependency';
@@ -317,12 +317,19 @@ export class Job {
     if (path.endsWith('.json')) return;
     if (path.endsWith('.node')) return await sharedLibEmit(path, this);
 
-    // js files require the "type": "module" lookup, so always emit the package.json
-    if (path.endsWith('.js')) {
-      const pjsonBoundary = await this.getPjsonBoundary(path);
-      if (pjsonBoundary)
-        await this.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
-    }
+    const handlePjsonBoundary = async (item: string) => {
+      // js files require the "type": "module" lookup, so always emit the package.json
+      if (item.endsWith(".js")) {
+        const pjsonBoundary = await this.getPjsonBoundary(item);
+        if (pjsonBoundary)
+          await this.emitFile(
+            pjsonBoundary + sep + "package.json",
+            "resolve",
+            item
+          );
+      }
+    };
+    await handlePjsonBoundary(path);
 
     let analyzeResult: AnalyzeResult;
 
@@ -333,6 +340,9 @@ export class Job {
     else {
       const source = await this.readFile(path);
       if (source === null) throw new Error('File ' + path + ' does not exist.');
+      // analyze should not have any side-effects e.g. calling `job.emitFile` 
+      // directly as this will not be included in the cachedAnalysis and won't
+      // be emit for successive runs that leverage the cache
       analyzeResult = await analyze(path, source.toString(), this);
       this.analysisCache.set(path, analyzeResult);
     }
@@ -344,12 +354,8 @@ export class Job {
     
     await Promise.all([
       ...[...assets].map(async asset => {
-        const ext = extname(asset);
-        if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '' ||
-            this.ts && (ext === '.ts' || ext === '.tsx') && asset.startsWith(this.base) && asset.slice(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
-          await this.emitDependency(asset, path);
-        else
-          await this.emitFile(asset, 'asset', path);
+        await handlePjsonBoundary(asset);
+        await this.emitFile(asset, 'asset', path);
       }),
       ...[...deps].map(async dep => {
         try {

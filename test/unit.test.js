@@ -89,6 +89,36 @@ for (const { testName, isRoot } of unitTests) {
             : undefined,
         }
       );
+
+      const normalizeFilesRoot = f => 
+        (isRoot ? relative(join('./', __dirname, '..'), f) : f).replace(/\\/g, '/');
+      
+      const normalizeInputRoot = f =>
+        isRoot ? join('./', unitPath, f) : join('test/unit', testName, f);
+      
+      const getReasonType = f => reasons.get(normalizeInputRoot(f)).type;
+
+      if (testName === 'fs-and-require') {
+        const dep1 = reasons.get(normalizeInputRoot('lib/dep1.js'));
+        expect(dep1).toBeDefined()
+        expect(dep1.parents).toEqual(new Set([normalizeInputRoot('input.js')]))
+        expect(dep1.type.sort()).toEqual(['asset', 'dependency'])
+
+        const dep2 = reasons.get(normalizeInputRoot('more/dep2.js'));
+        expect(dep2).toBeDefined()
+        expect(dep2.parents).toEqual(new Set([normalizeInputRoot('lib/dep1.js')]))
+        expect(dep2.type).toEqual(['dependency'])
+
+        const file1 = reasons.get(normalizeInputRoot('asset/file1.js'));
+        expect(file1).toBeDefined()
+        expect(file1.parents).toEqual(new Set([normalizeInputRoot('lib/dep1.js')]))
+        expect(file1.type).toEqual(['asset'])
+
+        const file2 = reasons.get(normalizeInputRoot('asset/file2.js'));
+        expect(file2).toBeDefined()
+        expect(file2.parents).toEqual(new Set([normalizeInputRoot('more/dep2.js')]))
+        expect(file2.type).toEqual(['asset'])
+      }
       
       if (testName === 'multi-input') {
         const collectFiles = (parent, files = new Set()) => {
@@ -103,14 +133,6 @@ for (const { testName, isRoot } of unitTests) {
           })
           return files
         }
-        
-        const normalizeFilesRoot = file => 
-          (isRoot ? relative(join('./', __dirname, '..'), file) : file).replace(/\\/g, '/')
-        
-        const normalizeInputRoot = file =>
-          isRoot ? join('./', unitPath, file) : join('test/unit', testName, file)
-        
-        const getReasonType = file => reasons.get(normalizeInputRoot(file)).type
         
         expect([...collectFiles(normalizeInputRoot('input.js'))].map(normalizeFilesRoot).sort()).toEqual([
           "package.json",
@@ -201,7 +223,13 @@ for (const { testName, isRoot } of unitTests) {
     expect(nftCache.statCache).toBeDefined()
     expect(nftCache.symlinkCache).toBeDefined()
     expect(nftCache.analysisCache).toBeDefined()
-    await doTrace(true)
+    
+    try {
+      await doTrace(true)
+    } catch (err) {
+      console.error(`Failed for cached run`)
+      throw err
+    }
 
     if (testName === "tsx-input") {
       expect(readFileMock.mock.calls.length).toBe(2);

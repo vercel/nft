@@ -6,7 +6,7 @@ import { Job } from '../node-file-trace';
 import { Ast } from './types';
 type Node = Ast['body'][0]
 
-const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
+const specialCases: Record<string, (o: SpecialCaseOpts) => Promise<void> | void> = {
   '@generated/photon' ({ id, emitAssetDirectory }) {
     if (id.endsWith('@generated/photon/index.js')) {
       emitAssetDirectory(resolve(dirname(id), 'runtime/'));
@@ -229,9 +229,9 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(dirname(id), '../data/geo.dat'));
     }
   },
-  'pixelmatch'({ id, emitAsset }) {
+  'pixelmatch'({ id, emitDependency }) {
     if (id.endsWith('pixelmatch/index.js')) {
-      emitAsset(resolve(dirname(id), 'bin/pixelmatch'))
+      emitDependency(resolve(dirname(id), 'bin/pixelmatch'));
     }
   }
 };
@@ -239,14 +239,15 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
 interface SpecialCaseOpts {
   id: string;
   ast: Ast;
+  emitDependency: (filename: string) => void;
   emitAsset: (filename: string) => void;
   emitAssetDirectory: (dirname: string) => void;
   job: Job;
 }
 
-export default async function handleSpecialCases({ id, ast, emitAsset, emitAssetDirectory, job }: SpecialCaseOpts) {
+export default async function handleSpecialCases({ id, ast, emitDependency, emitAsset, emitAssetDirectory, job }: SpecialCaseOpts) {
   const pkgName = getPackageName(id);
   const specialCase = specialCases[pkgName || ''];
   id = id.replace(/\\/g,  '/');
-  if (specialCase) await specialCase({ id, ast, emitAsset, emitAssetDirectory, job });
+  if (specialCase) await specialCase({ id, ast, emitDependency, emitAsset, emitAssetDirectory, job });
 };
