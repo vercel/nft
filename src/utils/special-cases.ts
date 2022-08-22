@@ -229,7 +229,7 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => Promise<void> | void>
       emitAsset(resolve(dirname(id), '../data/geo.dat'));
     }
   },
-  'pixelmatch': function ({ id, emitDependency }) {
+  'pixelmatch'({ id, emitDependency }) {
     if (id.endsWith('pixelmatch/index.js')) {
       emitDependency(resolve(dirname(id), 'bin/pixelmatch'));
     }

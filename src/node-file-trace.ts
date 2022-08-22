@@ -354,7 +354,7 @@ export class Job {
     
     await Promise.all([
       ...[...assets].map(async asset => {
-        await handlePjsonBoundary(asset)
+        await handlePjsonBoundary(asset);
         await this.emitFile(asset, 'asset', path);
       }),
       ...[...deps].map(async dep => {
