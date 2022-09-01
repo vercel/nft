@@ -430,7 +430,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         !excludeAssetFiles.has(path.basename(name)) &&
         !name.endsWith('/')
       )
-      .forEach(file => deps.add(file));
+      .forEach(file => assets.add(file));
     });
   }
 
@@ -466,7 +466,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   let scope = attachScopes(ast, 'scope');
   if (isAst(ast)) {
     handleWrappers(ast);
-    await handleSpecialCases({ id, ast, emitDependency: path => deps.add(path), emitAsset: path => assets.add(path), emitAssetDirectory, job });
+    await handleSpecialCases({ id, ast, emitAsset: path => assets.add(path), emitAssetDirectory, job });
   }
   async function backtrack (parent: Node, context?: WalkerContext) {
     // computing a static expression outward
@@ -550,17 +550,6 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             node.callee.property.type === 'Identifier' &&
             !node.callee.computed &&
             node.callee.property.name === 'require' &&
-            node.arguments.length) {
-          await processRequireArg(node.arguments[0]);
-          return;
-        } else if ((!isESM || job.mixedModules) &&
-            node.callee.type === 'MemberExpression' &&
-            node.callee.object.type === 'Identifier' &&
-            node.callee.object.name === 'require' &&
-            knownBindings.require.shadowDepth === 0 &&
-            node.callee.property.type === 'Identifier' &&
-            !node.callee.computed &&
-            node.callee.property.name === 'resolve' &&
             node.arguments.length) {
           await processRequireArg(node.arguments[0]);
           return;
