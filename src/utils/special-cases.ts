@@ -6,7 +6,7 @@ import { Job } from '../node-file-trace';
 import { Ast } from './types';
 type Node = Ast['body'][0]
 
-const specialCases: Record<string, (o: SpecialCaseOpts) => Promise<void> | void> = {
+const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
   '@generated/photon' ({ id, emitAssetDirectory }) {
     if (id.endsWith('@generated/photon/index.js')) {
       emitAssetDirectory(resolve(dirname(id), 'runtime/'));
