@@ -1,1 +1,1 @@
-included
+export const dep = 'dep'
