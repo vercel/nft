@@ -466,7 +466,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   let scope = attachScopes(ast, 'scope');
   if (isAst(ast)) {
     handleWrappers(ast);
-    await handleSpecialCases({ id, ast, emitAsset: path => assets.add(path), emitAssetDirectory, job });
+    await handleSpecialCases({ id, ast, emitDependency: path => deps.add(path), emitAsset: path => assets.add(path), emitAssetDirectory, job });
   }
   async function backtrack (parent: Node, context?: WalkerContext) {
     // computing a static expression outward
