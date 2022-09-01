@@ -231,7 +231,7 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
   },
   'pixelmatch'({ id, emitDependency }) {
     if (id.endsWith('pixelmatch/index.js')) {
-      emitDependency(resolve(dirname(id), 'bin/pixelmatch'))
+      emitDependency(resolve(dirname(id), 'bin/pixelmatch'));
     }
   }
 };
@@ -245,7 +245,7 @@ interface SpecialCaseOpts {
   job: Job;
 }
 
-export default async function handleSpecialCases({ id, ast, emitAsset, emitDependency, emitAssetDirectory, job }: SpecialCaseOpts) {
+export default async function handleSpecialCases({ id, ast, emitDependency, emitAsset, emitAssetDirectory, job }: SpecialCaseOpts) {
   const pkgName = getPackageName(id);
   const specialCase = specialCases[pkgName || ''];
   id = id.replace(/\\/g,  '/');
