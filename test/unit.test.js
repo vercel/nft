@@ -92,10 +92,10 @@ for (const { testName, isRoot } of unitTests) {
 
       const normalizeFilesRoot = f => 
         (isRoot ? relative(join('./', __dirname, '..'), f) : f).replace(/\\/g, '/');
-
+      
       const normalizeInputRoot = f =>
         isRoot ? join('./', unitPath, f) : join('test/unit', testName, f);
-
+      
       const getReasonType = f => reasons.get(normalizeInputRoot(f)).type;
       
       if (testName === 'multi-input') {
