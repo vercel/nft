@@ -1,5 +1,5 @@
-import { walk, Node as ESNode } from 'estree-walker';
-import { Ast } from './types';
+import { walk } from 'estree-walker';
+import { Ast, Node as ESNode } from './types';
 import { SimpleCallExpression, Node, Literal, FunctionExpression, ReturnStatement, ObjectExpression, ArrayExpression, Property, CallExpression } from 'estree';
 
 function isUndefinedOrVoid (node: Node) {

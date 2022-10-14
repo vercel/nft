@@ -1,4 +1,4 @@
-import { Node } from 'estree-walker';
+import { Node } from './types';
 
 export function isIdentifierRead(node: Node, parent: Node) {
   switch (parent.type) {
