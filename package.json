@@ -20,6 +20,7 @@
   ],
   "dependencies": {
     "@mapbox/node-pre-gyp": "^1.0.5",
+    "@rollup/pluginutils": "^4.0.0",
     "acorn": "^8.6.0",
     "async-sema": "^3.1.1",
     "bindings": "^1.4.0",
@@ -28,8 +29,7 @@
     "graceful-fs": "^4.2.9",
     "micromatch": "^4.0.2",
     "node-gyp-build": "^4.2.2",
-    "resolve-from": "^5.0.0",
-    "rollup-pluginutils": "^2.8.2"
+    "resolve-from": "^5.0.0"
   },
   "devDependencies": {
     "@azure/cosmos": "^2.1.7",

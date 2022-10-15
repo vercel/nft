@@ -1,6 +1,6 @@
 import path from 'path';
-import { WalkerContext, Node } from 'estree-walker';
-import { attachScopes } from 'rollup-pluginutils';
+import { AsyncHandler, asyncWalk } from 'estree-walker';
+import { attachScopes } from '@rollup/pluginutils';
 import { evaluate, UNKNOWN, FUNCTION, WILDCARD, wildcardRegEx } from './utils/static-eval';
 import { Parser } from 'acorn';
 import bindings from 'bindings';
@@ -10,6 +10,7 @@ import { getPackageBase } from './utils/get-package-base';
 import { pregyp, nbind } from './utils/binary-locators';
 import { normalizeDefaultRequire, normalizeWildcardRequire } from './utils/interop-require';
 import handleSpecialCases from './utils/special-cases';
+import { Node } from './utils/types';
 import resolve from './resolve-dependency.js';
 //@ts-ignore
 import nodeGypBuild from 'node-gyp-build';
@@ -17,11 +18,6 @@ import nodeGypBuild from 'node-gyp-build';
 import mapboxPregyp from '@mapbox/node-pre-gyp';
 import { Job } from './node-file-trace';
 import { fileURLToPath, pathToFileURL, URL } from 'url';
-
-
-// TypeScript fails to resolve estree-walker to the top due to the conflicting
-// estree-walker version in rollup-pluginutils so we use require here instead
-const asyncWalk: typeof import('../node_modules/estree-walker').asyncWalk = require('estree-walker').asyncWalk
 
 // Note: these should be deprecated over time as they ship in Acorn core
 const acorn = Parser.extend(
@@ -468,7 +464,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     handleWrappers(ast);
     await handleSpecialCases({ id, ast, emitDependency: path => deps.add(path), emitAsset: path => assets.add(path), emitAssetDirectory, job });
   }
-  async function backtrack (parent: Node, context?: WalkerContext) {
+  async function backtrack (parent: Node, context?: ThisParameterType<AsyncHandler>) {
     // computing a static expression outward
     // -> compute and backtrack
     // Note that `context` can be undefined in `leave()`
