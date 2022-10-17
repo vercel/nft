@@ -124,7 +124,7 @@
     "swig": "^1.4.2",
     "tiny-json-http": "^7.1.2",
     "twilio": "^3.33.0",
-    "typescript": "^3.9.6",
+    "typescript": "^4.8.4",
     "uglify-js": "^3.6.0",
     "unified": "^10.1.0",
     "vm2": "^3.9.11",
