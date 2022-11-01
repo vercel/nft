@@ -7,6 +7,7 @@ import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
 import { join } from 'path';
 import { Sema } from 'async-sema';
+import { cacheFileIOFactory } from './utils/cache-file-io';
 
 const fsReadFile = fs.promises.readFile;
 const fsReadlink = fs.promises.readlink;
@@ -54,18 +55,24 @@ export class Job {
   public exportsOnly: boolean;
   public paths: Record<string, string>;
   public ignoreFn: (path: string, parent?: string) => boolean;
+  public stat: (path: string) => Promise<Stats | null>;
+  public readFile: (path: string) => Promise<Buffer | string | null>;
+  public readlink: (path: string) => Promise<string | null>;
+  protected internalStat: (path: string) => Promise<Stats | null>;
+  protected internalReadFile: (path: string) => Promise<Buffer | string | null>;
+  protected internalReadlink: (path: string) => Promise<string | null>;
   public log: boolean;
   public mixedModules: boolean;
   public analysis: { emitGlobs?: boolean, computeFileReferences?: boolean, evaluatePureExpressions?: boolean };
-  private fileCache: Map<string, string | null>;
-  private statCache: Map<string, Stats | null>;
-  private symlinkCache: Map<string, string | null>;
-  private analysisCache: Map<string, AnalyzeResult>;
+  private fileCache: Map<string, Promise<string | null>>;
+  private statCache: Map<string, Promise<Stats | null>>;
+  private symlinkCache: Map<string, Promise<string | null>>;
+  private analysisCache: Map<string, Promise<AnalyzeResult>>;
   public fileList: Set<string>;
   public esmFileList: Set<string>;
   public processed: Set<string>;
   public warnings: Set<Error>;
-  public reasons: NodeFileTraceReasons = new Map()
+  public reasons: NodeFileTraceReasons = new Map();
   private fileIOQueue: Sema;
 
   constructor ({
@@ -153,29 +160,28 @@ export class Job {
     this.esmFileList = new Set();
     this.processed = new Set();
     this.warnings = new Set();
+
+    // This creates the cached versions of these IO functions
+    // The internal methods are only there in case the functions are overwritten from config and the overwritten function wants
+    // to call the internal implementation
+    this.stat = this.internalStat = cacheFileIOFactory(this.statFn.bind(this), this.statCache, this.fileIOQueue);
+    this.readFile = this.internalReadFile = cacheFileIOFactory(this.readFileFn.bind(this), this.fileCache, this.fileIOQueue);
+    this.readlink = this.internalReadlink = cacheFileIOFactory(this.readlinkFn.bind(this), this.symlinkCache, this.fileIOQueue);
   }
 
-  async readlink (path: string) {
-    const cached = this.symlinkCache.get(path);
-    if (cached !== undefined) return cached;
-    await this.fileIOQueue.acquire();
+  protected async readlinkFn (path: string) {
     try {
       const link = await fsReadlink(path);
       // also copy stat cache to symlink
       const stats = this.statCache.get(path);
       if (stats)
         this.statCache.set(resolve(path, link), stats);
-      this.symlinkCache.set(path, link);
       return link;
     }
     catch (e: any) {
       if (e.code !== 'EINVAL' && e.code !== 'ENOENT' && e.code !== 'UNKNOWN')
         throw e;
-      this.symlinkCache.set(path, null);
       return null;
-    }
-    finally {
-      this.fileIOQueue.release();
     }
   }
 
@@ -193,24 +199,15 @@ export class Job {
     return false;
   }
 
-  async stat (path: string) {
-    const cached = this.statCache.get(path);
-    if (cached) return cached;
-    await this.fileIOQueue.acquire();
+  protected async statFn (path: string) {
     try {
-      const stats = await fsStat(path);
-      this.statCache.set(path, stats);
-      return stats;
+      return await fsStat(path);
     }
     catch (e: any) {
       if (e.code === 'ENOENT') {
-        this.statCache.set(path, null);
         return null;
       }
       throw e;
-    }
-    finally {
-      this.fileIOQueue.release();
     }
   }
 
@@ -257,24 +254,15 @@ export class Job {
     return resolveDependency(id, parent, job, cjsResolve);
   }
 
-  async readFile (path: string): Promise<string | Buffer | null> {
-    const cached = this.fileCache.get(path);
-    if (cached !== undefined) return cached;
-    await this.fileIOQueue.acquire();
+  protected async readFileFn (path: string): Promise<string | null> {
     try {
-      const source = (await fsReadFile(path)).toString();
-      this.fileCache.set(path, source);
-      return source;
+      return (await fsReadFile(path)).toString();
     }
     catch (e: any) {
       if (e.code === 'ENOENT' || e.code === 'EISDIR') {
-        this.fileCache.set(path, null);
         return null;
       }
       throw e;
-    }
-    finally {
-      this.fileIOQueue.release();
     }
   }
 
@@ -302,12 +290,12 @@ export class Job {
       path = await this.realpath(path, parent);
     }
     path = relative(this.base, path);
-    
+
     if (parent) {
       parent = relative(this.base, parent);
     }
     let reasonEntry = this.reasons.get(path)
-    
+
     if (!reasonEntry) {
       reasonEntry = {
         type: [reasonType],
@@ -342,6 +330,15 @@ export class Job {
     return undefined;
   }
 
+  private async runAnalyze (path: string): Promise<AnalyzeResult> {
+    const source = await this.readFile(path);
+    if (source === null) throw new Error('File ' + path + ' does not exist.');
+    // analyze should not have any side-effects e.g. calling `job.emitFile`
+    // directly as this will not be included in the cachedAnalysis and won't
+    // be emit for successive runs that leverage the cache
+    return analyze(path, source.toString(), this);
+  }
+
   async emitDependency (path: string, parent?: string) {
     if (this.processed.has(path)) {
       if (parent) {
@@ -366,23 +363,19 @@ export class Job {
         await this.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
     }
 
-    let analyzeResult: AnalyzeResult;
+    let analyzeResultPromise: Promise<AnalyzeResult>;
 
     const cachedAnalysis = this.analysisCache.get(path);
     if (cachedAnalysis) {
-      analyzeResult = cachedAnalysis;
+      analyzeResultPromise = cachedAnalysis;
     }
     else {
-      const source = await this.readFile(path);
-      if (source === null) throw new Error('File ' + path + ' does not exist.');
-      // analyze should not have any side-effects e.g. calling `job.emitFile` 
-      // directly as this will not be included in the cachedAnalysis and won't
-      // be emit for successive runs that leverage the cache
-      analyzeResult = await analyze(path, source.toString(), this);
-      this.analysisCache.set(path, analyzeResult);
+      // no await here as we want to cache the promise
+      analyzeResultPromise = this.runAnalyze(path);
+      this.analysisCache.set(path, analyzeResultPromise);
     }
 
-    const { deps, imports, assets, isESM } = analyzeResult;
+    const { deps, imports, assets, isESM } = await analyzeResultPromise;
 
     if (isESM) {
       this.esmFileList.add(relative(this.base, path));

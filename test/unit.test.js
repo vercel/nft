@@ -18,7 +18,7 @@ for (const { testName, isRoot } of unitTests) {
     continue;
   };
   const unitPath = join(__dirname, 'unit', testName);
-  
+
   it(`should correctly trace ${testSuffix}`, async () => {
 
     // We mock readFile because when node-file-trace is integrated into @now/node
@@ -27,12 +27,12 @@ for (const { testName, isRoot } of unitTests) {
     // used in the tsx-input test:
     const readFileMock = jest.fn(function() {
       const [id] = arguments;
-      
+
       if (id.startsWith('custom-resolution-')) {
         return ''
       }
-      
-      // ensure sync readFile works as expected since default is 
+
+      // ensure sync readFile works as expected since default is
       // async now
       if (testName === 'wildcard') {
         try {
@@ -41,15 +41,15 @@ for (const { testName, isRoot } of unitTests) {
           return null
         }
       }
-      return this.constructor.prototype.readFile.apply(this, arguments);
+      return this.internalReadFile.apply(this, arguments);
     });
 
     const nftCache = {}
-    
+
     const doTrace = async (cached = false) => {
       let inputFileNames = ["input.js"];
       let outputFileName = "output.js";
-      
+
       if (testName === "jsx-input") {
         inputFileNames = ["input.jsx"];
       }
@@ -63,13 +63,13 @@ for (const { testName, isRoot } of unitTests) {
         inputFileNames = ["input-cached.js"]
         outputFileName = "output-cached.js"
       }
-      
+
       if (testName === 'multi-input') {
         inputFileNames.push('input-2.js', 'input-3.js', 'input-4.js');
       }
-      
+
       const { fileList, reasons } = await nodeFileTrace(
-        inputFileNames.map(file => join(unitPath, file)), 
+        inputFileNames.map(file => join(unitPath, file)),
         {
           base: isRoot ? '/' : `${__dirname}/../`,
           processCwd: unitPath,
@@ -93,20 +93,20 @@ for (const { testName, isRoot } of unitTests) {
         }
       );
 
-      const normalizeFilesRoot = f => 
+      const normalizeFilesRoot = f =>
         (isRoot ? relative(join('./', __dirname, '..'), f) : f).replace(/\\/g, '/');
-      
+
       const normalizeInputRoot = f =>
         isRoot ? join('./', unitPath, f) : join('test/unit', testName, f);
-      
+
       const getReasonType = f => reasons.get(normalizeInputRoot(f)).type;
-      
+
       if (testName === 'multi-input') {
         const collectFiles = (parent, files = new Set()) => {
           fileList.forEach(file => {
             if (files.has(file)) return
             const reason = reasons.get(file)
-        
+
             if (reason.parents && reason.parents.has(parent)) {
               files.add(file)
               collectFiles(file, files)
@@ -114,7 +114,7 @@ for (const { testName, isRoot } of unitTests) {
           })
           return files
         }
-        
+
         expect([...collectFiles(normalizeInputRoot('input.js'))].map(normalizeFilesRoot).sort()).toEqual([
           "package.json",
           "test/unit/multi-input/asset-2.txt",
@@ -156,7 +156,7 @@ for (const { testName, isRoot } of unitTests) {
         expect(getReasonType('style.module.css')).toEqual(['dependency', 'asset'])
       }
       let sortedFileList = [...fileList].sort()
-      
+
       if (testName === 'microtime-node-gyp') {
         let foundMatchingBinary = false
         sortedFileList = sortedFileList.filter(file => {
@@ -169,9 +169,9 @@ for (const { testName, isRoot } of unitTests) {
           }
           return true
         })
-        expect(foundMatchingBinary).toBe(true) 
+        expect(foundMatchingBinary).toBe(true)
       }
-      
+
       let expected;
       try {
         expected = JSON.parse(fs.readFileSync(join(unitPath, outputFileName)).toString());
@@ -204,7 +204,7 @@ for (const { testName, isRoot } of unitTests) {
     expect(nftCache.statCache).toBeDefined()
     expect(nftCache.symlinkCache).toBeDefined()
     expect(nftCache.analysisCache).toBeDefined()
-    
+
     try {
       await doTrace(true)
     } catch (err) {
