@@ -60,7 +60,7 @@ async function resolveDir (path: string, parent: string, job: Job) {
   return resolveFile(resolve(path, 'index'), parent, job);
 }
 
-class NotFoundError extends Error {
+export class NotFoundError extends Error {
   public code: string;
   constructor(specifier: string, parent: string) {
     super("Cannot find module '" + specifier + "' loaded from " + parent);
