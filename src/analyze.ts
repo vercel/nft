@@ -269,7 +269,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     ast = acorn.parse(code, { ecmaVersion: 'latest', allowReturnOutsideFunction: true });
     isESM = false;
   }
-  catch (e) {
+  catch (e: any) {
     const isModule = e && e.message && e.message.includes('sourceType: module');
     if (!isModule) {
       job.warnings.add(new Error(`Failed to parse ${id} as script:\n${e && e.message}`));
@@ -281,7 +281,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       ast = acorn.parse(code, { ecmaVersion: 'latest', sourceType: 'module', allowAwaitOutsideFunction: true });
       isESM = true;
     }
-    catch (e) {
+    catch (e: any) {
       job.warnings.add(new Error(`Failed to parse ${id} as module:\n${e && e.message}`));
       // Parser errors just skip analysis
       return { assets, deps, imports, isESM: false };

@@ -168,7 +168,7 @@ export class Job {
       this.symlinkCache.set(path, link);
       return link;
     }
-    catch (e) {
+    catch (e: any) {
       if (e.code !== 'EINVAL' && e.code !== 'ENOENT' && e.code !== 'UNKNOWN')
         throw e;
       this.symlinkCache.set(path, null);
@@ -202,7 +202,7 @@ export class Job {
       this.statCache.set(path, stats);
       return stats;
     }
-    catch (e) {
+    catch (e: any) {
       if (e.code === 'ENOENT') {
         this.statCache.set(path, null);
         return null;
@@ -227,7 +227,7 @@ export class Job {
       this.fileCache.set(path, source);
       return source;
     }
-    catch (e) {
+    catch (e: any) {
       if (e.code === 'ENOENT' || e.code === 'EISDIR') {
         this.fileCache.set(path, null);
         return null;
@@ -358,7 +358,7 @@ export class Job {
         try {
           var resolved = await this.resolve(dep, path, this, !isESM);
         }
-        catch (e) {
+        catch (e: any) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
           return;
         }
@@ -379,7 +379,7 @@ export class Job {
         try {
           var resolved = await this.resolve(dep, path, this, false);
         }
-        catch (e) {
+        catch (e: any) {
           this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
           return;
         }
