@@ -4020,13 +4020,13 @@ canonicalize@^1.0.1:
   resolved "https://registry.yarnpkg.com/canonicalize/-/canonicalize-1.0.5.tgz#b43b390ce981d397908bb847c3a8d9614323a47b"
   integrity sha512-mAjKJPIyP0xqqv6IAkvso07StOmz6cmGtNDg3pXCSzXVZOqka7StIkAhJl/zHOi4M2CgpYfD6aeRWbnrmtvBEA==
 
-canvas@^2.9.0:
-  version "2.9.0"
-  resolved "https://registry.yarnpkg.com/canvas/-/canvas-2.9.0.tgz#7df0400b141a7e42e597824f377935ba96880f2a"
-  integrity sha512-0l93g7uxp7rMyr7H+XRQ28A3ud0dKIUTIEkUe1Dxh4rjUYN7B93+SjC3r1PDKA18xcQN87OFGgUnyw7LSgNLSQ==
+canvas@^2.10.2:
+  version "2.10.2"
+  resolved "https://registry.yarnpkg.com/canvas/-/canvas-2.10.2.tgz#66d827e24acd6c34667453728e13d337417d4b20"
+  integrity sha512-FSmlsip0nZ0U4Zcfht0qBJqDhlfGuevTZKE8h+dBOYrJjGvY3iqMGSzzbvkaFhvMXiVxfcMaPHS/kge++T5SKg==
   dependencies:
     "@mapbox/node-pre-gyp" "^1.0.0"
-    nan "^2.15.0"
+    nan "^2.17.0"
     simple-get "^3.0.3"
 
 capture-stack-trace@^1.0.0:
@@ -11116,15 +11116,10 @@ n3@^1.3.5:
     queue-microtask "^1.1.2"
     readable-stream "^3.6.0"
 
-nan@^2.12.1, nan@^2.13.2, nan@^2.14.0:
-  version "2.14.2"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.14.2.tgz#f5376400695168f4cc694ac9393d0c9585eeea19"
-  integrity sha512-M2ufzIiINKCuDfBSAUr1vWQ+vuVcA9kqx8JJUsbQi6yf1uGRyb7HfpdfUr5qLXf3B/t8dPvcjhKMmlfnP47EzQ==
-
-nan@^2.14.2, nan@^2.15.0:
-  version "2.15.0"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.15.0.tgz#3f34a473ff18e15c1b5626b62903b5ad6e665fee"
-  integrity sha512-8ZtvEnA2c5aYCZYd1cvgdnU6cqwixRoYg70xPLWUws5ORTa/lnw+u4amixRS/Ac5U5mQVgp9pnlSUnbNWFaWZQ==
+nan@^2.12.1, nan@^2.13.2, nan@^2.14.0, nan@^2.14.2, nan@^2.17.0:
+  version "2.17.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.17.0.tgz#c0150a2368a182f033e9aa5195ec76ea41a199cb"
+  integrity sha512-2ZTgtl0nJsO0KQCjEpxcIr5D+Yv90plTitZt9JBfQvVJDS5seMl3FOvsh3+9CoYWXf/1l5OaZzzF6nDm4cagaQ==
 
 nanoid@^2.1.0:
   version "2.1.11"
