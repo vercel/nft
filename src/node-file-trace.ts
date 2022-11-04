@@ -356,8 +356,11 @@ export class Job {
     if (path.endsWith('.json')) return;
     if (path.endsWith('.node')) return await sharedLibEmit(path, this);
 
-    // js files require the "type": "module" lookup, so always emit the package.json
-    if (path.endsWith('.js')) {
+    // .js and .ts files can change behavior based on { "type": "module" }
+    // in the nearest package.json so we must emit it too. We don't need to
+    // emit for .cjs/.mjs/.cts/.mts files since their behavior does not
+    // depend on package.json
+    if (path.endsWith('.js') || path.endsWith('.ts')) {
       const pjsonBoundary = await this.getPjsonBoundary(path);
       if (pjsonBoundary)
         await this.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
