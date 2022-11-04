@@ -56,6 +56,9 @@ for (const { testName, isRoot } of unitTests) {
       if (testName === "tsx-input") {
         inputFileNames = ["input.tsx"];
       }
+      if (testName === "ts-input-esm") {
+        inputFileNames = ["input.ts"];
+      }
       if (testName === "processed-dependency" && cached) {
         inputFileNames = ["input-cached.js"]
         outputFileName = "output-cached.js"

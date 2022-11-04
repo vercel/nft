@@ -2,7 +2,7 @@ import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats,
 import { basename, dirname, extname, relative, resolve, sep } from 'path';
 import fs from 'graceful-fs';
 import analyze, { AnalyzeResult } from './analyze';
-import resolveDependency from './resolve-dependency';
+import resolveDependency, { NotFoundError } from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
 import { join } from 'path';
@@ -214,6 +214,45 @@ export class Job {
     }
   }
 
+  private maybeEmitDep = async (dep: string, path: string, cjsResolve: boolean) => {
+    let resolved: string | string[] = '';
+    let error: Error | undefined;
+    try {
+      resolved = await this.resolve(dep, path, this, cjsResolve);
+    } catch (e1: any) {
+      error = e1;
+      try {
+        if (this.ts && dep.endsWith('.js') && e1 instanceof NotFoundError) {
+          // TS with ESM relative import paths need full extensions
+          // (we have to write import "./foo.js" instead of import "./foo")
+          // See https://www.typescriptlang.org/docs/handbook/esm-node.html
+          const depTS = dep.slice(0, -3) + '.ts';
+          resolved = await this.resolve(depTS, path, this, cjsResolve);
+          error = undefined;
+        }
+      } catch (e2: any) {
+        error = e2;
+      }
+    }
+
+    if (error) {
+      this.warnings.add(new Error(`Failed to resolve dependency "${dep}":\n${error?.message}`));
+      return;
+    }
+
+    if (Array.isArray(resolved)) {
+      for (const item of resolved) {
+        // ignore builtins
+        if (item.startsWith('node:')) return;
+        await this.emitDependency(item, path);
+      }
+    } else {
+      // ignore builtins
+      if (resolved.startsWith('node:')) return;
+      await this.emitDependency(resolved, path);
+    }
+  }
+
   async resolve (id: string, parent: string, job: Job, cjsResolve: boolean): Promise<string | string[]> {
     return resolveDependency(id, parent, job, cjsResolve);
   }
@@ -317,8 +356,11 @@ export class Job {
     if (path.endsWith('.json')) return;
     if (path.endsWith('.node')) return await sharedLibEmit(path, this);
 
-    // js files require the "type": "module" lookup, so always emit the package.json
-    if (path.endsWith('.js')) {
+    // .js and .ts files can change behavior based on { "type": "module" }
+    // in the nearest package.json so we must emit it too. We don't need to
+    // emit for .cjs/.mjs/.cts/.mts files since their behavior does not
+    // depend on package.json
+    if (path.endsWith('.js') || path.endsWith('.ts')) {
       const pjsonBoundary = await this.getPjsonBoundary(path);
       if (pjsonBoundary)
         await this.emitFile(pjsonBoundary + sep + 'package.json', 'resolve', path);
@@ -342,8 +384,9 @@ export class Job {
 
     const { deps, imports, assets, isESM } = analyzeResult;
 
-    if (isESM)
+    if (isESM) {
       this.esmFileList.add(relative(this.base, path));
+    }
     
     await Promise.all([
       ...[...assets].map(async asset => {
@@ -354,48 +397,8 @@ export class Job {
         else
           await this.emitFile(asset, 'asset', path);
       }),
-      ...[...deps].map(async dep => {
-        try {
-          var resolved = await this.resolve(dep, path, this, !isESM);
-        }
-        catch (e: any) {
-          this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
-          return;
-        }
-        if (Array.isArray(resolved)) {
-          for (const item of resolved) {
-            // ignore builtins
-            if (item.startsWith('node:')) return;
-            await this.emitDependency(item, path);
-          }
-        }
-        else {
-          // ignore builtins
-          if (resolved.startsWith('node:')) return;
-          await this.emitDependency(resolved, path);
-        }
-      }),
-      ...[...imports].map(async dep => {
-        try {
-          var resolved = await this.resolve(dep, path, this, false);
-        }
-        catch (e: any) {
-          this.warnings.add(new Error(`Failed to resolve dependency ${dep}:\n${e && e.message}`));
-          return;
-        }
-        if (Array.isArray(resolved)) {
-          for (const item of resolved) {
-            // ignore builtins
-            if (item.startsWith('node:')) return;
-            await this.emitDependency(item, path);
-          }
-        }
-        else {
-          // ignore builtins
-          if (resolved.startsWith('node:')) return;
-          await this.emitDependency(resolved, path);
-        }
-      })
+      ...[...deps].map(async dep => this.maybeEmitDep(dep, path, !isESM)),
+      ...[...imports].map(async dep => this.maybeEmitDep(dep, path, false)),
     ]);
   }
 }
