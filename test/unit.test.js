@@ -1,6 +1,12 @@
 const fs = require('fs');
 const { join, relative } = require('path');
 const { nodeFileTrace } = require('../out/node-file-trace');
+const gracefulFS = require('graceful-fs');
+const analyze = require('../out/analyze.js').default;
+
+const stat = gracefulFS.promises.stat
+const readlink = gracefulFS.promises.readlink
+const readFile = gracefulFS.promises.readFile
 
 global._unit = true;
 
@@ -10,6 +16,38 @@ const unitTests = [
   ...unitTestDirs.map(testName => ({testName, isRoot: false})),
   ...unitTestDirs.map(testName => ({testName, isRoot: true})),
 ];
+
+jest.mock('../out/analyze.js', () => {
+  const originalModule = jest.requireActual('../out/analyze.js').default;
+
+  return {
+    __esModule: true,
+    default: jest.fn(originalModule)
+  };
+});
+
+jest.mock('graceful-fs', () => {
+  const originalModule = jest.requireActual('graceful-fs');
+
+  return {
+    ...originalModule,
+    promises: {
+      ...originalModule.promises,
+      stat: jest.fn(originalModule.promises.stat),
+      readFile: jest.fn(originalModule.promises.readFile),
+      readlink: jest.fn( originalModule.promises.readlink),
+    }
+  };
+});
+
+function resetFileIOMocks() {
+  analyze.mockClear();
+  stat.mockClear()
+  readFile.mockClear()
+  readlink.mockClear()
+}
+
+afterEach(resetFileIOMocks)
 
 for (const { testName, isRoot } of unitTests) {
   const testSuffix = `${testName} from ${isRoot ? 'root' : 'cwd'}`;
@@ -197,6 +235,26 @@ for (const { testName, isRoot } of unitTests) {
         fs.writeFileSync(join(unitPath, 'actual.js'), JSON.stringify(sortedFileList, null, 2));
         throw e;
       }
+
+      if (cached) {
+        // Everything should be cached in the second run, except for `processed-dependency` which adds 1 new input file
+        expect(stat).toHaveBeenCalledTimes(0);
+        expect(readlink).toHaveBeenCalledTimes(testName === 'processed-dependency' ? 1 : 0);
+        expect(readFile).toHaveBeenCalledTimes(testName === 'processed-dependency' ? 1 : 0);
+        expect(analyze).toHaveBeenCalledTimes(testName === 'processed-dependency' ? 1 : 0);
+      } else {
+        // Ensure all cached calls are only called once per file. The expected count is the count of calls unique per path
+        const uniqueStatCalls = [...new Set(stat.mock.calls.map((call) => call[0]))].length;
+        const uniqueReadlinkCalls = [...new Set(readlink.mock.calls.map((call) => call[0]))].length;
+        const uniqueReadFileCalls = [...new Set(readFile.mock.calls.map((call) => call[0]))].length;
+        const uniqueAnalyzeFileCalls = [...new Set(analyze.mock.calls.map((call) => call[0]))].length;
+        expect(stat).toHaveBeenCalledTimes(uniqueStatCalls);
+        expect(readlink).toHaveBeenCalledTimes(uniqueReadlinkCalls);
+        expect(readFile).toHaveBeenCalledTimes(uniqueReadFileCalls);
+        expect(analyze).toHaveBeenCalledTimes(uniqueAnalyzeFileCalls);
+      }
+
+      resetFileIOMocks();
     }
     await doTrace()
     // test tracing again with a populated nftTrace
