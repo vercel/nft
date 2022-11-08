@@ -58,9 +58,12 @@ export class Job {
   public stat: (path: string) => Promise<Stats | null>;
   public readFile: (path: string) => Promise<Buffer | string | null>;
   public readlink: (path: string) => Promise<string | null>;
-  protected internalStat: (path: string) => Promise<Stats | null>;
-  protected internalReadFile: (path: string) => Promise<Buffer | string | null>;
-  protected internalReadlink: (path: string) => Promise<string | null>;
+  // @ts-expect-error not used inside class, but maybe in stat method from config
+  private _internalStat: (path: string) => Promise<Stats | null>;
+  // @ts-expect-error not used inside class, but maybe in readFile method from config
+  private _internalReadFile: (path: string) => Promise<Buffer | string | null>;
+  // @ts-expect-error not used inside class, but maybe in readlink method from config
+  private _internalReadlink: (path: string) => Promise<string | null>;
   public log: boolean;
   public mixedModules: boolean;
   public analysis: { emitGlobs?: boolean, computeFileReferences?: boolean, evaluatePureExpressions?: boolean };
@@ -164,9 +167,9 @@ export class Job {
     // This creates the cached versions of these IO functions
     // The internal methods are only there in case the functions are overwritten from config and the overwritten function wants
     // to call the internal implementation
-    this.stat = this.internalStat = cacheFileIOFactory(this.statFn.bind(this), this.statCache, this.fileIOQueue);
-    this.readFile = this.internalReadFile = cacheFileIOFactory(this.readFileFn.bind(this), this.fileCache, this.fileIOQueue);
-    this.readlink = this.internalReadlink = cacheFileIOFactory(this.readlinkFn.bind(this), this.symlinkCache, this.fileIOQueue);
+    this.stat = this._internalStat = cacheFileIOFactory(this.statFn.bind(this), this.statCache, this.fileIOQueue);
+    this.readFile = this._internalReadFile = cacheFileIOFactory(this.readFileFn.bind(this), this.fileCache, this.fileIOQueue);
+    this.readlink = this._internalReadlink = cacheFileIOFactory(this.readlinkFn.bind(this), this.symlinkCache, this.fileIOQueue);
   }
 
   protected async readlinkFn (path: string) {

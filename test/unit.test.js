@@ -79,7 +79,7 @@ for (const { testName, isRoot } of unitTests) {
           return null
         }
       }
-      return this.internalReadFile.apply(this, arguments);
+      return this._internalReadFile.apply(this, arguments);
     });
 
     const nftCache = {}
@@ -244,14 +244,14 @@ for (const { testName, isRoot } of unitTests) {
         expect(analyze).toHaveBeenCalledTimes(testName === 'processed-dependency' ? 1 : 0);
       } else {
         // Ensure all cached calls are only called once per file. The expected count is the count of calls unique per path
-        const uniqueStatCalls = [...new Set(stat.mock.calls.map((call) => call[0]))].length;
-        const uniqueReadlinkCalls = [...new Set(readlink.mock.calls.map((call) => call[0]))].length;
-        const uniqueReadFileCalls = [...new Set(readFile.mock.calls.map((call) => call[0]))].length;
-        const uniqueAnalyzeFileCalls = [...new Set(analyze.mock.calls.map((call) => call[0]))].length;
-        expect(stat).toHaveBeenCalledTimes(uniqueStatCalls);
-        expect(readlink).toHaveBeenCalledTimes(uniqueReadlinkCalls);
-        expect(readFile).toHaveBeenCalledTimes(uniqueReadFileCalls);
-        expect(analyze).toHaveBeenCalledTimes(uniqueAnalyzeFileCalls);
+        const uniqueStatCalls = new Set(stat.mock.calls.map((call) => call[0]));
+        const uniqueReadlinkCalls = new Set(readlink.mock.calls.map((call) => call[0]));
+        const uniqueReadFileCalls = new Set(readFile.mock.calls.map((call) => call[0]));
+        const uniqueAnalyzeFileCalls = new Set(analyze.mock.calls.map((call) => call[0]));
+        expect(stat).toHaveBeenCalledTimes(uniqueStatCalls.size);
+        expect(readlink).toHaveBeenCalledTimes(uniqueReadlinkCalls.size);
+        expect(readFile).toHaveBeenCalledTimes(uniqueReadFileCalls.size);
+        expect(analyze).toHaveBeenCalledTimes(uniqueAnalyzeFileCalls.size);
       }
 
       resetFileIOMocks();
