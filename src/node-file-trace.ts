@@ -375,13 +375,15 @@ export class Job {
     // Strip the querystring, if any. (Only affects ESM dependencies.)
     const { path } = parseSpecifier(rawPath, cjsResolve)
 
-    if (this.processed.has(path)) {
+    // Since different querystrings may lead to different results, include the full path
+    // when noting whether or not we've already seen this path
+    if (this.processed.has(rawPath)) {
       if (parent) {
         await this.emitFile(path, 'dependency', parent)
       }
       return
     };
-    this.processed.add(path);
+    this.processed.add(rawPath);
 
     const emitted = await this.emitFile(path, 'dependency', parent);
     if (!emitted) return;
@@ -400,7 +402,8 @@ export class Job {
 
     let analyzeResult: AnalyzeResult;
 
-    const cachedAnalysis = this.analysisCache.get(path);
+    // Since different querystrings may lead to analyses, include the full path when caching
+    const cachedAnalysis = this.analysisCache.get(rawPath);
     if (cachedAnalysis) {
       analyzeResult = cachedAnalysis;
     }
@@ -411,7 +414,7 @@ export class Job {
       // directly as this will not be included in the cachedAnalysis and won't
       // be emit for successive runs that leverage the cache
       analyzeResult = await analyze(path, source.toString(), this);
-      this.analysisCache.set(path, analyzeResult);
+      this.analysisCache.set(rawPath, analyzeResult);
     }
 
     const { deps, imports, assets, isESM } = analyzeResult;
