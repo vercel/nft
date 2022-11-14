@@ -1,11 +1,16 @@
 import { isAbsolute, resolve, sep } from 'path';
-import { Job } from './node-file-trace';
+import { Job, parseSpecifier } from './node-file-trace';
 
 // node resolver
 // custom implementation to emit only needed package.json files for resolver
 // (package.json files are emitted as they are hit)
 export default async function resolveDependency (specifier: string, parent: string, job: Job, cjsResolve = true): Promise<string | string[]> {
   let resolved: string | string[];
+
+  // ESM imports are allowed to have querystrings, but the native Node behavior is to ignore them when doing
+  // file resolution, so emulate that here by stripping any querystring off before continuing
+  specifier = parseSpecifier(specifier, cjsResolve).path
+
   if (isAbsolute(specifier) || specifier === '.' || specifier === '..' || specifier.startsWith('./') || specifier.startsWith('../')) {
     const trailingSlash = specifier.endsWith('/');
     resolved = await resolvePath(resolve(parent, '..', specifier) + (trailingSlash ? '/' : ''), parent, job);
