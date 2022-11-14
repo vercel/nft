@@ -268,12 +268,12 @@ export class Job {
       for (const item of resolved) {
         // ignore builtins
         if (item.startsWith('node:')) return;
-        await this.emitDependency(item, path);
+        await this.analyzeAndEmitDependency(item, path, cjsResolve);
       }
     } else {
       // ignore builtins
       if (resolved.startsWith('node:')) return;
-      await this.emitDependency(resolved, path);
+      await this.analyzeAndEmitDependency(resolved, path, cjsResolve);
     }
   }
 
@@ -367,6 +367,10 @@ export class Job {
   }
 
   async emitDependency (path: string, parent?: string) {
+    return this.analyzeAndEmitDependency(path, parent)
+  }
+
+  private async analyzeAndEmitDependency(path: string, parent?: string, cjsResolve?: boolean) {
     if (this.processed.has(path)) {
       if (parent) {
         await this.emitFile(path, 'dependency', parent)
@@ -417,7 +421,7 @@ export class Job {
         const ext = extname(asset);
         if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '' ||
             this.ts && (ext === '.ts' || ext === '.tsx') && asset.startsWith(this.base) && asset.slice(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
-          await this.emitDependency(asset, path);
+          await this.analyzeAndEmitDependency(asset, path, !isESM);
         else
           await this.emitFile(asset, 'asset', path);
       }),
