@@ -268,9 +268,16 @@ export class Job {
 
     // For simplicity, force `resolved` to be an array
     resolved = Array.isArray(resolved) ? resolved : [resolved];
-    for (const item of resolved) {
-      // ignore builtins
+    for (let item of resolved) {
+      // ignore builtins for the purposes of both tracing and querystring handling (neither Node 
+      // nor Webpack can handle querystrings on `node:xxx` imports).
       if (item.startsWith('node:')) return;
+
+      // If querystring was stripped during resolution, restore it
+      if (queryString && !item.endsWith(queryString)) {
+        item += queryString;
+      }
+      
       await this.analyzeAndEmitDependency(item, path, cjsResolve);
     }
   }
