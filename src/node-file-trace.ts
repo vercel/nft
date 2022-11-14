@@ -12,6 +12,30 @@ const fsReadFile = fs.promises.readFile;
 const fsReadlink = fs.promises.readlink;
 const fsStat = fs.promises.stat;
 
+type ParseSpecifierResult = {
+  path: string;
+  queryString: string | null
+}
+
+// Splits an ESM specifier into path and querystring (including the leading `?`). (If the specifier is CJS,
+// it is passed through untouched.)
+export function parseSpecifier(specifier: string, cjsResolve: boolean = true): ParseSpecifierResult {
+  let path = specifier;
+  let queryString = null;
+
+  if (!cjsResolve) {
+    // Regex which splits a specifier into path and querystring, inspired by that in `enhanced-resolve`
+    // https://github.com/webpack/enhanced-resolve/blob/157ed9bcc381857d979e56d2f20a5a17c6362bff/lib/util/identifier.js#L8
+    const match = /^(#?(?:\0.|[^?#\0])*)(\?(?:\0.|[^\0])*)?$/.exec(specifier);
+    if (match) {
+      path = match[1]
+      queryString = match[2]
+    }
+  }
+
+  return {path, queryString};
+}
+
 function inPath (path: string, parent: string) {
   const pathWithSep = join(parent, sep);
   return path.startsWith(pathWithSep) && path !== pathWithSep;
