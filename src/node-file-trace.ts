@@ -370,7 +370,11 @@ export class Job {
     return this.analyzeAndEmitDependency(path, parent)
   }
 
-  private async analyzeAndEmitDependency(path: string, parent?: string, cjsResolve?: boolean) {
+  private async analyzeAndEmitDependency(rawPath: string, parent?: string, cjsResolve?: boolean) {
+
+    // Strip the querystring, if any. (Only affects ESM dependencies.)
+    const { path } = parseSpecifier(rawPath, cjsResolve)
+
     if (this.processed.has(path)) {
       if (parent) {
         await this.emitFile(path, 'dependency', parent)
