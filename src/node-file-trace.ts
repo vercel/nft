@@ -408,8 +408,23 @@ export class Job {
       analyzeResult = cachedAnalysis;
     }
     else {
-      const source = await this.readFile(path);
-      if (source === null) throw new Error('File ' + path + ' does not exist.');
+      // By default, `this.readFile` is the regular `fs.readFile`, but a different implementation
+      // can be specified via a user option in the main `nodeFileTrace` entrypoint. Depending on
+      // that implementation, having a querystring on the end of the path may either a) be necessary
+      // in order to specify the right module from which to read, or b) lead to an `ENOENT: no such
+      // file or directory` error because it thinks the querystring is part of the filename. We
+      // therefore try it with the querystring first, but have the non-querystringed version as a
+      // fallback. (If there's no `?` in the given path, `rawPath` will equal `path`, so order is a
+      // moot point.)
+      const source = await this.readFile(rawPath) || await this.readFile(path) ;
+
+      if (source === null) {
+        const errorMessage = path === rawPath
+          ? 'File ' + path + ' does not exist.'
+          : 'Neither ' + path + ' nor ' + rawPath + ' exists.'
+        throw new Error(errorMessage);
+      }
+      
       // analyze should not have any side-effects e.g. calling `job.emitFile` 
       // directly as this will not be included in the cachedAnalysis and won't
       // be emit for successive runs that leverage the cache
