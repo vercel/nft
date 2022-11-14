@@ -248,12 +248,12 @@ export class Job {
     } catch (e1: any) {
       error = e1;
       try {
-        if (this.ts && dep.endsWith('.js') && e1 instanceof NotFoundError) {
+        if (this.ts && strippedDep.endsWith('.js') && e1 instanceof NotFoundError) {
           // TS with ESM relative import paths need full extensions
           // (we have to write import "./foo.js" instead of import "./foo")
           // See https://www.typescriptlang.org/docs/handbook/esm-node.html
-          const depTS = dep.slice(0, -3) + '.ts';
-          resolved = await this.resolve(depTS, path, this, cjsResolve);
+          const strippedDepTS = strippedDep.slice(0, -3) + '.ts';
+          resolved = await this.resolve(strippedDepTS + queryString, path, this, cjsResolve);
           error = undefined;
         }
       } catch (e2: any) {
