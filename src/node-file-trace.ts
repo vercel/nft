@@ -239,6 +239,8 @@ export class Job {
   }
 
   private maybeEmitDep = async (dep: string, path: string, cjsResolve: boolean) => {
+    // Only affects ESM dependencies
+    const { path: strippedDep, queryString = '' } = parseSpecifier(dep, cjsResolve)
     let resolved: string | string[] = '';
     let error: Error | undefined;
     try {
@@ -447,8 +449,8 @@ export class Job {
         else
           await this.emitFile(asset, 'asset', path);
       }),
-      ...[...deps].map(async dep => this.maybeEmitDep(dep, path, !isESM)),
-      ...[...imports].map(async dep => this.maybeEmitDep(dep, path, false)),
+      ...[...deps].map(async dep => this.maybeEmitDep(dep, rawPath, !isESM)),
+      ...[...imports].map(async dep => this.maybeEmitDep(dep, rawPath, false)),
     ]);
   }
 }
