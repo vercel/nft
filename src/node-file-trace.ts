@@ -266,16 +266,12 @@ export class Job {
       return;
     }
 
-    if (Array.isArray(resolved)) {
-      for (const item of resolved) {
-        // ignore builtins
-        if (item.startsWith('node:')) return;
-        await this.analyzeAndEmitDependency(item, path, cjsResolve);
-      }
-    } else {
+    // For simplicity, force `resolved` to be an array
+    resolved = Array.isArray(resolved) ? resolved : [resolved];
+    for (const item of resolved) {
       // ignore builtins
-      if (resolved.startsWith('node:')) return;
-      await this.analyzeAndEmitDependency(resolved, path, cjsResolve);
+      if (item.startsWith('node:')) return;
+      await this.analyzeAndEmitDependency(item, path, cjsResolve);
     }
   }
 
