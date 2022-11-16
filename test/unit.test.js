@@ -1,23 +1,39 @@
 const fs = require('fs');
-const { join, relative } = require('path');
+const { join, relative, sep } = require('path');
 const { nodeFileTrace } = require('../out/node-file-trace');
 
 global._unit = true;
 
-const skipOnWindows = ['yarn-workspaces', 'yarn-workspaces-base-root', 'yarn-workspace-esm', 'asset-symlink', 'require-symlink'];
+const skipOnWindows = ['yarn-workspaces', 'yarn-workspaces-base-root', 'yarn-workspace-esm', 'asset-symlink', 'require-symlink', 'cjs-querystring'];
 const unitTestDirs = fs.readdirSync(join(__dirname, 'unit'));
 const unitTests = [
-  ...unitTestDirs.map(testName => ({testName, isRoot: false})),
   ...unitTestDirs.map(testName => ({testName, isRoot: true})),
+  ...unitTestDirs.map(testName => ({testName, isRoot: false})),
 ];
 
 for (const { testName, isRoot } of unitTests) {
   const testSuffix = `${testName} from ${isRoot ? 'root' : 'cwd'}`;
-  if (process.platform === 'win32' && (isRoot || skipOnWindows.includes(testName))) {
-    console.log(`Skipping unit test on Windows: ${testSuffix}`);
-    continue;
-  };
   const unitPath = join(__dirname, 'unit', testName);
+
+  if (process.platform === 'win32') { 
+    if (isRoot || skipOnWindows.includes(testName)) {
+      console.log(`Skipping unit test on Windows: ${testSuffix}`);
+      continue;
+    }
+  } else {
+    if (testName === 'cjs-querystring') {
+      // Create (a git-ignored copy of) the file we need, since committing it
+      // breaks CI on Windows. See https://github.com/vercel/nft/pull/322.
+      const currentFilepath = join(unitPath, 'noPunctuation', 'whowhatidk.js');
+      const newFilepath = currentFilepath.replace(
+        'noPunctuation' + sep + 'whowhatidk.js',
+        'who?what?idk!.js'
+      );
+      if (!fs.existsSync(newFilepath)) {
+        fs.copyFileSync(currentFilepath, newFilepath);
+      }
+    }
+  }
   
   it(`should correctly trace ${testSuffix}`, async () => {
 
@@ -41,6 +57,25 @@ for (const { testName, isRoot } of unitTests) {
           return null
         }
       }
+
+      // mock an in-memory module store (such as webpack's) where the same filename with
+      // two different querystrings can correspond to two different modules, one importing
+      // the other
+      if (testName === 'querystring-self-import') {
+        if (id.endsWith('input.js') || id.endsWith('base.js') || id.endsWith('dep.js')) {
+          return fs.readFileSync(id).toString()
+        }
+
+        if (id.endsWith('base.js?__withQuery')) {
+          return `
+            import * as origBase from './base';
+            export const dogs = origBase.dogs.concat('Cory', 'Bodhi');
+            export const cats = origBase.cats.concat('Teaberry', 'Sassafras', 'Persephone');
+            export const rats = origBase.rats;
+          `;
+        }
+      }
+
       return this.constructor.prototype.readFile.apply(this, arguments);
     });
 
@@ -67,8 +102,8 @@ for (const { testName, isRoot } of unitTests) {
       if (testName === 'multi-input') {
         inputFileNames.push('input-2.js', 'input-3.js', 'input-4.js');
       }
-      
-      const { fileList, reasons } = await nodeFileTrace(
+
+      const { fileList, reasons, warnings } = await nodeFileTrace(
         inputFileNames.map(file => join(unitPath, file)), 
         {
           base: isRoot ? '/' : `${__dirname}/../`,
@@ -193,7 +228,7 @@ for (const { testName, isRoot } of unitTests) {
         expect(sortedFileList).toEqual(expected);
       }
       catch (e) {
-        console.warn(reasons);
+        console.warn({reasons, warnings});
         fs.writeFileSync(join(unitPath, 'actual.js'), JSON.stringify(sortedFileList, null, 2));
         throw e;
       }

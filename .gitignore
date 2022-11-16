@@ -4,3 +4,4 @@ out
 coverage
 test/**/dist
 test/**/actual.js
+test/unit/cjs-querystring/who?what?idk!.js
