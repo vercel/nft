@@ -134,5 +134,8 @@
   },
   "engines": {
     "node": ">=14"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
