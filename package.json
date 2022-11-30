@@ -115,7 +115,6 @@
     "rimraf": "^3.0.2",
     "rxjs": "^6.5.2",
     "saslprep": "^1.0.3",
-    "semantic-release": "^19.0.5",
     "semver": "^7.1.1",
     "sequelize": "^5.9.3",
     "sharp": "^0.30.5",
