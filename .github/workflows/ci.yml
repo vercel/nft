@@ -15,7 +15,7 @@ concurrency:
 jobs:
   test:
     name: Test on node ${{ matrix.node }} and ${{ matrix.os }}
-    timeout-minutes: 16
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -45,3 +45,9 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: yarn codecov
+    - name: Maybe Release
+      if: matrix.os == 'ubuntu-latest' && matrix.node == 18 && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
+      run: yarn semantic-release
