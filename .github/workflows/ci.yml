@@ -28,8 +28,6 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node }}
-    - name: Print Node Version
-      run: node --version
     - name: Prepare Install (if applicable)
       run: node prepare-install.js
     - name: Install Dependencies
