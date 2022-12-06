@@ -1,16 +1,16 @@
 import type { Sema } from "async-sema";
 
-async function fileIOExecutor <Return>(path: string, fileIOQueue: Sema, fileIO: (path: string) => Promise<Return>): Promise<Return> {
-    await fileIOQueue.acquire();
-    try {
-      return fileIO(path);
-    }
-    finally {
-      fileIOQueue.release();
-    }
+async function fileIOExecutor<Return>(path: string, fileIOQueue: Sema, fileIO: (path: string) => Promise<Return>): Promise<Return> {
+  await fileIOQueue.acquire();
+  try {
+    return fileIO(path);
+  }
+  finally {
+    fileIOQueue.release();
+  }
 }
 
-export function cacheFileIOFactory <Return>(
+export function cacheFileIOFactory<Return>(
   fileIO: (path: string) => Promise<Return>,
   cache: Map<string, Promise<Return>>,
   fileIOQueue: Sema

@@ -58,12 +58,6 @@ export class Job {
   public stat: (path: string) => Promise<Stats | null>;
   public readFile: (path: string) => Promise<Buffer | string | null>;
   public readlink: (path: string) => Promise<string | null>;
-  // @ts-expect-error not used inside class, but maybe in stat method from config
-  private _internalStat: (path: string) => Promise<Stats | null>;
-  // @ts-expect-error not used inside class, but maybe in readFile method from config
-  private _internalReadFile: (path: string) => Promise<Buffer | string | null>;
-  // @ts-expect-error not used inside class, but maybe in readlink method from config
-  private _internalReadlink: (path: string) => Promise<string | null>;
   public log: boolean;
   public mixedModules: boolean;
   public analysis: { emitGlobs?: boolean, computeFileReferences?: boolean, evaluatePureExpressions?: boolean };
@@ -164,12 +158,9 @@ export class Job {
     this.processed = new Set();
     this.warnings = new Set();
 
-    // This creates the cached versions of these IO functions
-    // The internal methods are only there in case the functions are overwritten from config and the overwritten function wants
-    // to call the internal implementation
-    this.stat = this._internalStat = cacheFileIOFactory(this.statFn.bind(this), this.statCache, this.fileIOQueue);
-    this.readFile = this._internalReadFile = cacheFileIOFactory(this.readFileFn.bind(this), this.fileCache, this.fileIOQueue);
-    this.readlink = this._internalReadlink = cacheFileIOFactory(this.readlinkFn.bind(this), this.symlinkCache, this.fileIOQueue);
+    this.stat = cacheFileIOFactory(this.statFn.bind(this), this.statCache, this.fileIOQueue);
+    this.readFile = cacheFileIOFactory(this.readFileFn.bind(this), this.fileCache, this.fileIOQueue);
+    this.readlink = cacheFileIOFactory(this.readlinkFn.bind(this), this.symlinkCache, this.fileIOQueue);
   }
 
   protected async readlinkFn (path: string) {
@@ -333,15 +324,6 @@ export class Job {
     return undefined;
   }
 
-  private async runAnalyze (path: string): Promise<AnalyzeResult> {
-    const source = await this.readFile(path);
-    if (source === null) throw new Error('File ' + path + ' does not exist.');
-    // analyze should not have any side-effects e.g. calling `job.emitFile`
-    // directly as this will not be included in the cachedAnalysis and won't
-    // be emit for successive runs that leverage the cache
-    return analyze(path, source.toString(), this);
-  }
-
   async emitDependency (path: string, parent?: string) {
     if (this.processed.has(path)) {
       if (parent) {
@@ -373,8 +355,12 @@ export class Job {
       analyzeResultPromise = cachedAnalysis;
     }
     else {
-      // no await here as we want to cache the promise
-      analyzeResultPromise = this.runAnalyze(path);
+      const source = await this.readFile(path);
+      if (source === null) throw new Error('File ' + path + ' does not exist.');
+      // analyze should not have any side-effects e.g. calling `job.emitFile`
+      // directly as this will not be included in the cachedAnalysis and won't
+      // be emit for successive runs that leverage the cache
+      analyzeResultPromise = analyze(path, source.toString(), this);
       this.analysisCache.set(path, analyzeResultPromise);
     }
 
