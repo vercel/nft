@@ -12,6 +12,30 @@ const fsReadFile = fs.promises.readFile;
 const fsReadlink = fs.promises.readlink;
 const fsStat = fs.promises.stat;
 
+type ParseSpecifierResult = {
+  path: string;
+  queryString: string | null
+}
+
+// Splits an ESM specifier into path and querystring (including the leading `?`). (If the specifier is CJS,
+// it is passed through untouched.)
+export function parseSpecifier(specifier: string, cjsResolve: boolean = true): ParseSpecifierResult {
+  let path = specifier;
+  let queryString = null;
+
+  if (!cjsResolve) {
+    // Regex which splits a specifier into path and querystring, inspired by that in `enhanced-resolve`
+    // https://github.com/webpack/enhanced-resolve/blob/157ed9bcc381857d979e56d2f20a5a17c6362bff/lib/util/identifier.js#L8
+    const match = /^(#?(?:\0.|[^?#\0])*)(\?(?:\0.|[^\0])*)?$/.exec(specifier);
+    if (match) {
+      path = match[1]
+      queryString = match[2]
+    }
+  }
+
+  return {path, queryString};
+}
+
 function inPath (path: string, parent: string) {
   const pathWithSep = join(parent, sep);
   return path.startsWith(pathWithSep) && path !== pathWithSep;
@@ -215,6 +239,8 @@ export class Job {
   }
 
   private maybeEmitDep = async (dep: string, path: string, cjsResolve: boolean) => {
+    // Only affects ESM dependencies
+    const { path: strippedDep, queryString = '' } = parseSpecifier(dep, cjsResolve)
     let resolved: string | string[] = '';
     let error: Error | undefined;
     try {
@@ -222,12 +248,12 @@ export class Job {
     } catch (e1: any) {
       error = e1;
       try {
-        if (this.ts && dep.endsWith('.js') && e1 instanceof NotFoundError) {
+        if (this.ts && strippedDep.endsWith('.js') && e1 instanceof NotFoundError) {
           // TS with ESM relative import paths need full extensions
           // (we have to write import "./foo.js" instead of import "./foo")
           // See https://www.typescriptlang.org/docs/handbook/esm-node.html
-          const depTS = dep.slice(0, -3) + '.ts';
-          resolved = await this.resolve(depTS, path, this, cjsResolve);
+          const strippedDepTS = strippedDep.slice(0, -3) + '.ts';
+          resolved = await this.resolve(strippedDepTS + queryString, path, this, cjsResolve);
           error = undefined;
         }
       } catch (e2: any) {
@@ -240,16 +266,19 @@ export class Job {
       return;
     }
 
-    if (Array.isArray(resolved)) {
-      for (const item of resolved) {
-        // ignore builtins
-        if (item.startsWith('node:')) return;
-        await this.emitDependency(item, path);
+    // For simplicity, force `resolved` to be an array
+    resolved = Array.isArray(resolved) ? resolved : [resolved];
+    for (let item of resolved) {
+      // ignore builtins for the purposes of both tracing and querystring handling (neither Node 
+      // nor Webpack can handle querystrings on `node:xxx` imports).
+      if (item.startsWith('node:')) return;
+
+      // If querystring was stripped during resolution, restore it
+      if (queryString && !item.endsWith(queryString)) {
+        item += queryString;
       }
-    } else {
-      // ignore builtins
-      if (resolved.startsWith('node:')) return;
-      await this.emitDependency(resolved, path);
+      
+      await this.analyzeAndEmitDependency(item, path, cjsResolve);
     }
   }
 
@@ -343,13 +372,23 @@ export class Job {
   }
 
   async emitDependency (path: string, parent?: string) {
-    if (this.processed.has(path)) {
+    return this.analyzeAndEmitDependency(path, parent)
+  }
+
+  private async analyzeAndEmitDependency(rawPath: string, parent?: string, cjsResolve?: boolean) {
+
+    // Strip the querystring, if any. (Only affects ESM dependencies.)
+    const { path } = parseSpecifier(rawPath, cjsResolve)
+
+    // Since different querystrings may lead to different results, include the full path
+    // when noting whether or not we've already seen this path
+    if (this.processed.has(rawPath)) {
       if (parent) {
         await this.emitFile(path, 'dependency', parent)
       }
       return
     };
-    this.processed.add(path);
+    this.processed.add(rawPath);
 
     const emitted = await this.emitFile(path, 'dependency', parent);
     if (!emitted) return;
@@ -368,18 +407,34 @@ export class Job {
 
     let analyzeResult: AnalyzeResult;
 
-    const cachedAnalysis = this.analysisCache.get(path);
+    // Since different querystrings may lead to analyses, include the full path when caching
+    const cachedAnalysis = this.analysisCache.get(rawPath);
     if (cachedAnalysis) {
       analyzeResult = cachedAnalysis;
     }
     else {
-      const source = await this.readFile(path);
-      if (source === null) throw new Error('File ' + path + ' does not exist.');
+      // By default, `this.readFile` is the regular `fs.readFile`, but a different implementation
+      // can be specified via a user option in the main `nodeFileTrace` entrypoint. Depending on
+      // that implementation, having a querystring on the end of the path may either a) be necessary
+      // in order to specify the right module from which to read, or b) lead to an `ENOENT: no such
+      // file or directory` error because it thinks the querystring is part of the filename. We
+      // therefore try it with the querystring first, but have the non-querystringed version as a
+      // fallback. (If there's no `?` in the given path, `rawPath` will equal `path`, so order is a
+      // moot point.)
+      const source = await this.readFile(rawPath) || await this.readFile(path) ;
+
+      if (source === null) {
+        const errorMessage = path === rawPath
+          ? 'File ' + path + ' does not exist.'
+          : 'Neither ' + path + ' nor ' + rawPath + ' exists.'
+        throw new Error(errorMessage);
+      }
+      
       // analyze should not have any side-effects e.g. calling `job.emitFile` 
       // directly as this will not be included in the cachedAnalysis and won't
       // be emit for successive runs that leverage the cache
       analyzeResult = await analyze(path, source.toString(), this);
-      this.analysisCache.set(path, analyzeResult);
+      this.analysisCache.set(rawPath, analyzeResult);
     }
 
     const { deps, imports, assets, isESM } = analyzeResult;
@@ -393,12 +448,12 @@ export class Job {
         const ext = extname(asset);
         if (ext === '.js' || ext === '.mjs' || ext === '.node' || ext === '' ||
             this.ts && (ext === '.ts' || ext === '.tsx') && asset.startsWith(this.base) && asset.slice(this.base.length).indexOf(sep + 'node_modules' + sep) === -1)
-          await this.emitDependency(asset, path);
+          await this.analyzeAndEmitDependency(asset, path, !isESM);
         else
           await this.emitFile(asset, 'asset', path);
       }),
-      ...[...deps].map(async dep => this.maybeEmitDep(dep, path, !isESM)),
-      ...[...imports].map(async dep => this.maybeEmitDep(dep, path, false)),
+      ...[...deps].map(async dep => this.maybeEmitDep(dep, rawPath, !isESM)),
+      ...[...imports].map(async dep => this.maybeEmitDep(dep, rawPath, false)),
     ]);
   }
 }
