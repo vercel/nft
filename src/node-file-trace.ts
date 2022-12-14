@@ -1,16 +1,11 @@
-import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats, NodeFileTraceReasonType } from './types';
+import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, NodeFileTraceReasonType } from './types';
 import { basename, dirname, extname, relative, resolve, sep } from 'path';
-import fs from 'graceful-fs';
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency, { NotFoundError } from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
 import { join } from 'path';
-import { Sema } from 'async-sema';
-
-const fsReadFile = fs.promises.readFile;
-const fsReadlink = fs.promises.readlink;
-const fsStat = fs.promises.stat;
+import { CachedFileSystem } from './fs';
 
 function inPath (path: string, parent: string) {
   const pathWithSep = join(parent, sep);
@@ -57,16 +52,13 @@ export class Job {
   public log: boolean;
   public mixedModules: boolean;
   public analysis: { emitGlobs?: boolean, computeFileReferences?: boolean, evaluatePureExpressions?: boolean };
-  private fileCache: Map<string, string | null>;
-  private statCache: Map<string, Stats | null>;
-  private symlinkCache: Map<string, string | null>;
   private analysisCache: Map<string, AnalyzeResult>;
   public fileList: Set<string>;
   public esmFileList: Set<string>;
   public processed: Set<string>;
   public warnings: Set<Error>;
-  public reasons: NodeFileTraceReasons = new Map()
-  private fileIOQueue: Sema;
+  public reasons: NodeFileTraceReasons = new Map();
+  private cachedFileSystem: CachedFileSystem;
 
   constructor ({
     base = process.cwd(),
@@ -121,8 +113,7 @@ export class Job {
     this.paths = resolvedPaths;
     this.log = log;
     this.mixedModules = mixedModules;
-    this.fileIOQueue = new Sema(fileIOConcurrency);
-
+    this.cachedFileSystem = new CachedFileSystem({ cache, fileIOConcurrency });
     this.analysis = {};
     if (analysis !== false) {
       Object.assign(this.analysis, {
@@ -137,15 +128,9 @@ export class Job {
       }, analysis === true ? {} : analysis);
     }
 
-    this.fileCache = cache && cache.fileCache || new Map();
-    this.statCache = cache && cache.statCache || new Map();
-    this.symlinkCache = cache && cache.symlinkCache || new Map();
     this.analysisCache = cache && cache.analysisCache || new Map();
 
     if (cache) {
-      cache.fileCache = this.fileCache;
-      cache.statCache = this.statCache;
-      cache.symlinkCache = this.symlinkCache;
       cache.analysisCache = this.analysisCache;
     }
 
@@ -156,27 +141,7 @@ export class Job {
   }
 
   async readlink (path: string) {
-    const cached = this.symlinkCache.get(path);
-    if (cached !== undefined) return cached;
-    await this.fileIOQueue.acquire();
-    try {
-      const link = await fsReadlink(path);
-      // also copy stat cache to symlink
-      const stats = this.statCache.get(path);
-      if (stats)
-        this.statCache.set(resolve(path, link), stats);
-      this.symlinkCache.set(path, link);
-      return link;
-    }
-    catch (e: any) {
-      if (e.code !== 'EINVAL' && e.code !== 'ENOENT' && e.code !== 'UNKNOWN')
-        throw e;
-      this.symlinkCache.set(path, null);
-      return null;
-    }
-    finally {
-      this.fileIOQueue.release();
-    }
+    return this.cachedFileSystem.readlink(path);
   }
 
   async isFile (path: string) {
@@ -194,24 +159,7 @@ export class Job {
   }
 
   async stat (path: string) {
-    const cached = this.statCache.get(path);
-    if (cached) return cached;
-    await this.fileIOQueue.acquire();
-    try {
-      const stats = await fsStat(path);
-      this.statCache.set(path, stats);
-      return stats;
-    }
-    catch (e: any) {
-      if (e.code === 'ENOENT') {
-        this.statCache.set(path, null);
-        return null;
-      }
-      throw e;
-    }
-    finally {
-      this.fileIOQueue.release();
-    }
+    return this.cachedFileSystem.stat(path);
   }
 
   private maybeEmitDep = async (dep: string, path: string, cjsResolve: boolean) => {
@@ -257,25 +205,8 @@ export class Job {
     return resolveDependency(id, parent, job, cjsResolve);
   }
 
-  async readFile (path: string): Promise<string | Buffer | null> {
-    const cached = this.fileCache.get(path);
-    if (cached !== undefined) return cached;
-    await this.fileIOQueue.acquire();
-    try {
-      const source = (await fsReadFile(path)).toString();
-      this.fileCache.set(path, source);
-      return source;
-    }
-    catch (e: any) {
-      if (e.code === 'ENOENT' || e.code === 'EISDIR') {
-        this.fileCache.set(path, null);
-        return null;
-      }
-      throw e;
-    }
-    finally {
-      this.fileIOQueue.release();
-    }
+  async readFile (path: string): Promise<Buffer | string | null> {
+    return this.cachedFileSystem.readFile(path);
   }
 
   async realpath (path: string, parent?: string, seen = new Set()): Promise<string> {
@@ -302,12 +233,12 @@ export class Job {
       path = await this.realpath(path, parent);
     }
     path = relative(this.base, path);
-    
+
     if (parent) {
       parent = relative(this.base, parent);
     }
     let reasonEntry = this.reasons.get(path)
-    
+
     if (!reasonEntry) {
       reasonEntry = {
         type: [reasonType],
@@ -375,7 +306,7 @@ export class Job {
     else {
       const source = await this.readFile(path);
       if (source === null) throw new Error('File ' + path + ' does not exist.');
-      // analyze should not have any side-effects e.g. calling `job.emitFile` 
+      // analyze should not have any side-effects e.g. calling `job.emitFile`
       // directly as this will not be included in the cachedAnalysis and won't
       // be emit for successive runs that leverage the cache
       analyzeResult = await analyze(path, source.toString(), this);
@@ -387,7 +318,7 @@ export class Job {
     if (isESM) {
       this.esmFileList.add(relative(this.base, path));
     }
-    
+
     await Promise.all([
       ...[...assets].map(async asset => {
         const ext = extname(asset);
