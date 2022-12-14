@@ -21,9 +21,9 @@ export class CachedFileSystem {
     fileIOConcurrency: number;
   }) {
     this.fileIOQueue = new Sema(fileIOConcurrency);
-    this.fileCache = (cache && cache.fileCache) || new Map();
-    this.statCache = (cache && cache.statCache) || new Map();
-    this.symlinkCache = (cache && cache.symlinkCache) || new Map();
+    this.fileCache = cache?.fileCache ?? new Map();
+    this.statCache = cache?.statCache ?? new Map();
+    this.symlinkCache = cache?.symlinkCache ?? new Map();
 
     if (cache) {
       cache.fileCache = this.fileCache;
