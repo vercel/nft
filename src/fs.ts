@@ -17,7 +17,7 @@ export class CachedFileSystem {
     cache,
     fileIOConcurrency,
   }: {
-    cache?: any;
+    cache?: { fileCache?: Map<string, Promise<string | null>>, statCache?: Map<string, Promise<Stats | null>>, symlinkCache?: Map<string, Promise<string | null>> };
     fileIOConcurrency: number;
   }) {
     this.fileIOQueue = new Sema(fileIOConcurrency);
