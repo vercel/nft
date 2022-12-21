@@ -1,11 +1,11 @@
 import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats, NodeFileTraceReasonType } from './types';
-import { basename, dirname, extname, relative, resolve, sep } from 'path';
+import { basename, dirname, extname, relative, resolve, sep, join } from 'path';
+import * as url from 'url';
 import fs from 'graceful-fs';
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency, { NotFoundError } from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
-import { join } from 'path';
 import { Sema } from 'async-sema';
 
 const fsReadFile = fs.promises.readFile;
@@ -24,12 +24,13 @@ export function parseSpecifier(specifier: string, cjsResolve: boolean = true): P
   let queryString = null;
 
   if (!cjsResolve) {
-    // Regex which splits a specifier into path and querystring, inspired by that in `enhanced-resolve`
-    // https://github.com/webpack/enhanced-resolve/blob/157ed9bcc381857d979e56d2f20a5a17c6362bff/lib/util/identifier.js#L8
-    const match = /^(#?(?:\0.|[^?#\0])*)(\?(?:\0.|[^\0])*)?$/.exec(specifier);
-    if (match) {
-      path = match[1]
-      queryString = match[2]
+    const specifierUrl = url.parse(specifier);
+    queryString = specifierUrl.search;
+
+    if (specifierUrl.search) {
+      path = specifier.replace(specifierUrl.search, '');
+    } else {
+      path = specifier;
     }
   }
 
