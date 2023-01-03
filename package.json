@@ -66,7 +66,7 @@
     "es-get-iterator": "^1.1.0",
     "esbuild": "^0.14.12",
     "esm": "^3.2.25",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "fast-glob": "^3.1.1",
     "fetch-h2": "^2.2.0",
     "firebase": "^7",

@@ -1,6 +1,12 @@
 const fs = require('fs');
 const { join, relative, sep } = require('path');
 const { nodeFileTrace } = require('../out/node-file-trace');
+const gracefulFS = require('graceful-fs');
+const analyze = require('../out/analyze.js').default;
+
+const stat = gracefulFS.promises.stat
+const readlink = gracefulFS.promises.readlink
+const readFile = gracefulFS.promises.readFile
 
 global._unit = true;
 
@@ -10,6 +16,38 @@ const unitTests = [
   ...unitTestDirs.map(testName => ({testName, isRoot: true})),
   ...unitTestDirs.map(testName => ({testName, isRoot: false})),
 ];
+
+jest.mock('../out/analyze.js', () => {
+  const originalModule = jest.requireActual('../out/analyze.js').default;
+
+  return {
+    __esModule: true,
+    default: jest.fn(originalModule)
+  };
+});
+
+jest.mock('graceful-fs', () => {
+  const originalModule = jest.requireActual('graceful-fs');
+
+  return {
+    ...originalModule,
+    promises: {
+      ...originalModule.promises,
+      stat: jest.fn(originalModule.promises.stat),
+      readFile: jest.fn(originalModule.promises.readFile),
+      readlink: jest.fn( originalModule.promises.readlink),
+    }
+  };
+});
+
+function resetFileIOMocks() {
+  analyze.mockClear();
+  stat.mockClear()
+  readFile.mockClear()
+  readlink.mockClear()
+}
+
+afterEach(resetFileIOMocks)
 
 for (const { testName, isRoot } of unitTests) {
   const testSuffix = `${testName} from ${isRoot ? 'root' : 'cwd'}`;
@@ -43,12 +81,12 @@ for (const { testName, isRoot } of unitTests) {
     // used in the tsx-input test:
     const readFileMock = jest.fn(function() {
       const [id] = arguments;
-      
+
       if (id.startsWith('custom-resolution-')) {
         return ''
       }
-      
-      // ensure sync readFile works as expected since default is 
+
+      // ensure sync readFile works as expected since default is
       // async now
       if (testName === 'wildcard') {
         try {
@@ -80,11 +118,11 @@ for (const { testName, isRoot } of unitTests) {
     });
 
     const nftCache = {}
-    
+
     const doTrace = async (cached = false) => {
       let inputFileNames = ["input.js"];
       let outputFileName = "output.js";
-      
+
       if (testName === "jsx-input") {
         inputFileNames = ["input.jsx"];
       }
@@ -98,13 +136,13 @@ for (const { testName, isRoot } of unitTests) {
         inputFileNames = ["input-cached.js"]
         outputFileName = "output-cached.js"
       }
-      
+
       if (testName === 'multi-input') {
         inputFileNames.push('input-2.js', 'input-3.js', 'input-4.js');
       }
 
       const { fileList, reasons, warnings } = await nodeFileTrace(
-        inputFileNames.map(file => join(unitPath, file)), 
+        inputFileNames.map(file => join(unitPath, file)),
         {
           base: isRoot ? '/' : `${__dirname}/../`,
           processCwd: unitPath,
@@ -128,20 +166,20 @@ for (const { testName, isRoot } of unitTests) {
         }
       );
 
-      const normalizeFilesRoot = f => 
+      const normalizeFilesRoot = f =>
         (isRoot ? relative(join('./', __dirname, '..'), f) : f).replace(/\\/g, '/');
-      
+
       const normalizeInputRoot = f =>
         isRoot ? join('./', unitPath, f) : join('test/unit', testName, f);
-      
+
       const getReasonType = f => reasons.get(normalizeInputRoot(f)).type;
-      
+
       if (testName === 'multi-input') {
         const collectFiles = (parent, files = new Set()) => {
           fileList.forEach(file => {
             if (files.has(file)) return
             const reason = reasons.get(file)
-        
+
             if (reason.parents && reason.parents.has(parent)) {
               files.add(file)
               collectFiles(file, files)
@@ -149,7 +187,7 @@ for (const { testName, isRoot } of unitTests) {
           })
           return files
         }
-        
+
         expect([...collectFiles(normalizeInputRoot('input.js'))].map(normalizeFilesRoot).sort()).toEqual([
           "package.json",
           "test/unit/multi-input/asset-2.txt",
@@ -191,7 +229,7 @@ for (const { testName, isRoot } of unitTests) {
         expect(getReasonType('style.module.css')).toEqual(['dependency', 'asset'])
       }
       let sortedFileList = [...fileList].sort()
-      
+
       if (testName === 'microtime-node-gyp') {
         let foundMatchingBinary = false
         sortedFileList = sortedFileList.filter(file => {
@@ -204,9 +242,9 @@ for (const { testName, isRoot } of unitTests) {
           }
           return true
         })
-        expect(foundMatchingBinary).toBe(true) 
+        expect(foundMatchingBinary).toBe(true)
       }
-      
+
       let expected;
       try {
         expected = JSON.parse(fs.readFileSync(join(unitPath, outputFileName)).toString());
@@ -232,6 +270,26 @@ for (const { testName, isRoot } of unitTests) {
         fs.writeFileSync(join(unitPath, 'actual.js'), JSON.stringify(sortedFileList, null, 2));
         throw e;
       }
+
+      if (cached) {
+        // Everything should be cached in the second run, except for `processed-dependency` which adds 1 new input file
+        expect(stat).toHaveBeenCalledTimes(0);
+        expect(readlink).toHaveBeenCalledTimes(testName === 'processed-dependency' ? 1 : 0);
+        expect(readFile).toHaveBeenCalledTimes(testName === 'processed-dependency' ? 1 : 0);
+        expect(analyze).toHaveBeenCalledTimes(testName === 'processed-dependency' ? 1 : 0);
+      } else {
+        // Ensure all cached calls are only called once per file. The expected count is the count of calls unique per path
+        const uniqueStatCalls = new Set(stat.mock.calls.map((call) => call[0]));
+        const uniqueReadlinkCalls = new Set(readlink.mock.calls.map((call) => call[0]));
+        const uniqueReadFileCalls = new Set(readFile.mock.calls.map((call) => call[0]));
+        const uniqueAnalyzeFileCalls = new Set(analyze.mock.calls.map((call) => call[0]));
+        expect(stat).toHaveBeenCalledTimes(uniqueStatCalls.size);
+        expect(readlink).toHaveBeenCalledTimes(uniqueReadlinkCalls.size);
+        expect(readFile).toHaveBeenCalledTimes(uniqueReadFileCalls.size);
+        expect(analyze).toHaveBeenCalledTimes(uniqueAnalyzeFileCalls.size);
+      }
+
+      resetFileIOMocks();
     }
     await doTrace()
     // test tracing again with a populated nftTrace
@@ -239,7 +297,7 @@ for (const { testName, isRoot } of unitTests) {
     expect(nftCache.statCache).toBeDefined()
     expect(nftCache.symlinkCache).toBeDefined()
     expect(nftCache.analysisCache).toBeDefined()
-    
+
     try {
       await doTrace(true)
     } catch (err) {
