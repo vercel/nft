@@ -1,6 +1,5 @@
 import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, Stats, NodeFileTraceReasonType } from './types';
 import { basename, dirname, extname, relative, resolve, sep, join } from 'path';
-import * as url from 'url';
 import fs from 'graceful-fs';
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency, { NotFoundError } from './resolve-dependency';
@@ -24,7 +23,7 @@ export function splitQueryStringFromSpecifier(specifier: string, cjsResolve: boo
   let queryString = null;
 
   if (!cjsResolve) {
-    const specifierUrl = url.parse(specifier);
+    const specifierUrl = new URL(specifier, "placeholder-protocol://");
     queryString = specifierUrl.search;
 
     if (specifierUrl.search) {

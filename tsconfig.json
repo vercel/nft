@@ -4,7 +4,10 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
-    "lib": ["esnext"],
+    "lib": [
+      "esnext",
+      "DOM" // needed for "new URL()"
+    ],
     "module": "commonjs",
     "moduleResolution": "node",
     "noEmitOnError": true,
