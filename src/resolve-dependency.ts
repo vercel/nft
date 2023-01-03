@@ -1,5 +1,5 @@
 import { isAbsolute, resolve, sep } from 'path';
-import { Job, parseSpecifier } from './node-file-trace';
+import { Job, splitQueryStringFromSpecifier } from './node-file-trace';
 
 // node resolver
 // custom implementation to emit only needed package.json files for resolver
@@ -9,7 +9,7 @@ export default async function resolveDependency (specifier: string, parent: stri
 
   // ESM imports are allowed to have querystrings, but the native Node behavior is to ignore them when doing
   // file resolution, so emulate that here by stripping any querystring off before continuing
-  specifier = parseSpecifier(specifier, cjsResolve).path
+  specifier = splitQueryStringFromSpecifier(specifier, cjsResolve).remainingSpecifier
 
   if (isAbsolute(specifier) || specifier === '.' || specifier === '..' || specifier.startsWith('./') || specifier.startsWith('../')) {
     const trailingSlash = specifier.endsWith('/');

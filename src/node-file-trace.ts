@@ -13,14 +13,14 @@ const fsReadlink = fs.promises.readlink;
 const fsStat = fs.promises.stat;
 
 type ParseSpecifierResult = {
-  path: string;
+  remainingSpecifier: string;
   queryString: string | null
 }
 
 // Splits an ESM specifier into path and querystring (including the leading `?`). (If the specifier is CJS,
 // it is passed through untouched.)
-export function parseSpecifier(specifier: string, cjsResolve: boolean = true): ParseSpecifierResult {
-  let path = specifier;
+export function splitQueryStringFromSpecifier(specifier: string, cjsResolve: boolean = true): ParseSpecifierResult {
+  let remainingSpecifier = specifier;
   let queryString = null;
 
   if (!cjsResolve) {
@@ -28,13 +28,13 @@ export function parseSpecifier(specifier: string, cjsResolve: boolean = true): P
     queryString = specifierUrl.search;
 
     if (specifierUrl.search) {
-      path = specifier.replace(specifierUrl.search, '');
+      remainingSpecifier = specifier.replace(specifierUrl.search, '');
     } else {
-      path = specifier;
+      remainingSpecifier = specifier;
     }
   }
 
-  return {path, queryString};
+  return {queryString, remainingSpecifier};
 }
 
 function inPath (path: string, parent: string) {
@@ -241,7 +241,7 @@ export class Job {
 
   private maybeEmitDep = async (dep: string, path: string, cjsResolve: boolean) => {
     // Only affects ESM dependencies
-    const { path: strippedDep, queryString = '' } = parseSpecifier(dep, cjsResolve)
+    const { remainingSpecifier: strippedDep, queryString = '' } = splitQueryStringFromSpecifier(dep, cjsResolve)
     let resolved: string | string[] = '';
     let error: Error | undefined;
     try {
@@ -379,7 +379,7 @@ export class Job {
   private async analyzeAndEmitDependency(rawPath: string, parent?: string, cjsResolve?: boolean) {
 
     // Strip the querystring, if any. (Only affects ESM dependencies.)
-    const { path } = parseSpecifier(rawPath, cjsResolve)
+    const { remainingSpecifier: path } = splitQueryStringFromSpecifier(rawPath, cjsResolve)
 
     // Since different querystrings may lead to different results, include the full path
     // when noting whether or not we've already seen this path
