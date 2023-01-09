@@ -38,11 +38,6 @@ jobs:
       env:
         BULL_REDIS_CONNECTION: ${{ secrets.BULL_REDIS_CONNECTION }}
       run: yarn test-verbose
-    - name: Submit Code Coverage
-      if: matrix.os == 'ubuntu-latest' && matrix.node == 14 # only run once
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      run: yarn codecov
     - name: Maybe Release
       if: matrix.os == 'ubuntu-latest' && matrix.node == 18 && github.event_name == 'push' && github.ref == 'refs/heads/main'
       env:
