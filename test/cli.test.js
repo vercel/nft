@@ -57,8 +57,7 @@ it('should correctly print help when unknown action is used', async () => {
   }
   expect(stdout).toMatch('$ nft [command] <file>');
 });
-
-it('[codecov] should correctly print trace from required cli', async () => {
+it('[coverage] should correctly print trace from required cli', async () => {
   // This test is only here to satisfy code coverage
   const cli = require('../out/cli.js')
   const files = join(__dirname, inputjs);
@@ -66,7 +65,7 @@ it('[codecov] should correctly print trace from required cli', async () => {
   expect(stdout).toMatch(normalizeOutput(outputjs));
 });
 
-it('[codecov] should correctly build dist from required cli', async () => {
+it('[coverage] should correctly build dist from required cli', async () => {
   // This test is only here to satisfy code coverage
   const cli = require('../out/cli.js')
   const files = join(__dirname, inputjs);
@@ -75,7 +74,7 @@ it('[codecov] should correctly build dist from required cli', async () => {
   expect(found).toBe(true);
 });
 
-it('[codecov] should correctly show size in bytes from required cli', async () => {
+it('[coverage] should correctly show size in bytes from required cli', async () => {
   // This test is only here to satisfy code coverage
   const cli = require('../out/cli.js')
   const files = join(__dirname, inputjs);
@@ -83,7 +82,7 @@ it('[codecov] should correctly show size in bytes from required cli', async () =
   expect(stdout).toMatch('bytes total');
 });
 
-it('[codecov] should correctly show why from required cli', async () => {
+it('[coverage] should correctly show why from required cli', async () => {
   // This test is only here to satisfy code coverage
   const cli = require('../out/cli.js')
   const entrypoint = join(__dirname, inputjs);
@@ -93,7 +92,7 @@ it('[codecov] should correctly show why from required cli', async () => {
   expect(stdout.replace(/\\/g, '/')).toMatch('unit/wildcard/assets/asset1.txt\nunit/wildcard/input.js');
 });
 
-it('[codecov] should correctly print help when unknown action is used', async () => {
+it('[coverage] should correctly print help when unknown action is used', async () => {
   // This test is only here to satisfy code coverage
   const cli = require('../out/cli.js')
   const files = join(__dirname, inputjs);

@@ -1,7 +1,6 @@
 # Node File Trace
 
 [![CI Status](https://github.com/vercel/nft/actions/workflows/ci.yml/badge.svg)](https://github.com/vercel/nft/actions/workflows/ci.yml)
-[![Code Coverage](https://badgen.net/codecov/c/github/vercel/nft)](https://codecov.io/gh/vercel/nft)
 
 Used to determine exactly which files (including `node_modules`) are necessary for the application runtime.
 
