@@ -3,7 +3,7 @@ var common = require('./data-common');
 var babel = common.babel;
 var typescript = common.typescript;
 // var firefox = common.firefox;
-// var graalvm = common.graalvm;
+var graalvm = common.graalvm;
 
 exports.name = 'ES Next';
 exports.target_file = 'esnext/index.html';
@@ -35,8 +35,8 @@ exports.tests = [
     chrome77: false,
     duktape2_0: false,
     graalvm19: false,
-    graalvm20: false,
-    graalvm20_1: false,
+    hermes0_7_0: false,
+    reactnative0_70_3: false,
     rhino1_7_13: false
   }
 },
@@ -69,22 +69,22 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     }
   ],
 },
 {
-  name: 'Realms',
+  name: 'ShadowRealm',
   category: STAGE3,
   significance: 'large',
-  spec: 'https://github.com/tc39/proposal-realms',
+  spec: 'https://github.com/tc39/proposal-shadowrealm',
   exec: function () {/*
-    return typeof Realm === "function"
-      && ["eval", "global", "intrinsics", "stdlib", "directEval", "indirectEval", "initGlobal", "nonEval"].every(function(key){
-        return key in Realm.prototype;
+    return typeof ShadowRealm === "function"
+      && ["evaluate", "importValue"].every(function(key){
+        return key in ShadowRealm.prototype;
       });
   */},
   res: {
@@ -95,8 +95,8 @@ exports.tests = [
     chrome77: false,
     duktape2_0: false,
     graalvm19: false,
-    graalvm20: false,
-    graalvm20_1: false,
+    hermes0_7_0: false,
+    reactnative0_70_3: false,
     rhino1_7_13: false
   }
 },
@@ -126,8 +126,8 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -155,8 +155,8 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -179,8 +179,8 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -203,8 +203,8 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     }
@@ -234,8 +234,9 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        graalvm21_3_3: graalvm.newSetMethodsFlag,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -258,8 +259,9 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        graalvm21_3_3: graalvm.newSetMethodsFlag,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -281,8 +283,9 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        graalvm21_3_3: graalvm.newSetMethodsFlag,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -304,8 +307,9 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        graalvm21_3_3: graalvm.newSetMethodsFlag,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -324,8 +328,10 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        graalvm20_1: graalvm.es2021flag,
+        graalvm21_3_3: graalvm.newSetMethodsFlag,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -344,8 +350,9 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        graalvm21_3_3: graalvm.newSetMethodsFlag,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -364,8 +371,9 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        graalvm20: false,
-        graalvm20_1: false,
+        graalvm21_3_3: graalvm.newSetMethodsFlag,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     }
@@ -392,6 +400,9 @@ exports.tests = [
         chrome70: false,
         safari12: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -410,6 +421,9 @@ exports.tests = [
         chrome70: false,
         safari12: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     }
@@ -440,15 +454,15 @@ exports.tests = [
         konq4_4: true,
         besen: false,
         rhino1_7_13: true,
-        phantom: true,
+        phantom1_9: true,
         android4_0: true,
         duktape2_0: false,
         nashorn1_8: true,
         nashorn9: true,
         nashorn10: true,
         graalvm19: true,
-        graalvm20: true,
-        graalvm20_1: true
+        hermes0_7_0: true,
+        reactnative0_70_3: true
       }
     },
     {
@@ -471,15 +485,15 @@ exports.tests = [
         konq4_4: true,
         besen: false,
         rhino1_7_13: true,
-        phantom: true,
+        phantom1_9: true,
         android4_0: true,
         duktape2_0: false,
         nashorn1_8: true,
         nashorn9: true,
         nashorn10: true,
         graalvm19: true,
-        graalvm20: true,
-        graalvm20_1: true
+        hermes0_7_0: true,
+        reactnative0_70_3: true
       }
     }
   ]
@@ -508,6 +522,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -530,6 +547,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     }
@@ -542,7 +562,7 @@ exports.tests = [
   spec: 'https://github.com/tc39/proposal-array-is-template-object',
   exec: function () {/*
     return !Array.isTemplateObject([])
-      && Array.isTemplateObject((it => it)`a{1}c`);
+      && Array.isTemplateObject((it => it)`a${1}c`);
   */},
   res: {
     babel6corejs2: false,
@@ -554,6 +574,9 @@ exports.tests = [
     firefox60: false,
     chrome77: false,
     duktape2_0: false,
+    graalvm21_3_3: false,
+    hermes0_7_0: false,
+    reactnative0_70_3: false,
     rhino1_7_13: false
   }
 },
@@ -578,6 +601,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -598,6 +624,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -619,6 +648,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -645,6 +677,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -663,6 +698,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -681,6 +719,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -699,6 +740,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -717,6 +761,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -735,6 +782,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -753,6 +803,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -773,6 +826,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -791,6 +847,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -809,6 +868,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -827,6 +889,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -845,6 +910,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -864,6 +932,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -882,6 +953,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -900,6 +974,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -920,6 +997,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -950,6 +1030,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -980,6 +1063,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1010,6 +1096,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1036,6 +1125,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1062,6 +1154,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1082,6 +1177,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1108,6 +1206,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1128,6 +1229,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1154,6 +1258,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1175,6 +1282,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1201,6 +1311,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1221,6 +1334,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1241,6 +1357,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1267,6 +1386,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1287,6 +1409,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     },
@@ -1305,92 +1430,9 @@ exports.tests = [
         firefox60: false,
         chrome77: false,
         duktape2_0: false,
-        rhino1_7_13: false
-      }
-    }
-  ]
-},
-{
-  name: 'Hashbang Grammar',
-  category: STAGE3,
-  significance: 'tiny',
-  spec: 'https://github.com/tc39/proposal-hashbang/',
-  mdn: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#Hashbang_comments',
-  exec: function() {/*
-    try {
-      return !eval('#!/wash/your/hands');
-    } catch (e) {
-      return false
-    }
-  */},
-  res: {
-    chrome1: false,
-    chrome74: true,
-    firefox2: false,
-    firefox67: true,
-    ie11: false,
-    opera10_50: false,
-    edge18: false,
-    safari1: false,
-    safari13: false,
-    safari13_1: true,
-    duktape2_0: false,
-    graalvm19: false,
-    graalvm20: false,
-    graalvm20_1: true,
-    babel7corejs3: false,
-    typescript3_2corejs3: false,
-    closure: false,
-    rhino1_7_13: false
-  }
-},
-{
-  name: 'Array find from last',
-  category: STAGE3,
-  significance: 'small',
-  spec: 'https://github.com/tc39/proposal-array-find-from-last',
-  subtests: [
-    {
-      name: "Array.prototype.findLast",
-      exec: function () {/*
-        var arr = [{ x: 1 }, { x: 2 }, { x: 1 }, { x: 2 }];
-        return arr.findLast(function (o) { return o.x === 1; }) === arr[2];
-      */},
-      res: {
-        babel7corejs3: babel.corejs,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        chrome1: false,
-        chrome90: false,
-        edge18: false,
-        firefox2: false,
-        firefox89: false,
-        opera10_50: false,
-        safari12: false,
-        safaritp: true,
-        duktape2_0: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: "Array.prototype.findLastIndex",
-      exec: function () {/*
-        var arr = [{ x: 1 }, { x: 2 }, { x: 1 }, { x: 2 }];
-        return arr.findLastIndex(function (o) { return o.x === 1; }) === 2;
-      */},
-      res: {
-        babel7corejs3: babel.corejs,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        chrome1: false,
-        chrome90: false,
-        edge18: false,
-        firefox2: false,
-        firefox89: false,
-        opera10_50: false,
-        safari12: false,
-        safaritp: true,
-        duktape2_0: false,
+        graalvm21_3_3: false,
+        hermes0_7_0: false,
+        reactnative0_70_3: false,
         rhino1_7_13: false
       }
     }
