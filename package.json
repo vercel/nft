@@ -113,7 +113,7 @@
     "rimraf": "^3.0.2",
     "rxjs": "^6.5.2",
     "saslprep": "^1.0.3",
-    "semver": "^7.1.1",
+    "semver": "^7.5.2",
     "sequelize": "^6.29.0",
     "sharp": "^0.30.5",
     "socket.io": "^2.4.0",
