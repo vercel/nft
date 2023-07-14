@@ -115,7 +115,7 @@ When providing a custom resolve hook you are responsible for returning one or mo
 
 * `resolve(id: string, parent: string, job: Job, isCjs: boolean): Promise<string | string[]>`
 
-Here is an example showing one id being resolved to a bespoke path while all other paths being resolved by the builting resolver
+Here is an example showing one id being resolved to a bespoke path while all other paths being resolved by the built-in resolver
 ```js
 const { nodeFileTrace, resolve } = require('@vercel/nft');
 const files = ['./src/main.js', './src/second.js'];
