@@ -23,7 +23,6 @@ jobs:
         node: [14, 16, 18]
     runs-on: ${{ matrix.os }}
     services:
-      if: ${{ matrix.os == 'ubuntu-latest' }}
       redis:
         image: ${{ (matrix.os == 'ubuntu-latest') && 'redis:6.0.20' || '' }}
         ports:
