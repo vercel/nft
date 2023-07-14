@@ -24,6 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     services:
       redis:
+        # See workaround https://github.com/actions/runner/issues/822#issuecomment-1524826092
         image: ${{ (matrix.os == 'ubuntu-latest') && 'redis:6.0.20' || '' }}
         ports:
           - 6379:6379
