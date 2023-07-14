@@ -23,6 +23,7 @@ jobs:
         node: [14, 16, 18]
     runs-on: ${{ matrix.os }}
     services:
+      if: ${{ matrix.os == 'ubuntu-latest' }}
       redis:
         image: redis:6.0.20 # https://hub.docker.com/_/redis
         ports:
@@ -41,7 +42,7 @@ jobs:
       run: yarn build
     - name: Run Tests
       env:
-        BULL_REDIS_CONNECTION: "http://127.0.0.1:6379"
+        BULL_REDIS_CONNECTION: "redis://127.0.0.1:6379/0"
       run: yarn test-verbose
     - name: Maybe Release
       if: matrix.os == 'ubuntu-latest' && matrix.node == 18 && github.event_name == 'push' && github.ref == 'refs/heads/main'
