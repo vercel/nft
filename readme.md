@@ -109,6 +109,25 @@ The following FS functions can be hooked by passing them as options:
 * `readlink(path): Promise<string>`
 * `resolve(id: string, parent: string): Promise<string | string[]>`
 
+##### Advanced Resolving
+
+When providing a custom resolve hook you are responsible for returning one or more absolute paths to resolved files based on the `id` input. However it may be the case that you only want to augment or override the resolve behavior in certain cases. You can use `nft`'s underlying resolver by importing it. The builtin `resolve` function expects additional arguments that need to be forwarded from the hook
+
+* `resolve(id: string, parent: string, job: Job, isCjs: boolean): Promise<string | string[]>`
+
+Here is an example showing one id being resolved to a bespoke path while all other paths being resolved by the built-in resolver
+```js
+const { nodeFileTrace, resolve } = require('@vercel/nft');
+const files = ['./src/main.js', './src/second.js'];
+const { fileList } = await nodeFileTrace(files, { resolve: async (id, parent, job, isCjs) => {
+  if (id === './src/main.js') {
+    return '/path/to/some/resolved/main/file.js'
+  } else {
+    return resolve(id, parent, job, isCjs)
+  }
+}});
+```
+
 #### TypeScript
 
 The internal resolution supports resolving `.ts` files in traces by default.
