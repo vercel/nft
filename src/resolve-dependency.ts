@@ -1,4 +1,5 @@
 import { isAbsolute, resolve, sep } from 'path';
+import { builtinModules } from 'module';
 import { Job } from './node-file-trace';
 
 // node resolver
@@ -68,7 +69,7 @@ export class NotFoundError extends Error {
   }
 }
 
-const nodeBuiltins = new Set<string>([...require("repl")._builtinLibs, "constants", "module", "timers", "console", "_stream_writable", "_stream_readable", "_stream_duplex", "process", "sys"]);
+const nodeBuiltins = new Set<string>(builtinModules);
 
 function getPkgName (name: string) {
   const segments = name.split('/');
