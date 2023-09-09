@@ -222,7 +222,7 @@ function resolveExportsImports(
     matchObj = obj;
   }
 
-  if (subpath in matchObj) {
+  if (subpath in matchObj && !subpath.includes('*') && !subpath.endsWith('/')) {
     const target = getExportsTarget(
       matchObj[subpath],
       job.conditions,
