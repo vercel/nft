@@ -274,7 +274,8 @@ function resolveExportsImports(
       const patternIndex = target.indexOf("*");
       if (patternIndex !== -1 && target.lastIndexOf("*") === patternIndex) {
         return (
-          target.substring(0, patternIndex) +
+          pkgPath +
+          target.substring(1, patternIndex) +
           bestMatchSubpath +
           target.substring(patternIndex + 1)
         );
