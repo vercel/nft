@@ -328,7 +328,7 @@ export class Job {
         else
           await this.emitFile(asset, 'asset', path);
       }),
-      ...[...deps].map(async dep => this.maybeEmitDep(dep, path, !isESM)),
+      ...[...deps].map(async dep => this.maybeEmitDep(dep, path, true)),
       ...[...imports].map(async dep => this.maybeEmitDep(dep, path, false)),
     ]);
   }
