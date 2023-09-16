@@ -15,7 +15,6 @@ if (isWin) {
   unlinkSync(join(__dirname, 'test', 'integration', 'hot-shots.js'));
   unlinkSync(join(__dirname, 'test', 'integration', 'loopback.js'));
   unlinkSync(join(__dirname, 'test', 'integration', 'playwright-core.js'));
-  delete pkg.devDependencies['@tensorflow/tfjs-node'];
   delete pkg.devDependencies['argon2'];
   delete pkg.devDependencies['highlights'];
   delete pkg.devDependencies['hot-shots'];
