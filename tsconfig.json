@@ -14,7 +14,7 @@
     "noUnusedParameters": true,
     "noImplicitThis": true,
     "outDir": "out",
-    "target": "es2020",
+    "target": "es2021",
     "types": ["node"],
     "skipLibCheck": true,
     "strict": true
