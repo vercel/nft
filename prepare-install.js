@@ -9,7 +9,6 @@ if (isWin) {
 
   //unlinkSync(join(__dirname, 'yarn.lock'));
   // Delete the integration tests that will never work in Windows
-  unlinkSync(join(__dirname, 'test', 'integration', 'tensorflow.js'));
   unlinkSync(join(__dirname, 'test', 'integration', 'argon2.js'));
   unlinkSync(join(__dirname, 'test', 'integration', 'highlights.js'));
   unlinkSync(join(__dirname, 'test', 'integration', 'hot-shots.js'));
