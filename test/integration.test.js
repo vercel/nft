@@ -13,6 +13,7 @@ const integrationDir = `${__dirname}${path.sep}integration`;
 for (const integrationTest of readdirSync(integrationDir)) {
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
     console.log('Tracing and executing ' + integrationTest);
+    const mixedModules = integrationTest === 'vercel-edge-config-esm.mjs';
     const nftCache = {}
     const fails = integrationTest.endsWith('failure.js');
     const { fileList, reasons, warnings } = await nodeFileTrace([`${integrationDir}/${integrationTest}`], {
@@ -21,7 +22,8 @@ for (const integrationTest of readdirSync(integrationDir)) {
       base: path.resolve(__dirname, '..'),
       processCwd: integrationDir,
       // ignore other integration tests
-      ignore: ['test/integration/**']
+      ignore: ['test/integration/**'],
+      mixedModules
     });
     // warnings.forEach(warning => console.warn(warning));
     const randomTmpId = Math.random().toString().slice(2)
@@ -62,7 +64,8 @@ for (const integrationTest of readdirSync(integrationDir)) {
         base: path.resolve(__dirname, '..'),
         processCwd: integrationDir,
         // ignore other integration tests
-        ignore: ['test/integration/**']
+        ignore: ['test/integration/**'],
+        mixedModules
       });
       expect([...cachedResult.fileList].sort()).toEqual([...fileList].sort())
     }
