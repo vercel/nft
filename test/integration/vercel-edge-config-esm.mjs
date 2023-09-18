@@ -1,3 +1,7 @@
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+
 // this will load the CJS export and should not be treated as ESM
 const ec = require('@vercel/edge-config');
 

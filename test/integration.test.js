@@ -21,7 +21,8 @@ for (const integrationTest of readdirSync(integrationDir)) {
       base: path.resolve(__dirname, '..'),
       processCwd: integrationDir,
       // ignore other integration tests
-      ignore: ['test/integration/**']
+      ignore: ['test/integration/**'],
+      mixedModules: true
     });
     // warnings.forEach(warning => console.warn(warning));
     const randomTmpId = Math.random().toString().slice(2)
@@ -62,7 +63,8 @@ for (const integrationTest of readdirSync(integrationDir)) {
         base: path.resolve(__dirname, '..'),
         processCwd: integrationDir,
         // ignore other integration tests
-        ignore: ['test/integration/**']
+        ignore: ['test/integration/**'],
+        mixedModules: true
       });
       expect([...cachedResult.fileList].sort()).toEqual([...fileList].sort())
     }
