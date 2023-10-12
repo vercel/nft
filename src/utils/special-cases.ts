@@ -109,6 +109,12 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(id.replace('index.js', 'preload.js')));
     }
   },
+  'shiki' ({ id, emitAssetDirectory }) {
+    if (id.endsWith('/dist/index.js')) {
+      emitAssetDirectory(resolve(dirname(id), '..', 'languages'));
+      emitAssetDirectory(resolve(dirname(id), '..', 'themes'));
+    }
+  },
   'socket.io': async function ({ id, ast, job }) {
     if (id.endsWith('socket.io/lib/index.js')) {
       async function replaceResolvePathStatement (statement: Node) {
