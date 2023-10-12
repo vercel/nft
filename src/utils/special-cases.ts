@@ -112,6 +112,7 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
   'shiki' ({ id, emitAssetDirectory }) {
     if (id.endsWith('/dist/index.js')) {
       emitAssetDirectory(resolve(dirname(id), 'languages'));
+      emitAssetDirectory(resolve(dirname(id), 'themes'));
     }
   },
   'socket.io': async function ({ id, ast, job }) {
