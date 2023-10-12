@@ -109,9 +109,9 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(id.replace('index.js', 'preload.js')));
     }
   },
-  'shiki' ({ id, emitAsset }) {
-    if (id.includes('shiki') && id.endsWith('.tmLanguage.json')) {
-      emitAsset(id);
+  'shiki' ({ id, emitAssetDirectory }) {
+    if (id.endsWith('/dist/index.js')) {
+      emitAssetDirectory(resolve(dirname(id), 'languages'));
     }
   },
   'socket.io': async function ({ id, ast, job }) {

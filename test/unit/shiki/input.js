@@ -1,13 +1,9 @@
-const shiki = require('shiki')
+const { getHighlighter } = require('shiki')
 
-shiki
-  .getHighlighter({
-    theme: 'nord',
-    langs: ['javascript']
-  })
-  .then((highlighter) => {
-    highlighter.codeToThemedTokens(
-      'const sayHello = (name) => console.log("Hello, " + name)',
-      'javascript'
-    )
-  })
+async function main() {
+  const { codeToThemedTokens } = await getHighlighter({ theme: 'nord', langs: ['javascript'] })
+  const result = codeToThemedTokens('let n=1', 'javascript');
+  Array.isArray(result);
+}
+
+main();
