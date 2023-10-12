@@ -1,3 +1,14 @@
-const javascriptGrammar = require('shiki/languages/javascript.tmLanguage.json');
+const shiki = require('shiki')
 
-console.log(javascriptGrammar)
+shiki
+  .getHighlighter({
+    theme: 'nord',
+    langs: ['javascript']
+  })
+  .then((highlighter) => {
+    const html = highlighter.codeToThemedTokens(
+      'const sayHello = (name) => console.log("Hello, " + name)',
+      'javascript'
+    )
+    console.log(html)
+  })
