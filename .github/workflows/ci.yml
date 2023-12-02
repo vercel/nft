@@ -34,8 +34,10 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node }}
-    - name: Install node-gyp deps
-      run: python3 -m pip install distutils
+    - uses: actions/setup-python@v4
+      with:
+        # we lock to 3.11 for a distutils requirement for node-gyp
+        python-version: '3.11' 
     - name: Prepare Install (if applicable)
       run: node prepare-install.js
     - name: Install Dependencies
