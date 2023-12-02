@@ -34,6 +34,8 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node }}
+    - name: Install node-gyp deps
+      run: python3 -m pip install distutils
     - name: Prepare Install (if applicable)
       run: node prepare-install.js
     - name: Install Dependencies
