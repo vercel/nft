@@ -23,7 +23,7 @@ export async function sharedLibEmit(path: string, job: Job) {
     return;
 
   const files = await new Promise<string[]>((resolve, reject) =>
-    glob(pkgPath + sharedlibGlob, { ignore: pkgPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
+    glob(pkgPath + sharedlibGlob, { ignore: pkgPath + '/**/node_modules/**/*', dot: true }, (err, files) => err ? reject(err) : resolve(files))
   );
   await Promise.all(files.map(file => job.emitFile(file, 'sharedlib', path)));
 };
