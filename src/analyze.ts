@@ -24,6 +24,7 @@ const acorn = Parser.extend(
   //require("acorn-class-fields"),
   //require("acorn-static-class-features"),
   //require("acorn-private-class-elements")
+  require("acorn-import-attributes").importAttributes
 );
 
 import os from 'os';
@@ -245,7 +246,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       if (job.log)
         console.log('Globbing ' + assetDirPath + wildcardPattern);
       const files = (await new Promise<string[]>((resolve, reject) =>
-        glob(assetDirPath + wildcardPattern, { mark: true, ignore: assetDirPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
+        glob(assetDirPath + wildcardPattern, { mark: true, ignore: assetDirPath + '/**/node_modules/**/*', dot: true }, (err, files) => err ? reject(err) : resolve(files))
       ));
       files
       .filter(name =>
