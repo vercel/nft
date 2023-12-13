@@ -31,6 +31,7 @@
   "node_modules/shiki/languages/crystal.tmLanguage.json",
   "node_modules/shiki/languages/csharp.tmLanguage.json",
   "node_modules/shiki/languages/css.tmLanguage.json",
+  "node_modules/shiki/languages/csv.tmLanguage.json",
   "node_modules/shiki/languages/cue.tmLanguage.json",
   "node_modules/shiki/languages/cypher.tmLanguage.json",
   "node_modules/shiki/languages/d.tmLanguage.json",
