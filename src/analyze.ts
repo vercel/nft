@@ -24,6 +24,7 @@ const acorn = Parser.extend(
   //require("acorn-class-fields"),
   //require("acorn-static-class-features"),
   //require("acorn-private-class-elements")
+  require("acorn-import-attributes").importAttributes
 );
 
 import os from 'os';
