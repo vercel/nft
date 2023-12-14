@@ -206,7 +206,7 @@ for (const { testName, isRoot } of unitTests) {
       if (testName === 'microtime-node-gyp') {
         let foundMatchingBinary = false
         sortedFileList = sortedFileList.filter(file => {
-          if (file.endsWith('node-napi.node')) {
+          if (file.endsWith('node-napi.node') || file.endsWith('node.napi.node')) {
             // remove from fileList for expected checking
             // as it will differ per platform
             foundMatchingBinary = true
