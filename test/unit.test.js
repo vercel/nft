@@ -11,6 +11,10 @@ const readFile = gracefulFS.promises.readFile
 global._unit = true;
 
 const skipOnWindows = ['yarn-workspaces', 'yarn-workspaces-base-root', 'yarn-workspace-esm', 'asset-symlink', 'require-symlink'];
+const skipOnMac = [];
+if (process.platform === 'darwin' && process.arch === 'arm64') {
+  skipOnMac.push('microtime-node-gyp');
+}
 const unitTestDirs = fs.readdirSync(join(__dirname, 'unit'));
 const unitTests = [
   ...unitTestDirs.map(testName => ({testName, isRoot: false})),
@@ -53,6 +57,10 @@ for (const { testName, isRoot } of unitTests) {
   const testSuffix = `${testName} from ${isRoot ? 'root' : 'cwd'}`;
   if (process.platform === 'win32' && (isRoot || skipOnWindows.includes(testName))) {
     console.log(`Skipping unit test on Windows: ${testSuffix}`);
+    continue;
+  };
+  if (process.platform === 'darwin' && skipOnMac.includes(testName)) {
+    console.log(`Skipping unit test on macOS: ${testSuffix}`);
     continue;
   };
   const unitPath = join(__dirname, 'unit', testName);
