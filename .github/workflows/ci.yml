@@ -34,7 +34,6 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node }}
-        cache: 'npm'
     - uses: actions/setup-python@v4
       with:
         # we lock to 3.11 for a distutils requirement for node-gyp
@@ -42,7 +41,7 @@ jobs:
     - name: Prepare Install (if applicable)
       run: node prepare-install.js
     - name: Install Dependencies
-      run: npm install
+      run: npm install --no-package-lock
     - name: Build
       run: npm run build
     - name: Run Tests
