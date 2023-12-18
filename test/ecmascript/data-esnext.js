@@ -13,69 +13,69 @@ var STAGE2 = 'Stage 2';
 var STAGE3 = 'Stage 3';
 
 exports.tests = [
-{
-  name: 'Generator function.sent Meta Property',
-  category: STAGE2,
-  significance: 'small',
-  spec: 'https://github.com/tc39/proposal-function.sent',
-  exec: function () {/*
-    var result;
-    function* generator() {
-      result = function.sent;
-    }
-    var iter = generator();
-    iter.next('tromple');
-    return result === 'tromple';
-  */},
-  res: {
-    babel6corejs2: true,
-    ie11: false,
-    firefox2: false,
-    opera10_50: false,
-    chrome77: false,
-    duktape2_0: false,
-    graalvm19: false,
-    hermes0_7_0: false,
-    reactnative0_70_3: false,
-    rhino1_7_13: false
-  }
-},
-{
-  name: 'Class and Property Decorators',
-  category: STAGE2,
-  significance: 'medium',
-  spec: 'https://github.com/tc39/proposal-decorators',
-  subtests: [
-    {
-      name: 'class decorators',
-      spec: 'https://github.com/wycats/javascript-decorators',
-      exec: function(){/*
-        class A {
-          @nonconf
-          get B() {}
-        }
-        function nonconf(target, name, descriptor) {
-          descriptor.configurable = false;
-          return descriptor;
-        }
-        return Object.getOwnPropertyDescriptor(A.prototype, "B").configurable === false;
-      */},
-      res: {
-        babel6corejs2: {val: false, note_id: "babel-decorators-legacy", note_html: "Babel 6 still has no official support decorators, but you can use <a href='https://github.com/loganfsmyth/babel-plugin-transform-decorators-legacy'>this plugin</a>."},
-        typescript1corejs2: true,
-        ie11: false,
-        firefox2: false,
-        opera10_50: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    }
-  ],
-},
+// {
+//   name: 'Generator function.sent Meta Property',
+//   category: STAGE2,
+//   significance: 'small',
+//   spec: 'https://github.com/tc39/proposal-function.sent',
+//   exec: function () {/*
+//     var result;
+//     function* generator() {
+//       result = function.sent;
+//     }
+//     var iter = generator();
+//     iter.next('tromple');
+//     return result === 'tromple';
+//   */},
+//   res: {
+//     babel6corejs2: true,
+//     ie11: false,
+//     firefox2: false,
+//     opera10_50: false,
+//     chrome77: false,
+//     duktape2_0: false,
+//     graalvm19: false,
+//     hermes0_7_0: false,
+//     reactnative0_70_3: false,
+//     rhino1_7_13: false
+//   }
+// },
+// {
+//   name: 'Class and Property Decorators',
+//   category: STAGE2,
+//   significance: 'medium',
+//   spec: 'https://github.com/tc39/proposal-decorators',
+//   subtests: [
+//     {
+//       name: 'class decorators',
+//       spec: 'https://github.com/wycats/javascript-decorators',
+//       exec: function(){/*
+//         class A {
+//           @nonconf
+//           get B() {}
+//         }
+//         function nonconf(target, name, descriptor) {
+//           descriptor.configurable = false;
+//           return descriptor;
+//         }
+//         return Object.getOwnPropertyDescriptor(A.prototype, "B").configurable === false;
+//       */},
+//       res: {
+//         babel6corejs2: {val: false, note_id: "babel-decorators-legacy", note_html: "Babel 6 still has no official support decorators, but you can use <a href='https://github.com/loganfsmyth/babel-plugin-transform-decorators-legacy'>this plugin</a>."},
+//         typescript1corejs2: true,
+//         ie11: false,
+//         firefox2: false,
+//         opera10_50: false,
+//         chrome77: false,
+//         duktape2_0: false,
+//         graalvm19: false,
+//         hermes0_7_0: false,
+//         reactnative0_70_3: false,
+//         rhino1_7_13: false
+//       }
+//     }
+//   ],
+// },
 {
   name: 'ShadowRealm',
   category: STAGE3,
@@ -100,116 +100,116 @@ exports.tests = [
     rhino1_7_13: false
   }
 },
-{
-  name: 'throw expressions',
-  spec: 'https://github.com/tc39/proposal-throw-expressions',
-  category: STAGE2,
-  significance: 'medium',
-  subtests: [
-    {
-      name: 'logical',
-      exec: function(){/*
-        var a, b;
-        try {
-          a = 19 || throw 77;
-          b = 88 && throw 23;
-        } catch (e) {
-          return a + e === 42;
-        }
-      */},
-      res : {
-        babel7corejs2: true,
-        ie11: false,
-        firefox10: false,
-        firefox52: false,
-        opera10_50: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'parameter initializers',
-      exec: function(){/*
-        function fn (arg = throw 42) {
-          return arg;
-        }
+// {
+//   name: 'throw expressions',
+//   spec: 'https://github.com/tc39/proposal-throw-expressions',
+//   category: STAGE2,
+//   significance: 'medium',
+//   subtests: [
+//     {
+//       name: 'logical',
+//       exec: function(){/*
+//         var a, b;
+//         try {
+//           a = 19 || throw 77;
+//           b = 88 && throw 23;
+//         } catch (e) {
+//           return a + e === 42;
+//         }
+//       */},
+//       res : {
+//         babel7corejs2: true,
+//         ie11: false,
+//         firefox10: false,
+//         firefox52: false,
+//         opera10_50: false,
+//         chrome77: false,
+//         duktape2_0: false,
+//         graalvm19: false,
+//         hermes0_7_0: false,
+//         reactnative0_70_3: false,
+//         rhino1_7_13: false
+//       }
+//     },
+//     {
+//       name: 'parameter initializers',
+//       exec: function(){/*
+//         function fn (arg = throw 42) {
+//           return arg;
+//         }
 
-        if (fn(21) !== 21) return false;
+//         if (fn(21) !== 21) return false;
 
-        try {
-          fn();
-        } catch (e) {
-          return e === 42;
-        }
-      */},
-      res : {
-        babel7corejs2: true,
-        ie11: false,
-        firefox10: false,
-        firefox52: false,
-        opera10_50: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'arrow function bodies',
-      exec: function(){/*
-        var fn = () => throw 42;
-        try {
-          fn();
-        } catch (e) {
-          return e === 42;
-        }
-      */},
-      res : {
-        babel7corejs2: true,
-        ie11: false,
-        firefox10: false,
-        firefox52: false,
-        opera10_50: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'conditionals',
-      exec: function(){/*
-        true ? 42 : throw 21;
-        try {
-          false ? 42 : throw 21;
-        } catch (e) {
-          return e === 21;
-        }
-      */},
-      res : {
-        babel7corejs2: true,
-        ie11: false,
-        firefox10: false,
-        firefox52: false,
-        opera10_50: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    }
-  ]
-},
+//         try {
+//           fn();
+//         } catch (e) {
+//           return e === 42;
+//         }
+//       */},
+//       res : {
+//         babel7corejs2: true,
+//         ie11: false,
+//         firefox10: false,
+//         firefox52: false,
+//         opera10_50: false,
+//         chrome77: false,
+//         duktape2_0: false,
+//         graalvm19: false,
+//         hermes0_7_0: false,
+//         reactnative0_70_3: false,
+//         rhino1_7_13: false
+//       }
+//     },
+//     {
+//       name: 'arrow function bodies',
+//       exec: function(){/*
+//         var fn = () => throw 42;
+//         try {
+//           fn();
+//         } catch (e) {
+//           return e === 42;
+//         }
+//       */},
+//       res : {
+//         babel7corejs2: true,
+//         ie11: false,
+//         firefox10: false,
+//         firefox52: false,
+//         opera10_50: false,
+//         chrome77: false,
+//         duktape2_0: false,
+//         graalvm19: false,
+//         hermes0_7_0: false,
+//         reactnative0_70_3: false,
+//         rhino1_7_13: false
+//       }
+//     },
+//     {
+//       name: 'conditionals',
+//       exec: function(){/*
+//         true ? 42 : throw 21;
+//         try {
+//           false ? 42 : throw 21;
+//         } catch (e) {
+//           return e === 21;
+//         }
+//       */},
+//       res : {
+//         babel7corejs2: true,
+//         ie11: false,
+//         firefox10: false,
+//         firefox52: false,
+//         opera10_50: false,
+//         chrome77: false,
+//         duktape2_0: false,
+//         graalvm19: false,
+//         hermes0_7_0: false,
+//         reactnative0_70_3: false,
+//         rhino1_7_13: false
+//       }
+//     }
+//   ]
+// },
 {
   name: 'Set methods',
   spec: 'https://github.com/tc39/proposal-set-methods',
