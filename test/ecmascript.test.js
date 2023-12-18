@@ -28,8 +28,6 @@ async function runTests(importPath) {
         let str = exec.toString().replace('{/*', '{').replace('*/}', '}');
         str = `var obj = { exec: ${str} }`;
         const filename = path.join(tmpdir, `test${Math.random().toString().slice(2)}.js`);
-        console.log(filename);
-        console.log(str);
         await writeFile(filename, str, 'utf8');
         const { fileList, warnings } = await nodeFileTrace([filename], {
           base: `${__dirname}/../`,
