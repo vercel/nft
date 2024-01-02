@@ -34,7 +34,7 @@
   "devDependencies": {
     "@azure/cosmos": "^2.1.7",
     "@bugsnag/js": "^6.3.2",
-    "@ffmpeg-installer/ffmpeg": "^1.0.19",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@google-cloud/bigquery": "^4.1.4",
     "@google-cloud/firestore": "^6.2.0",
     "@sentry/node": "^5.5.0",
@@ -90,7 +90,7 @@
     "mongoose": "^5.13.20",
     "mysql": "^2.17.1",
     "npm": "^6.14.6",
-    "oracledb": "^4.2.0",
+    "oracledb": "^6.2.0",
     "paraphrase": "1.8.0",
     "passport": "^0.6.0",
     "passport-google-oauth": "^2.0.0",
@@ -115,7 +115,7 @@
     "saslprep": "^1.0.3",
     "semver": "^7.5.2",
     "sequelize": "^6.29.0",
-    "sharp": "^0.32.6",
+    "sharp": "^0.33.1",
     "shiki": "^0.14.5",
     "socket.io": "^2.4.0",
     "socket.io-client": "^2.2.0",
@@ -134,6 +134,7 @@
   "engines": {
     "node": ">=18"
   },
+  "packageManager": "npm@10.2.5",
   "publishConfig": {
     "access": "public"
   }
