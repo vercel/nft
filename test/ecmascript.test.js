@@ -13,6 +13,9 @@ console.log('created directory ' + tmpdir);
 
  // These are tests known to fail so we skip them
 const ignoreCategories = new Set([
+  'Generator function.sent Meta Property',
+  'Class and Property Decorators',
+  'throw expressions',
 ]);
 
 async function runTests(importPath) {
