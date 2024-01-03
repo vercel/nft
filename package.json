@@ -97,7 +97,7 @@
     "passport-trakt": "^1.0.4",
     "path-platform": "^0.11.15",
     "pdf2json": "^2.0.0",
-    "pdfkit": "^0.10.0",
+    "pdfkit": "^0.14.0",
     "pg": "^7.11.0",
     "phantomjs-prebuilt": "^2.1.16",
     "pixelmatch": "^5.2.1",
