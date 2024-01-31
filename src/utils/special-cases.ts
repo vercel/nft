@@ -109,13 +109,36 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(id.replace('index.js', 'preload.js')));
     }
   },
-  'sharp' ({ id, emitAssetDirectory }) {
+  sharp: async ({ id, emitAssetDirectory, job }) => {
     if (id.endsWith('sharp/lib/index.js')) {
       const file = resolve(id, '..', '..', 'package.json');
       const pkg = JSON.parse(readFileSync(file, 'utf8'));
       for (const dep of Object.keys(pkg.optionalDependencies || {})) {
         const dir = resolve(id, '..', '..', '..', dep);
         emitAssetDirectory(dir);
+
+        try {
+          const file = resolve(dir, 'package.json');
+          const pkg = JSON.parse(readFileSync(file, 'utf8'));
+          for (const innerDep of Object.keys(pkg.optionalDependencies || {})) {
+            const innerDir = resolve(
+              await job.realpath(dir),
+              '..',
+              '..',
+              innerDep
+            );
+            emitAssetDirectory(innerDir);
+          }
+        } catch (err: unknown) {
+          if (
+            err &&
+            typeof err === 'object' &&
+            'code' in err &&
+            err.code !== 'ENOENT'
+          ) {
+            throw err;
+          }
+        }
       }
     }
   },
