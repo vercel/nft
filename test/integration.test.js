@@ -3,7 +3,7 @@ const path = require('path');
 const { nodeFileTrace } = require('../out/node-file-trace');
 const os = require('os');
 const rimraf = require('rimraf');
-const { readFile, writeFile, readlink, symlink, mkdtemp, copyFile } = promises;
+const { readFile, writeFile, readlink, symlink, copyFile } = promises;
 const { fork, exec: execOrig } = require('child_process');
 
 const exec = require('util').promisify(execOrig);
@@ -18,31 +18,25 @@ for (const integrationTest of readdirSync(integrationDir)) {
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
     console.log('Tracing and executing ' + integrationTest);
     const nftCache = {};
+    const rand = Math.random().toString().slice(2);
     const fails = integrationTest.endsWith('failure.js');
 
     let traceBase = path.resolve(__dirname, '..')
 
     if (integrationTest === 'sharp-pnpm.js') {
-      currentIntegrationDir = await mkdtemp(path.join(os.tmpdir(), `nft-${integrationTest}`));
+      currentIntegrationDir = path.resolve(os.tmpdir(), `node-file-trace-${integrationTest}-${rand}`);
+      rimraf.sync(currentIntegrationDir);
+      mkdirSync(currentIntegrationDir);
       await copyFile(
         path.join(integrationDir, integrationTest),
         path.join(currentIntegrationDir, integrationTest)
       );
       await writeFile(
         path.join(currentIntegrationDir, 'package.json'),
-        JSON.stringify({
-          name: 'sharp-pnpm',
-          dependencies: {
-            sharp: 'latest',
-          },
-          packageManager: 'pnpm@8.14.3',
-        })
+        JSON.stringify({ packageManager: 'pnpm@8.14.3', dependencies: { sharp: '0.33.2' } })
       );
       traceBase = currentIntegrationDir
-      await exec(`corepack enable && pnpm i`, {
-        cwd: currentIntegrationDir,
-        stdio: 'inherit',
-      });
+      await exec(`corepack enable && pnpm i`, { cwd: currentIntegrationDir, stdio: 'inherit' });
     }
     
     const { fileList, reasons, warnings } = await nodeFileTrace(
@@ -57,8 +51,7 @@ for (const integrationTest of readdirSync(integrationDir)) {
       }
     );
     // warnings.forEach(warning => console.warn(warning));
-    const randomTmpId = Math.random().toString().slice(2);
-    const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-${randomTmpId}`);
+    const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-${rand}`);
     rimraf.sync(tmpdir);
     mkdirSync(tmpdir);
     
