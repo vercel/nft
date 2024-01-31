@@ -33,10 +33,10 @@ for (const integrationTest of readdirSync(integrationDir)) {
       );
       await writeFile(
         path.join(currentIntegrationDir, 'package.json'),
-        JSON.stringify({ packageManager: 'pnpm@8.14.3', dependencies: { sharp: '0.33.2' } })
+        JSON.stringify({ dependencies: { sharp: '0.33.2' } })
       );
       traceBase = currentIntegrationDir
-      await exec(`corepack enable && pnpm i`, { cwd: currentIntegrationDir, stdio: 'inherit' });
+      await exec(`npx pnpm@8.14.3 install`, { cwd: currentIntegrationDir, stdio: 'inherit' });
     }
     
     const { fileList, reasons, warnings } = await nodeFileTrace(
