@@ -35,7 +35,7 @@ for (const integrationTest of readdirSync(integrationDir)) {
           dependencies: {
             sharp: 'latest',
           },
-          packageManager: 'pnpm@8.15.1',
+          packageManager: 'pnpm@8.14.3',
         })
       );
       traceBase = currentIntegrationDir
