@@ -20,23 +20,30 @@ for (const integrationTest of readdirSync(integrationDir)) {
     const nftCache = {};
     const rand = Math.random().toString().slice(2);
     const fails = integrationTest.endsWith('failure.js');
-
-    let traceBase = path.resolve(__dirname, '..')
+    let traceBase = path.resolve(__dirname, '..');
 
     if (integrationTest === 'sharp-pnpm.js') {
-      currentIntegrationDir = path.resolve(os.tmpdir(), `node-file-trace-${integrationTest}-${rand}`);
-      rimraf.sync(currentIntegrationDir);
-      mkdirSync(currentIntegrationDir);
+      if (process.version.startsWith('v18.') && process.platform === 'win32') {
+        console.log(
+          'Skipping sharp-pnpm.js on Node 18 and Windows because of a bug:\n' +
+          'https://github.com/nodejs/node/issues/18518'
+        );
+        return;
+      }
+      const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-${integrationTest}-${rand}`);
+      rimraf.sync(tmpdir);
+      mkdirSync(tmpdir);
       await copyFile(
         path.join(integrationDir, integrationTest),
-        path.join(currentIntegrationDir, integrationTest)
+        path.join(tmpdir, integrationTest)
       );
       await writeFile(
-        path.join(currentIntegrationDir, 'package.json'),
+        path.join(tmpdir, 'package.json'),
         JSON.stringify({ packageManager: 'pnpm@8.14.3', dependencies: { sharp: '0.33.2' } })
       );
-      traceBase = currentIntegrationDir
-      await exec(`corepack enable && pnpm i`, { cwd: currentIntegrationDir, stdio: 'inherit' });
+      await exec(`corepack enable && pnpm i`, { cwd: tmpdir, stdio: 'inherit' });
+      currentIntegrationDir = tmpdir;
+      traceBase = tmpdir;
     }
     
     const { fileList, reasons, warnings } = await nodeFileTrace(
