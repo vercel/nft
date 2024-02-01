@@ -109,7 +109,7 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(id.replace('index.js', 'preload.js')));
     }
   },
-  sharp: async ({ id, emitAssetDirectory, job }) => {
+  'sharp': async ({ id, emitAssetDirectory, job }) => {
     if (id.endsWith('sharp/lib/index.js')) {
       const file = resolve(id, '..', '..', 'package.json');
       const pkg = JSON.parse(readFileSync(file, 'utf8'));
@@ -121,21 +121,12 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
           const file = resolve(dir, 'package.json');
           const pkg = JSON.parse(readFileSync(file, 'utf8'));
           for (const innerDep of Object.keys(pkg.optionalDependencies || {})) {
-            const innerDir = resolve(
-              await job.realpath(dir),
-              '..',
-              '..',
-              innerDep
-            );
+            const innerDir = resolve(await job.realpath(dir), '..', '..', innerDep);
             emitAssetDirectory(innerDir);
           }
-        } catch (err: unknown) {
-          if (
-            err &&
-            typeof err === 'object' &&
-            'code' in err &&
-            err.code !== 'ENOENT'
-          ) {
+        } catch (err: any) {
+          if (err && err.code !== 'ENOENT') {
+            console.error(`Error reading "sharp" dependencies from "${dir}/package.json"'`);
             throw err;
           }
         }

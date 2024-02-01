@@ -25,7 +25,7 @@ for (const integrationTest of readdirSync(integrationDir)) {
     if (integrationTest === 'sharp-pnpm.js') {
       if (process.version.startsWith('v18.') && process.platform === 'win32') {
         console.log(
-          'Skipping sharp-pnpm.js on Node 18 and Windows because of a bug:\n' +
+          'Skipping sharp-pnpm.js on Node 18 and Windows because of a bug: ' +
           'https://github.com/nodejs/node/issues/18518'
         );
         return;
