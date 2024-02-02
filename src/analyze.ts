@@ -5,7 +5,7 @@ import { evaluate, UNKNOWN, FUNCTION, WILDCARD, wildcardRegEx } from './utils/st
 import { Parser } from 'acorn';
 import bindings from 'bindings';
 import { isIdentifierRead, isLoop, isVarLoop } from './utils/ast-helpers';
-import glob from 'glob';
+import { glob } from 'glob';
 import { getPackageBase } from './utils/get-package-base';
 import { pregyp, nbind } from './utils/binary-locators';
 import { normalizeDefaultRequire, normalizeWildcardRequire } from './utils/interop-require';
@@ -245,9 +245,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log)
         console.log('Globbing ' + assetDirPath + wildcardPattern);
-      const files = (await new Promise<string[]>((resolve, reject) =>
-        glob(assetDirPath + wildcardPattern, { mark: true, ignore: assetDirPath + '/**/node_modules/**/*', dot: true }, (err, files) => err ? reject(err) : resolve(files))
-      ));
+      const files = await glob(assetDirPath + wildcardPattern, { mark: true, ignore: assetDirPath + '/**/node_modules/**/*', dot: true });
       files
       .filter(name =>
         !excludeAssetExtensions.has(path.extname(name)) &&
@@ -418,9 +416,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log)
         console.log('Globbing ' + wildcardDirPath + wildcardPattern);
-      const files = (await new Promise<string[]>((resolve, reject) =>
-        glob(wildcardDirPath + wildcardPattern, { mark: true, ignore: wildcardDirPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
-      ));
+      const files = await glob(wildcardDirPath + wildcardPattern, { mark: true, ignore: wildcardDirPath + '/**/node_modules/**/*' });
       files
       .filter(name =>
         !excludeAssetExtensions.has(path.extname(name)) &&
