@@ -56,7 +56,6 @@
     "bull": "^3.10.0",
     "bullmq": "^4.10.0",
     "camaro": "^6.1.0",
-    "canvas": "^2.11.2",
     "chromeless": "^1.5.2",
     "consolidate": "^0.15.1",
     "copy": "^0.3.2",

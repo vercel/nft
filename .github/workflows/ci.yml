@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-14, windows-latest]
         node: [18, 20]
     runs-on: ${{ matrix.os }}
     services:
@@ -47,7 +47,7 @@ jobs:
     - name: Run Tests
       env:
         BULL_REDIS_CONNECTION: ${{ (matrix.os == 'ubuntu-latest') && 'redis://127.0.0.1:6379/0' || '' }}
-      run: npm run test-verbose
+      run: npm run ${{ (matrix.os == 'ubuntu-latest') && 'test-verbose' || 'test' }}
     - name: Maybe Release
       if: matrix.os == 'ubuntu-latest' && matrix.node == 18 && github.event_name == 'push' && github.ref == 'refs/heads/main'
       env:
