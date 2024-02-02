@@ -245,7 +245,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log)
         console.log('Globbing ' + assetDirPath + wildcardPattern);
-      const files = await glob(assetDirPath + wildcardPattern, { mark: true, ignore: assetDirPath + '/**/node_modules/**/*', dot: true });
+      const files = await glob(assetDirPath + wildcardPattern, { mark: true, ignore: assetDirPath + '/**/node_modules/**/*', dot: true, windowsPathsNoEscape: true });
       files
       .filter(name =>
         !excludeAssetExtensions.has(path.extname(name)) &&
@@ -416,7 +416,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log)
         console.log('Globbing ' + wildcardDirPath + wildcardPattern);
-      const files = await glob(wildcardDirPath + wildcardPattern, { mark: true, ignore: wildcardDirPath + '/**/node_modules/**/*' });
+      const files = await glob(wildcardDirPath + wildcardPattern, { mark: true, ignore: wildcardDirPath + '/**/node_modules/**/*', windowsPathsNoEscape: true });
       files
       .filter(name =>
         !excludeAssetExtensions.has(path.extname(name)) &&

@@ -22,6 +22,6 @@ export async function sharedLibEmit(path: string, job: Job) {
   if (!pkgPath)
     return;
 
-  const files = await glob(pkgPath + sharedlibGlob, { ignore: pkgPath + '/**/node_modules/**/*', dot: true });
+  const files = await glob(pkgPath + sharedlibGlob, { ignore: pkgPath + '/**/node_modules/**/*', windowsPathsNoEscape: true, dot: true });
   await Promise.all(files.map(file => job.emitFile(file, 'sharedlib', path)));
 };
