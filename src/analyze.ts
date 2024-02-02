@@ -248,7 +248,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       const unixDirPath = process.platform === 'win32' ? dirPath.replace(/\\/g, '/') : dirPath;
       const unixAssetDirPath = process.platform === 'win32' ? assetDirPath.replace(/\\/g, '/') : assetDirPath;
       if (job.log) {
-        console.log(`Globbing ${unixDirPath}`);
+        console.log(`Globbing asset dir: ${unixDirPath}`);
       }
       const files = await glob(unixDirPath, { mark: true, ignore: unixAssetDirPath + '/**/node_modules/**/*', dot: true });
       files
@@ -423,7 +423,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       const unixDirPath = process.platform === 'win32' ? dirPath.replace(/\\/g, '/') : dirPath;
       const unixWildcardDirPath = process.platform === 'win32' ? wildcardDirPath.replace(/\\/g, '/') : wildcardDirPath;
       if (job.log) {
-        console.log(`Globbing ${unixDirPath}`);
+        console.log(`Globbing wildcard dir: ${unixDirPath}`);
       }
       const files = await glob(unixDirPath, { mark: true, ignore: unixWildcardDirPath + '/**/node_modules/**/*' });
       files

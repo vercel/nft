@@ -23,6 +23,9 @@ export async function sharedLibEmit(path: string, job: Job) {
     return;
 
   const unixPkgPath = process.platform === 'win32' ? pkgPath.replace(/\\/g, '/') : pkgPath;
+  if (job.log) {
+    console.log(`Globbing sharedlib: ${unixPkgPath + sharedlibGlob}`);
+  }
   const files = await glob(unixPkgPath + sharedlibGlob, { ignore: unixPkgPath + '/**/node_modules/**/*', dot: true });
   await Promise.all(files.map(file => job.emitFile(file, 'sharedlib', path)));
 };
