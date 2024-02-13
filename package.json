@@ -18,7 +18,6 @@
     "out"
   ],
   "dependencies": {
-    "@aminya/node-gyp-build": "4.5.0-aminya.5",
     "@mapbox/node-pre-gyp": "^1.0.5",
     "@rollup/pluginutils": "^4.0.0",
     "acorn": "^8.6.0",

@@ -13,6 +13,8 @@ import handleSpecialCases from './utils/special-cases';
 import { Node } from './utils/types';
 import resolve from './resolve-dependency.js';
 //@ts-ignore
+import nodeGypBuild from 'node-gyp-build';
+//@ts-ignore
 import mapboxPregyp from '@mapbox/node-pre-gyp';
 import { Job } from './node-file-trace';
 import { fileURLToPath, pathToFileURL, URL } from 'url';
@@ -637,18 +639,16 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                   ? path.join(dir, node.arguments[0].arguments[1].value)
                   : dir;
 
-                const pkgName = node.callee.arguments[0].value;
                 let resolved: string | undefined;
                 try {
+                  // the pkg could be 'node-gyp-build' or '@aminya/node-gyp-build'
+                  const pkgName = node.callee.arguments[0].value;
                   // use installed version of node-gyp-build since resolving
                   // binaries can differ among versions
                   const nodeGypBuildPath = resolveFrom(pathJoinedDir, pkgName)
                   resolved = require(nodeGypBuildPath).path(pathJoinedDir)
                 } catch (e) {
                   try {
-                    const nodeGypBuild = '@aminya/node-gyp-build'
-                      ? require('@aminya/node-gyp-build')
-                      : require('node-gyp-build');
                     resolved = nodeGypBuild.path(pathJoinedDir);
                   } catch (e) {}
                 }
