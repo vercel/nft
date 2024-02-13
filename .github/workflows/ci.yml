@@ -41,7 +41,7 @@ jobs:
     - name: Prepare Install (if applicable)
       run: node prepare-install.js
     - name: Install Dependencies
-      run: npm install
+      run: corepack enable npm && npm install
     - name: Build
       run: npm run build
     - name: Run Tests

@@ -2,7 +2,7 @@ import { NodeFileTraceOptions, NodeFileTraceResult, NodeFileTraceReasons, NodeFi
 import { basename, dirname, extname, relative, resolve, sep } from 'path';
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency, { NotFoundError } from './resolve-dependency';
-import { isMatch } from 'micromatch';
+import { isMatch } from 'picomatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
 import { join } from 'path';
 import { CachedFileSystem } from './fs';
