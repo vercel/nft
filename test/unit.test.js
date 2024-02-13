@@ -205,12 +205,8 @@ for (const { testName, isRoot } of unitTests) {
 
       if (testName === 'microtime-node-gyp' || testName === 'zeromq-node-gyp') {
         let foundMatchingBinary = false
-        const isBinaryFnMap = {
-          'microtime-node-gyp': file => file.endsWith('node-napi.node') || file.endsWith('node.napi.node'),
-          'zeromq-node-gyp': file => file.endsWith('node.napi.glibc.node') || file.endsWith('node.napi.musl.node'),
-        }
         sortedFileList = sortedFileList.filter(file => {
-          if (isBinaryFnMap[testName](file)) {
+          if (file.includes('prebuilds') && file.endsWith('.node')) {
             // remove from fileList for expected checking
             // as it will differ per platform
             foundMatchingBinary = true
