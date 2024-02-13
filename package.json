@@ -12,6 +12,7 @@
     "build": "tsc",
     "prepublishOnly": "tsc && rm out/utils/*.d.ts && rm out/tsconfig.tsbuildinfo",
     "test": "jest --verbose",
+    "test-watch": "jest --watch",
     "test-verbose": "tsc --sourceMap && jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\""
   },
   "files": [

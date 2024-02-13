@@ -203,25 +203,14 @@ for (const { testName, isRoot } of unitTests) {
       }
       let sortedFileList = [...fileList].sort()
 
-      if (testName === 'microtime-node-gyp') {
+      if (testName === 'microtime-node-gyp' || testName === 'zeromq-node-gyp') {
         let foundMatchingBinary = false
+        const isBinaryFnMap = {
+          'microtime-node-gyp': file => file.endsWith('node-napi.node') || file.endsWith('node.napi.node'),
+          'zeromq-node-gyp': file => file.endsWith('node.napi.glibc.node') || file.endsWith('node.napi.musl.node'),
+        }
         sortedFileList = sortedFileList.filter(file => {
-          if (file.endsWith('node-napi.node') || file.endsWith('node.napi.node')) {
-            // remove from fileList for expected checking
-            // as it will differ per platform
-            foundMatchingBinary = true
-            fileList.delete(file)
-            return false
-          }
-          return true
-        })
-        expect(foundMatchingBinary).toBe(true)
-      }
-
-      if (testName === 'zeromq-node-gyp') {
-        let foundMatchingBinary = false
-        sortedFileList = sortedFileList.filter(file => {
-          if (file.startsWith('node.napi.')) {
+          if (isBinaryFnMap[testName](file)) {
             // remove from fileList for expected checking
             // as it will differ per platform
             foundMatchingBinary = true

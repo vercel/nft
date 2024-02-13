@@ -628,8 +628,8 @@ export default async function analyze(id: string, code: string, job: Job): Promi
               // handle case: require("node-gyp-build")(path.join(__dirname, ".."))
               const calledWithPathJoinDirname =
                 node.arguments.length === 1 &&
-                node.arguments[0].callee.object.name === "path" &&
-                node.arguments[0].callee.property.name === "join" &&
+                node.arguments[0].callee?.object?.name === "path" &&
+                node.arguments[0].callee?.property?.name === "join" &&
                 node.arguments[0].arguments.length === 2 &&
                 node.arguments[0].arguments[0].type === 'Identifier' &&
                 node.arguments[0].arguments[0].name === '__dirname' &&
