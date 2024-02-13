@@ -26,26 +26,35 @@ for (const integrationTest of readdirSync(integrationDir)) {
       if (process.version.startsWith('v18.') && process.platform === 'win32') {
         console.log(
           'Skipping sharp-pnpm.js on Node 18 and Windows because of a bug: ' +
-          'https://github.com/nodejs/node/issues/18518'
+            'https://github.com/nodejs/node/issues/18518',
         );
         return;
       }
-      const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-${integrationTest}-${rand}`);
+      const tmpdir = path.resolve(
+        os.tmpdir(),
+        `node-file-trace-${integrationTest}-${rand}`,
+      );
       rimraf.sync(tmpdir);
       mkdirSync(tmpdir);
       await copyFile(
         path.join(integrationDir, integrationTest),
-        path.join(tmpdir, integrationTest)
+        path.join(tmpdir, integrationTest),
       );
       await writeFile(
         path.join(tmpdir, 'package.json'),
-        JSON.stringify({ packageManager: 'pnpm@8.14.3', dependencies: { sharp: '0.33.2' } })
+        JSON.stringify({
+          packageManager: 'pnpm@8.14.3',
+          dependencies: { sharp: '0.33.2' },
+        }),
       );
-      await exec(`corepack enable && pnpm i`, { cwd: tmpdir, stdio: 'inherit' });
+      await exec(`corepack enable && pnpm i`, {
+        cwd: tmpdir,
+        stdio: 'inherit',
+      });
       currentIntegrationDir = tmpdir;
       traceBase = tmpdir;
     }
-    
+
     const { fileList, reasons, warnings } = await nodeFileTrace(
       [`${currentIntegrationDir}/${integrationTest}`],
       {
@@ -55,13 +64,13 @@ for (const integrationTest of readdirSync(integrationDir)) {
         processCwd: currentIntegrationDir,
         // ignore other integration tests
         ignore: ['test/integration/**'],
-      }
+      },
     );
     // warnings.forEach(warning => console.warn(warning));
     const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-${rand}`);
     rimraf.sync(tmpdir);
     mkdirSync(tmpdir);
-    
+
     await Promise.all(
       [...fileList].map(async (file) => {
         const inPath = path.resolve(traceBase, file);
@@ -77,10 +86,14 @@ for (const integrationTest of readdirSync(integrationDir)) {
         } else {
           await writeFile(outPath, await readFile(inPath), { mode: 0o777 });
         }
-      })
+      }),
     );
-    const testFile = path.join(tmpdir, path.relative(traceBase, currentIntegrationDir), integrationTest);
-    
+    const testFile = path.join(
+      tmpdir,
+      path.relative(traceBase, currentIntegrationDir),
+      integrationTest,
+    );
+
     const ps = fork(testFile, {
       stdio: fails ? 'pipe' : 'inherit',
     });
@@ -100,7 +113,7 @@ for (const integrationTest of readdirSync(integrationDir)) {
           processCwd: currentIntegrationDir,
           // ignore other integration tests
           ignore: ['test/integration/**'],
-        }
+        },
       );
       expect([...cachedResult.fileList].sort()).toEqual([...fileList].sort());
     }

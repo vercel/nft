@@ -18,7 +18,9 @@ function normalizeOutput(output) {
 }
 
 it('should correctly print trace from cli', async () => {
-  const { stderr, stdout } = await exec(`node ../out/cli.js print ${inputjs}`, { cwd: __dirname });
+  const { stderr, stdout } = await exec(`node ../out/cli.js print ${inputjs}`, {
+    cwd: __dirname,
+  });
   if (stderr) {
     throw new Error(stderr);
   }
@@ -26,7 +28,9 @@ it('should correctly print trace from cli', async () => {
 });
 
 it('should correctly build dist from cli', async () => {
-  const { stderr } = await exec(`node ../out/cli.js build ${inputjs}`, { cwd: __dirname });
+  const { stderr } = await exec(`node ../out/cli.js build ${inputjs}`, {
+    cwd: __dirname,
+  });
   if (stderr) {
     throw new Error(stderr);
   }
@@ -35,7 +39,9 @@ it('should correctly build dist from cli', async () => {
 });
 
 it('should correctly show size from cli', async () => {
-  const { stderr, stdout } = await exec(`node ../out/cli.js size ${inputjs}`, { cwd: __dirname });
+  const { stderr, stdout } = await exec(`node ../out/cli.js size ${inputjs}`, {
+    cwd: __dirname,
+  });
   if (stderr) {
     throw new Error(stderr);
   }
@@ -43,15 +49,23 @@ it('should correctly show size from cli', async () => {
 });
 
 it('should correctly show why from cli', async () => {
-  const { stderr, stdout } = await exec(`node ../out/cli.js why ${inputjs} ${outputjs}`, { cwd: __dirname });
+  const { stderr, stdout } = await exec(
+    `node ../out/cli.js why ${inputjs} ${outputjs}`,
+    { cwd: __dirname },
+  );
   if (stderr) {
     throw new Error(stderr);
   }
-  expect(stdout.replace(/\\/g, '/')).toMatch('unit/wildcard/assets/asset1.txt\nunit/wildcard/input.js');
+  expect(stdout.replace(/\\/g, '/')).toMatch(
+    'unit/wildcard/assets/asset1.txt\nunit/wildcard/input.js',
+  );
 });
 
 it('should correctly print help when unknown action is used', async () => {
-  const { stderr, stdout } = await exec(`node ../out/cli.js unknown ${inputjs}`, { cwd: __dirname });
+  const { stderr, stdout } = await exec(
+    `node ../out/cli.js unknown ${inputjs}`,
+    { cwd: __dirname },
+  );
   if (stderr) {
     throw new Error(stderr);
   }
@@ -59,7 +73,7 @@ it('should correctly print help when unknown action is used', async () => {
 });
 it('[coverage] should correctly print trace from required cli', async () => {
   // This test is only here to satisfy code coverage
-  const cli = require('../out/cli.js')
+  const cli = require('../out/cli.js');
   const files = join(__dirname, inputjs);
   const stdout = await cli('print', files);
   expect(stdout).toMatch(normalizeOutput(outputjs));
@@ -67,7 +81,7 @@ it('[coverage] should correctly print trace from required cli', async () => {
 
 it('[coverage] should correctly build dist from required cli', async () => {
   // This test is only here to satisfy code coverage
-  const cli = require('../out/cli.js')
+  const cli = require('../out/cli.js');
   const files = join(__dirname, inputjs);
   await cli('build', files);
   const found = existsSync(join(__dirname, outputjs));
@@ -76,7 +90,7 @@ it('[coverage] should correctly build dist from required cli', async () => {
 
 it('[coverage] should correctly show size in bytes from required cli', async () => {
   // This test is only here to satisfy code coverage
-  const cli = require('../out/cli.js')
+  const cli = require('../out/cli.js');
   const files = join(__dirname, inputjs);
   const stdout = await cli('size', files);
   expect(stdout).toMatch('bytes total');
@@ -84,17 +98,19 @@ it('[coverage] should correctly show size in bytes from required cli', async () 
 
 it('[coverage] should correctly show why from required cli', async () => {
   // This test is only here to satisfy code coverage
-  const cli = require('../out/cli.js')
+  const cli = require('../out/cli.js');
   const entrypoint = join(__dirname, inputjs);
   const exitpoint = join(__dirname, outputjs);
   const cwd = __dirname;
   const stdout = await cli('why', entrypoint, exitpoint, 'dist', cwd);
-  expect(stdout.replace(/\\/g, '/')).toMatch('unit/wildcard/assets/asset1.txt\nunit/wildcard/input.js');
+  expect(stdout.replace(/\\/g, '/')).toMatch(
+    'unit/wildcard/assets/asset1.txt\nunit/wildcard/input.js',
+  );
 });
 
 it('[coverage] should correctly print help when unknown action is used', async () => {
   // This test is only here to satisfy code coverage
-  const cli = require('../out/cli.js')
+  const cli = require('../out/cli.js');
   const files = join(__dirname, inputjs);
   const stdout = await cli('unknown', files);
   expect(stdout).toMatch('$ nft [command] <file>');

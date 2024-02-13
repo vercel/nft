@@ -1,14 +1,23 @@
 import path from 'path';
 import { AsyncHandler, asyncWalk } from 'estree-walker';
 import { attachScopes } from '@rollup/pluginutils';
-import { evaluate, UNKNOWN, FUNCTION, WILDCARD, wildcardRegEx } from './utils/static-eval';
+import {
+  evaluate,
+  UNKNOWN,
+  FUNCTION,
+  WILDCARD,
+  wildcardRegEx,
+} from './utils/static-eval';
 import { Parser } from 'acorn';
 import bindings from 'bindings';
 import { isIdentifierRead, isLoop, isVarLoop } from './utils/ast-helpers';
 import glob from 'glob';
 import { getPackageBase } from './utils/get-package-base';
 import { pregyp, nbind } from './utils/binary-locators';
-import { normalizeDefaultRequire, normalizeWildcardRequire } from './utils/interop-require';
+import {
+  normalizeDefaultRequire,
+  normalizeWildcardRequire,
+} from './utils/interop-require';
 import handleSpecialCases from './utils/special-cases';
 import { Node } from './utils/types';
 import resolve from './resolve-dependency.js';
@@ -24,13 +33,18 @@ const acorn = Parser.extend(
   //require("acorn-class-fields"),
   //require("acorn-static-class-features"),
   //require("acorn-private-class-elements")
-  require("acorn-import-attributes").importAttributes
+  require('acorn-import-attributes').importAttributes,
 );
 
 import os from 'os';
 import { handleWrappers } from './utils/wrappers';
 import resolveFrom from 'resolve-from';
-import { ConditionalValue, EvaluatedValue, StaticValue, Ast } from './utils/types';
+import {
+  ConditionalValue,
+  EvaluatedValue,
+  StaticValue,
+  Ast,
+} from './utils/types';
 
 const staticProcess = {
   cwd: () => {
@@ -38,9 +52,9 @@ const staticProcess = {
   },
   env: {
     NODE_ENV: UNKNOWN,
-    [UNKNOWN]: true
+    [UNKNOWN]: true,
   },
-  [UNKNOWN]: true
+  [UNKNOWN]: true,
 };
 
 // unique symbol value to identify express instance in static analysis
@@ -69,85 +83,85 @@ const fsSymbols = {
   readFile: FS_FN,
   readFileSync: FS_FN,
   stat: FS_FN,
-  statSync: FS_FN
+  statSync: FS_FN,
 };
 const fsExtraSymbols = {
-   ...fsSymbols,
-   pathExists: FS_FN,
-   pathExistsSync: FS_FN,
-   readJson: FS_FN,
-   readJSON: FS_FN,
-   readJsonSync: FS_FN,
-   readJSONSync: FS_FN,
-}
+  ...fsSymbols,
+  pathExists: FS_FN,
+  pathExistsSync: FS_FN,
+  readJson: FS_FN,
+  readJSON: FS_FN,
+  readJsonSync: FS_FN,
+  readJSONSync: FS_FN,
+};
 const staticModules = Object.assign(Object.create(null), {
   bindings: {
-    default: BINDINGS
+    default: BINDINGS,
   },
   express: {
     default: function () {
       return {
         [UNKNOWN]: true,
         set: EXPRESS_SET,
-        engine: EXPRESS_ENGINE
+        engine: EXPRESS_ENGINE,
       };
-    }
+    },
   },
   fs: {
     default: fsSymbols,
-    ...fsSymbols
+    ...fsSymbols,
   },
   'fs-extra': {
     default: fsExtraSymbols,
-    ...fsExtraSymbols
+    ...fsExtraSymbols,
   },
   'graceful-fs': {
     default: fsSymbols,
-    ...fsSymbols
+    ...fsSymbols,
   },
   process: {
     default: staticProcess,
-    ...staticProcess
+    ...staticProcess,
   },
   // populated below
   path: {
-    default: {}
+    default: {},
   },
   os: {
     default: os,
-    ...os
+    ...os,
   },
   '@mapbox/node-pre-gyp': {
     default: mapboxPregyp,
-    ...mapboxPregyp
+    ...mapboxPregyp,
   },
   'node-pre-gyp': pregyp,
   'node-pre-gyp/lib/pre-binding': pregyp,
   'node-pre-gyp/lib/pre-binding.js': pregyp,
   'node-gyp-build': {
-    default: NODE_GYP_BUILD
+    default: NODE_GYP_BUILD,
   },
   '@aminya/node-gyp-build': {
-    default: NODE_GYP_BUILD
+    default: NODE_GYP_BUILD,
   },
-  'nbind': {
+  nbind: {
     init: NBIND_INIT,
     default: {
-      init: NBIND_INIT
-    }
+      init: NBIND_INIT,
+    },
   },
   'resolve-from': {
-    default: resolveFrom
+    default: resolveFrom,
   },
   'strong-globalize': {
     default: {
-      SetRootDir: SET_ROOT_DIR
+      SetRootDir: SET_ROOT_DIR,
     },
-    SetRootDir: SET_ROOT_DIR
+    SetRootDir: SET_ROOT_DIR,
   },
-  'pkginfo': {
-    default: PKG_INFO
-  }
+  pkginfo: {
+    default: PKG_INFO,
+  },
 });
 const globalBindings: any = {
   // Support for require calls generated from `import` statements by babel
@@ -159,16 +173,19 @@ const globalBindings: any = {
   MONGOOSE_DRIVER_PATH: undefined,
   URL: URL,
   Object: {
-    assign: Object.assign
-  }
+    assign: Object.assign,
+  },
 };
-globalBindings.global = globalBindings.GLOBAL = globalBindings.globalThis = globalBindings;
+globalBindings.global =
+  globalBindings.GLOBAL =
+  globalBindings.globalThis =
+    globalBindings;
 
 // call expression triggers
 const TRIGGER = Symbol();
 (pregyp.find as any)[TRIGGER] = true;
 const staticPath = staticModules.path;
-Object.keys(path).forEach(name => {
+Object.keys(path).forEach((name) => {
   const pathFn = (path as any)[name];
   if (typeof pathFn === 'function') {
     const fn: any = function mockPath() {
@@ -176,8 +193,7 @@ Object.keys(path).forEach(name => {
     };
     fn[TRIGGER] = true;
     staticPath[name] = staticPath.default[name] = fn;
-  }
-  else {
+  } else {
     staticPath[name] = staticPath.default[name] = pathFn;
   }
 });
@@ -189,20 +205,23 @@ staticPath.resolve = staticPath.default.resolve = function (...args: string[]) {
 staticPath.resolve[TRIGGER] = true;
 
 const excludeAssetExtensions = new Set(['.h', '.cmake', '.c', '.cpp']);
-const excludeAssetFiles = new Set(['CHANGELOG.md', 'README.md', 'readme.md', 'changelog.md']);
+const excludeAssetFiles = new Set([
+  'CHANGELOG.md',
+  'README.md',
+  'readme.md',
+  'changelog.md',
+]);
 let cwd: string;
 
 const absoluteRegEx = /^\/[^\/]+|^[a-z]:[\\/][^\\/]+/i;
 function isAbsolutePathOrUrl(str: any): boolean {
-  if (str instanceof URL)
-    return str.protocol === 'file:';
+  if (str instanceof URL) return str.protocol === 'file:';
   if (typeof str === 'string') {
     if (str.startsWith('file:')) {
       try {
         new URL(str);
         return true;
-      }
-      catch {
+      } catch {
         return false;
       }
     }
@@ -219,9 +238,13 @@ export interface AnalyzeResult {
   deps: Set<string>;
   imports: Set<string>;
   isESM: boolean;
-};
+}
 
-export default async function analyze(id: string, code: string, job: Job): Promise<AnalyzeResult> {
+export default async function analyze(
+  id: string,
+  code: string,
+  job: Job,
+): Promise<AnalyzeResult> {
   const assets = new Set<string>();
   const deps = new Set<string>();
   const imports = new Set<string>();
@@ -235,29 +258,43 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   const emitAssetDirectory = (wildcardPath: string) => {
     if (!job.analysis.emitGlobs) return;
     const wildcardIndex = wildcardPath.indexOf(WILDCARD);
-    const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardIndex);
+    const dirIndex =
+      wildcardIndex === -1
+        ? wildcardPath.length
+        : wildcardPath.lastIndexOf(path.sep, wildcardIndex);
     const assetDirPath = wildcardPath.substring(0, dirIndex);
     const patternPath = wildcardPath.slice(dirIndex);
-    const wildcardPattern = patternPath.replace(wildcardRegEx, (_match, index) => {
-      return patternPath[index - 1] === path.sep ? '**/*' : '*';
-    }).replace(repeatGlobRegEx, '/**/*') || '/**/*';
+    const wildcardPattern =
+      patternPath
+        .replace(wildcardRegEx, (_match, index) => {
+          return patternPath[index - 1] === path.sep ? '**/*' : '*';
+        })
+        .replace(repeatGlobRegEx, '/**/*') || '/**/*';
 
     if (job.ignoreFn(path.relative(job.base, assetDirPath + wildcardPattern)))
       return;
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
-      if (job.log)
-        console.log('Globbing ' + assetDirPath + wildcardPattern);
-      const files = (await new Promise<string[]>((resolve, reject) =>
-        glob(assetDirPath + wildcardPattern, { mark: true, ignore: assetDirPath + '/**/node_modules/**/*', dot: true }, (err, files) => err ? reject(err) : resolve(files))
-      ));
+      if (job.log) console.log('Globbing ' + assetDirPath + wildcardPattern);
+      const files = await new Promise<string[]>((resolve, reject) =>
+        glob(
+          assetDirPath + wildcardPattern,
+          {
+            mark: true,
+            ignore: assetDirPath + '/**/node_modules/**/*',
+            dot: true,
+          },
+          (err, files) => (err ? reject(err) : resolve(files)),
+        ),
+      );
       files
-      .filter(name =>
-        !excludeAssetExtensions.has(path.extname(name)) &&
-        !excludeAssetFiles.has(path.basename(name)) &&
-        !name.endsWith('/')
-      )
-      .forEach(file => assets.add(file));
+        .filter(
+          (name) =>
+            !excludeAssetExtensions.has(path.extname(name)) &&
+            !excludeAssetFiles.has(path.basename(name)) &&
+            !name.endsWith('/'),
+        )
+        .forEach((file) => assets.add(file));
     });
   };
 
@@ -270,23 +307,32 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   let isESM = false;
 
   try {
-    ast = acorn.parse(code, { ecmaVersion: 'latest', allowReturnOutsideFunction: true });
+    ast = acorn.parse(code, {
+      ecmaVersion: 'latest',
+      allowReturnOutsideFunction: true,
+    });
     isESM = false;
-  }
-  catch (e: any) {
+  } catch (e: any) {
     const isModule = e && e.message && e.message.includes('sourceType: module');
     if (!isModule) {
-      job.warnings.add(new Error(`Failed to parse ${id} as script:\n${e && e.message}`));
+      job.warnings.add(
+        new Error(`Failed to parse ${id} as script:\n${e && e.message}`),
+      );
     }
   }
   //@ts-ignore
   if (!ast) {
     try {
-      ast = acorn.parse(code, { ecmaVersion: 'latest', sourceType: 'module', allowAwaitOutsideFunction: true });
+      ast = acorn.parse(code, {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        allowAwaitOutsideFunction: true,
+      });
       isESM = true;
-    }
-    catch (e: any) {
-      job.warnings.add(new Error(`Failed to parse ${id} as module:\n${e && e.message}`));
+    } catch (e: any) {
+      job.warnings.add(
+        new Error(`Failed to parse ${id} as module:\n${e && e.message}`),
+      );
       // Parser errors just skip analysis
       return { assets, deps, imports, isESM: false };
     }
@@ -294,22 +340,25 @@ export default async function analyze(id: string, code: string, job: Job): Promi
 
   const importMetaUrl = pathToFileURL(id).href;
 
-  const knownBindings: Record<string, {
-    shadowDepth: number,
-    value: StaticValue | ConditionalValue
-  }> = Object.assign(Object.create(null), {
+  const knownBindings: Record<
+    string,
+    {
+      shadowDepth: number;
+      value: StaticValue | ConditionalValue;
+    }
+  > = Object.assign(Object.create(null), {
     __dirname: {
       shadowDepth: 0,
-      value: { value: path.resolve(id, '..') }
+      value: { value: path.resolve(id, '..') },
     },
     __filename: {
       shadowDepth: 0,
-      value: { value: id }
+      value: { value: id },
     },
     process: {
       shadowDepth: 0,
-      value: { value: staticProcess }
-    }
+      value: { value: staticProcess },
+    },
   });
 
   if (!isESM || job.mixedModules) {
@@ -317,30 +366,36 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       shadowDepth: 0,
       value: {
         value: {
-          [FUNCTION] (specifier: string) {
+          [FUNCTION](specifier: string) {
             deps.add(specifier);
-            const m = staticModules[specifier.startsWith('node:') ? specifier.slice(5) : specifier];
+            const m =
+              staticModules[
+                specifier.startsWith('node:') ? specifier.slice(5) : specifier
+              ];
             return m.default;
           },
-          resolve (specifier: string) {
+          resolve(specifier: string) {
             return resolve(specifier, id, job);
-          }
-        }
-      }
+          },
+        },
+      },
     };
     (knownBindings.require.value as StaticValue).value.resolve[TRIGGER] = true;
   }
 
-  function setKnownBinding (name: string, value: StaticValue | ConditionalValue) {
+  function setKnownBinding(
+    name: string,
+    value: StaticValue | ConditionalValue,
+  ) {
     // require is somewhat special in that we shadow it but don't
     // statically analyze it ("known unknown" of sorts)
     if (name === 'require') return;
     knownBindings[name] = {
       shadowDepth: 0,
-      value: value
+      value: value,
     };
   }
-  function getKnownBinding (name: string): EvaluatedValue {
+  function getKnownBinding(name: string): EvaluatedValue {
     const binding = knownBindings[name];
     if (binding) {
       if (binding.shadowDepth === 0) {
@@ -349,7 +404,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     }
     return undefined;
   }
-  function hasKnownBindingValue (name: string) {
+  function hasKnownBindingValue(name: string) {
     const binding = knownBindings[name];
     return binding && binding.shadowDepth === 0;
   }
@@ -359,30 +414,41 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       if (decl.type === 'ImportDeclaration') {
         const source = String(decl.source.value);
         deps.add(source);
-        const staticModule = staticModules[source.startsWith('node:') ? source.slice(5) : source];
+        const staticModule =
+          staticModules[source.startsWith('node:') ? source.slice(5) : source];
         if (staticModule) {
           for (const impt of decl.specifiers) {
             if (impt.type === 'ImportNamespaceSpecifier')
               setKnownBinding(impt.local.name, { value: staticModule });
-            else if (impt.type === 'ImportDefaultSpecifier' && 'default' in staticModule)
+            else if (
+              impt.type === 'ImportDefaultSpecifier' &&
+              'default' in staticModule
+            )
               setKnownBinding(impt.local.name, { value: staticModule.default });
-            else if (impt.type === 'ImportSpecifier' && impt.imported.name in staticModule)
-              setKnownBinding(impt.local.name, { value: staticModule[impt.imported.name] });
+            else if (
+              impt.type === 'ImportSpecifier' &&
+              impt.imported.name in staticModule
+            )
+              setKnownBinding(impt.local.name, {
+                value: staticModule[impt.imported.name],
+              });
           }
         }
-      }
-      else if (decl.type === 'ExportNamedDeclaration' || decl.type === 'ExportAllDeclaration') {
+      } else if (
+        decl.type === 'ExportNamedDeclaration' ||
+        decl.type === 'ExportAllDeclaration'
+      ) {
         if (decl.source) deps.add(String(decl.source.value));
       }
     }
   }
 
-  async function computePureStaticValue (expr: Node, computeBranches = true) {
+  async function computePureStaticValue(expr: Node, computeBranches = true) {
     const vars = Object.create(null);
-    Object.keys(globalBindings).forEach(name => {
+    Object.keys(globalBindings).forEach((name) => {
       vars[name] = { value: globalBindings[name] };
     });
-    Object.keys(knownBindings).forEach(name => {
+    Object.keys(knownBindings).forEach((name) => {
       vars[name] = getKnownBinding(name);
     });
     vars['import.meta'] = { url: importMetaUrl };
@@ -399,42 +465,57 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   // Express engine opt-out
   let definedExpressEngines = false;
 
-  function emitWildcardRequire (wildcardRequire: string) {
-    if (!job.analysis.emitGlobs || !wildcardRequire.startsWith('./') && !wildcardRequire.startsWith('../')) return;
+  function emitWildcardRequire(wildcardRequire: string) {
+    if (
+      !job.analysis.emitGlobs ||
+      (!wildcardRequire.startsWith('./') && !wildcardRequire.startsWith('../'))
+    )
+      return;
 
     wildcardRequire = path.resolve(dir, wildcardRequire);
 
     const wildcardIndex = wildcardRequire.indexOf(WILDCARD);
-    const dirIndex = wildcardIndex === -1 ? wildcardRequire.length : wildcardRequire.lastIndexOf(path.sep, wildcardIndex);
+    const dirIndex =
+      wildcardIndex === -1
+        ? wildcardRequire.length
+        : wildcardRequire.lastIndexOf(path.sep, wildcardIndex);
     const wildcardDirPath = wildcardRequire.substring(0, dirIndex);
     const patternPath = wildcardRequire.slice(dirIndex);
-    let wildcardPattern = patternPath.replace(wildcardRegEx, (_match, index) => {
-      return patternPath[index - 1] === path.sep ? '**/*' : '*';
-    }) || '/**/*';
+    let wildcardPattern =
+      patternPath.replace(wildcardRegEx, (_match, index) => {
+        return patternPath[index - 1] === path.sep ? '**/*' : '*';
+      }) || '/**/*';
 
     if (!wildcardPattern.endsWith('*'))
-      wildcardPattern += '?(' + (job.ts ? '.ts|.tsx|' : '') + '.js|.json|.node)';
+      wildcardPattern +=
+        '?(' + (job.ts ? '.ts|.tsx|' : '') + '.js|.json|.node)';
 
-    if (job.ignoreFn(path.relative(job.base, wildcardDirPath + wildcardPattern)))
+    if (
+      job.ignoreFn(path.relative(job.base, wildcardDirPath + wildcardPattern))
+    )
       return;
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
-      if (job.log)
-        console.log('Globbing ' + wildcardDirPath + wildcardPattern);
-      const files = (await new Promise<string[]>((resolve, reject) =>
-        glob(wildcardDirPath + wildcardPattern, { mark: true, ignore: wildcardDirPath + '/**/node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
-      ));
+      if (job.log) console.log('Globbing ' + wildcardDirPath + wildcardPattern);
+      const files = await new Promise<string[]>((resolve, reject) =>
+        glob(
+          wildcardDirPath + wildcardPattern,
+          { mark: true, ignore: wildcardDirPath + '/**/node_modules/**/*' },
+          (err, files) => (err ? reject(err) : resolve(files)),
+        ),
+      );
       files
-      .filter(name =>
-        !excludeAssetExtensions.has(path.extname(name)) &&
-        !excludeAssetFiles.has(path.basename(name)) &&
-        !name.endsWith('/')
-      )
-      .forEach(file => deps.add(file));
+        .filter(
+          (name) =>
+            !excludeAssetExtensions.has(path.extname(name)) &&
+            !excludeAssetFiles.has(path.basename(name)) &&
+            !name.endsWith('/'),
+        )
+        .forEach((file) => deps.add(file));
     });
   }
 
-  async function processRequireArg (expression: Node, isImport = false) {
+  async function processRequireArg(expression: Node, isImport = false) {
     if (expression.type === 'ConditionalExpression') {
       await processRequireArg(expression.consequent, isImport);
       await processRequireArg(expression.alternate, isImport);
@@ -450,12 +531,10 @@ export default async function analyze(id: string, code: string, job: Job): Promi
     if (!computed) return;
 
     if ('value' in computed && typeof computed.value === 'string') {
-      if (!computed.wildcards)
-        (isImport ? imports : deps).add(computed.value);
+      if (!computed.wildcards) (isImport ? imports : deps).add(computed.value);
       else if (computed.wildcards.length >= 1)
         emitWildcardRequire(computed.value);
-    }
-    else {
+    } else {
       if ('then' in computed && typeof computed.then === 'string')
         (isImport ? imports : deps).add(computed.then);
       if ('else' in computed && typeof computed.else === 'string')
@@ -466,17 +545,33 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   let scope = attachScopes(ast, 'scope');
   if (isAst(ast)) {
     handleWrappers(ast);
-    await handleSpecialCases({ id, ast, emitDependency: path => deps.add(path), emitAsset: path => assets.add(path), emitAssetDirectory, job });
+    await handleSpecialCases({
+      id,
+      ast,
+      emitDependency: (path) => deps.add(path),
+      emitAsset: (path) => assets.add(path),
+      emitAssetDirectory,
+      job,
+    });
   }
-  async function backtrack (parent: Node, context?: ThisParameterType<AsyncHandler>) {
+  async function backtrack(
+    parent: Node,
+    context?: ThisParameterType<AsyncHandler>,
+  ) {
     // computing a static expression outward
     // -> compute and backtrack
     // Note that `context` can be undefined in `leave()`
-    if (!staticChildNode) throw new Error('Internal error: No staticChildNode for backtrack.');
+    if (!staticChildNode)
+      throw new Error('Internal error: No staticChildNode for backtrack.');
     const curStaticValue = await computePureStaticValue(parent, true);
     if (curStaticValue) {
-      if ('value' in curStaticValue && typeof curStaticValue.value !== 'symbol' ||
-          'then' in curStaticValue && typeof curStaticValue.then !== 'symbol' && typeof curStaticValue.else !== 'symbol') {
+      if (
+        ('value' in curStaticValue &&
+          typeof curStaticValue.value !== 'symbol') ||
+        ('then' in curStaticValue &&
+          typeof curStaticValue.then !== 'symbol' &&
+          typeof curStaticValue.else !== 'symbol')
+      ) {
         staticChildValue = curStaticValue;
         staticChildNode = parent;
         if (context) context.skip();
@@ -488,44 +583,60 @@ export default async function analyze(id: string, code: string, job: Job): Promi
   }
 
   await asyncWalk(ast, {
-    async enter (_node, _parent) {
-      const node: Node = _node as any
-      const parent: Node = _parent as any
-      
+    async enter(_node, _parent) {
+      const node: Node = _node as any;
+      const parent: Node = _parent as any;
+
       if (node.scope) {
         scope = node.scope;
         for (const id in node.scope.declarations) {
-          if (id in knownBindings)
-            knownBindings[id].shadowDepth++;
+          if (id in knownBindings) knownBindings[id].shadowDepth++;
         }
       }
 
       // currently backtracking
       if (staticChildNode) return;
 
-      if (!parent)
-        return;
+      if (!parent) return;
 
       if (node.type === 'Identifier') {
-        if (isIdentifierRead(node, parent) && job.analysis.computeFileReferences) {
+        if (
+          isIdentifierRead(node, parent) &&
+          job.analysis.computeFileReferences
+        ) {
           let binding;
           // detect asset leaf expression triggers (if not already)
           // __dirname,  __filename
-          if (typeof (binding = (getKnownBinding(node.name) as StaticValue | undefined)?.value) === 'string' && binding.match(absoluteRegEx) ||
-              binding && (typeof binding === 'function' || typeof binding === 'object') && binding[TRIGGER]) {
-            staticChildValue = { value: typeof binding === 'string' ? binding : undefined };
+          if (
+            (typeof (binding = (
+              getKnownBinding(node.name) as StaticValue | undefined
+            )?.value) === 'string' &&
+              binding.match(absoluteRegEx)) ||
+            (binding &&
+              (typeof binding === 'function' || typeof binding === 'object') &&
+              binding[TRIGGER])
+          ) {
+            staticChildValue = {
+              value: typeof binding === 'string' ? binding : undefined,
+            };
             staticChildNode = node;
             await backtrack(parent, this);
           }
         }
-      }
-      else if (job.analysis.computeFileReferences && node.type === 'MemberExpression' && node.object.type === 'MetaProperty' && node.object.meta.name === 'import' && node.object.property.name === 'meta' && (node.property.computed ? node.property.value : node.property.name) === 'url') {
+      } else if (
+        job.analysis.computeFileReferences &&
+        node.type === 'MemberExpression' &&
+        node.object.type === 'MetaProperty' &&
+        node.object.meta.name === 'import' &&
+        node.object.property.name === 'meta' &&
+        (node.property.computed ? node.property.value : node.property.name) ===
+          'url'
+      ) {
         // import.meta.url leaf trigger
         staticChildValue = { value: importMetaUrl };
         staticChildNode = node;
         await backtrack(parent, this);
-      }
-      else if (node.type === 'ImportExpression') {
+      } else if (node.type === 'ImportExpression') {
         await processRequireArg(node.source, true);
         return;
       }
@@ -536,40 +647,58 @@ export default async function analyze(id: string, code: string, job: Job): Promi
       // - nodegyp()
       // - etc.
       else if (node.type === 'CallExpression') {
-        if ((!isESM || job.mixedModules) && node.callee.type === 'Identifier' && node.arguments.length) {
-          if (node.callee.name === 'require' && knownBindings.require.shadowDepth === 0) {
+        if (
+          (!isESM || job.mixedModules) &&
+          node.callee.type === 'Identifier' &&
+          node.arguments.length
+        ) {
+          if (
+            node.callee.name === 'require' &&
+            knownBindings.require.shadowDepth === 0
+          ) {
             await processRequireArg(node.arguments[0]);
             return;
           }
-        }
-        else if ((!isESM || job.mixedModules) &&
-            node.callee.type === 'MemberExpression' &&
-            node.callee.object.type === 'Identifier' &&
-            node.callee.object.name === 'module' &&
-            'module' in knownBindings === false &&
-            node.callee.property.type === 'Identifier' &&
-            !node.callee.computed &&
-            node.callee.property.name === 'require' &&
-            node.arguments.length) {
+        } else if (
+          (!isESM || job.mixedModules) &&
+          node.callee.type === 'MemberExpression' &&
+          node.callee.object.type === 'Identifier' &&
+          node.callee.object.name === 'module' &&
+          'module' in knownBindings === false &&
+          node.callee.property.type === 'Identifier' &&
+          !node.callee.computed &&
+          node.callee.property.name === 'require' &&
+          node.arguments.length
+        ) {
           await processRequireArg(node.arguments[0]);
           return;
-        } else if ((!isESM || job.mixedModules) &&
-            node.callee.type === 'MemberExpression' &&
-            node.callee.object.type === 'Identifier' &&
-            node.callee.object.name === 'require' &&
-            knownBindings.require.shadowDepth === 0 &&
-            node.callee.property.type === 'Identifier' &&
-            !node.callee.computed &&
-            node.callee.property.name === 'resolve' &&
-            node.arguments.length) {
+        } else if (
+          (!isESM || job.mixedModules) &&
+          node.callee.type === 'MemberExpression' &&
+          node.callee.object.type === 'Identifier' &&
+          node.callee.object.name === 'require' &&
+          knownBindings.require.shadowDepth === 0 &&
+          node.callee.property.type === 'Identifier' &&
+          !node.callee.computed &&
+          node.callee.property.name === 'resolve' &&
+          node.arguments.length
+        ) {
           await processRequireArg(node.arguments[0]);
           return;
         }
 
-        const calleeValue = job.analysis.evaluatePureExpressions && await computePureStaticValue(node.callee, false);
+        const calleeValue =
+          job.analysis.evaluatePureExpressions &&
+          (await computePureStaticValue(node.callee, false));
         // if we have a direct pure static function,
         // and that function has a [TRIGGER] symbol -> trigger asset emission from it
-        if (calleeValue && 'value' in calleeValue && typeof calleeValue.value === 'function' && (calleeValue.value as any)[TRIGGER] && job.analysis.computeFileReferences) {
+        if (
+          calleeValue &&
+          'value' in calleeValue &&
+          typeof calleeValue.value === 'function' &&
+          (calleeValue.value as any)[TRIGGER] &&
+          job.analysis.computeFileReferences
+        ) {
           staticChildValue = await computePureStaticValue(node, true);
           // if it computes, then we start backtracking
           if (staticChildValue && parent) {
@@ -578,25 +707,33 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           }
         }
         // handle well-known function symbol cases
-        else if (calleeValue && 'value' in calleeValue && typeof calleeValue.value === 'symbol') {
+        else if (
+          calleeValue &&
+          'value' in calleeValue &&
+          typeof calleeValue.value === 'symbol'
+        ) {
           switch (calleeValue.value) {
             // customRequireWrapper('...')
             case BOUND_REQUIRE:
-              if (node.arguments.length === 1 &&
-                  node.arguments[0].type === 'Literal' &&
-                  node.callee.type === 'Identifier' &&
-                  knownBindings.require.shadowDepth === 0) {
+              if (
+                node.arguments.length === 1 &&
+                node.arguments[0].type === 'Literal' &&
+                node.callee.type === 'Identifier' &&
+                knownBindings.require.shadowDepth === 0
+              ) {
                 await processRequireArg(node.arguments[0]);
               }
-            break;
+              break;
             // require('bindings')(...)
             case BINDINGS:
               if (node.arguments.length) {
-                const arg = await computePureStaticValue(node.arguments[0], false);
+                const arg = await computePureStaticValue(
+                  node.arguments[0],
+                  false,
+                );
                 if (arg && 'value' in arg && arg.value) {
                   let opts: any;
-                  if (typeof arg.value === 'object')
-                    opts = arg.value;
+                  if (typeof arg.value === 'object') opts = arg.value;
                   else if (typeof arg.value === 'string')
                     opts = { bindings: arg.value };
                   if (!opts.path) {
@@ -606,8 +743,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                   let resolved;
                   try {
                     resolved = bindings(opts);
-                  }
-                  catch (e) {}
+                  } catch (e) {}
                   if (resolved) {
                     staticChildValue = { value: resolved };
                     staticChildNode = node;
@@ -615,7 +751,7 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                   }
                 }
               }
-            break;
+              break;
             case NODE_GYP_BUILD:
               // handle case: require('node-gyp-build')(__dirname)
               const withDirname =
@@ -631,10 +767,12 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 node.arguments[0].arguments.length === 2 &&
                 node.arguments[0].arguments[0].type === 'Identifier' &&
                 node.arguments[0].arguments[0].name === '__dirname' &&
-                node.arguments[0].arguments[1].type === 'Literal'
+                node.arguments[0].arguments[1].type === 'Literal';
 
-              if (knownBindings.__dirname.shadowDepth === 0 && (withDirname || withPathJoinDirname)) {
-
+              if (
+                knownBindings.__dirname.shadowDepth === 0 &&
+                (withDirname || withPathJoinDirname)
+              ) {
                 const pathJoinedDir = withPathJoinDirname
                   ? path.join(dir, node.arguments[0].arguments[1].value)
                   : dir;
@@ -645,8 +783,8 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                   const pkgName = node.callee.arguments[0].value;
                   // use installed version of node-gyp-build since resolving
                   // binaries can differ among versions
-                  const nodeGypBuildPath = resolveFrom(pathJoinedDir, pkgName)
-                  resolved = require(nodeGypBuildPath).path(pathJoinedDir)
+                  const nodeGypBuildPath = resolveFrom(pathJoinedDir, pkgName);
+                  resolved = require(nodeGypBuildPath).path(pathJoinedDir);
                 } catch (e) {
                   try {
                     resolved = nodeGypBuild.path(pathJoinedDir);
@@ -658,43 +796,62 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                   await emitStaticChildAsset();
                 }
               }
-            break;
+              break;
             // nbind.init(...) -> require('./resolved.node')
             case NBIND_INIT:
               if (node.arguments.length) {
-                const arg = await computePureStaticValue(node.arguments[0], false);
-                if (arg && 'value' in arg && (typeof arg.value === 'string' || typeof arg.value === 'undefined')) {
+                const arg = await computePureStaticValue(
+                  node.arguments[0],
+                  false,
+                );
+                if (
+                  arg &&
+                  'value' in arg &&
+                  (typeof arg.value === 'string' ||
+                    typeof arg.value === 'undefined')
+                ) {
                   const bindingInfo = nbind(arg.value);
                   if (bindingInfo && bindingInfo.path) {
-                    deps.add(path.relative(dir, bindingInfo.path).replace(/\\/g, '/'));
+                    deps.add(
+                      path.relative(dir, bindingInfo.path).replace(/\\/g, '/'),
+                    );
                     return this.skip();
                   }
                 }
               }
-            break;
+              break;
             // Express templates:
             // app.set("view engine", [name]) -> 'name' is a require
             case EXPRESS_SET:
-              if (node.arguments.length === 2 &&
-                  node.arguments[0].type === 'Literal' &&
-                  node.arguments[0].value === 'view engine' &&
-                  !definedExpressEngines) {
+              if (
+                node.arguments.length === 2 &&
+                node.arguments[0].type === 'Literal' &&
+                node.arguments[0].value === 'view engine' &&
+                !definedExpressEngines
+              ) {
                 await processRequireArg(node.arguments[1]);
                 return this.skip();
               }
-            break;
+              break;
             // app.engine('name', ...) causes opt-out of express dynamic require
             case EXPRESS_ENGINE:
               definedExpressEngines = true;
-            break;
+              break;
             case FS_FN:
             case FS_DIR_FN:
               if (node.arguments[0] && job.analysis.computeFileReferences) {
-                staticChildValue = await computePureStaticValue(node.arguments[0], true);
+                staticChildValue = await computePureStaticValue(
+                  node.arguments[0],
+                  true,
+                );
                 // if it computes, then we start backtracking
                 if (staticChildValue) {
                   staticChildNode = node.arguments[0];
-                  if (calleeValue.value === FS_DIR_FN && node.arguments[0].type === 'Identifier' && node.arguments[0].name === '__dirname') {
+                  if (
+                    calleeValue.value === FS_DIR_FN &&
+                    node.arguments[0].type === 'Identifier' &&
+                    node.arguments[0].name === '__dirname'
+                  ) {
                     // Special case `fs.readdirSync(__dirname)` to emit right away
                     emitAssetDirectory(dir);
                   } else {
@@ -703,29 +860,38 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                   return this.skip();
                 }
               }
-            break;
+              break;
             // strong globalize (emits intl folder)
             case SET_ROOT_DIR:
               if (node.arguments[0]) {
-                const rootDir = await computePureStaticValue(node.arguments[0], false);
+                const rootDir = await computePureStaticValue(
+                  node.arguments[0],
+                  false,
+                );
                 if (rootDir && 'value' in rootDir && rootDir.value)
                   emitAssetDirectory(rootDir.value + '/intl');
                 return this.skip();
               }
-            break;
+              break;
             // pkginfo - require('pkginfo')(module) -> loads package.json
             case PKG_INFO:
               let pjsonPath = path.resolve(id, '../package.json');
               const rootPjson = path.resolve('/package.json');
-              while (pjsonPath !== rootPjson && (await job.stat(pjsonPath) === null))
+              while (
+                pjsonPath !== rootPjson &&
+                (await job.stat(pjsonPath)) === null
+              )
                 pjsonPath = path.resolve(pjsonPath, '../../package.json');
-              if (pjsonPath !== rootPjson)
-                assets.add(pjsonPath);
-            break;
+              if (pjsonPath !== rootPjson) assets.add(pjsonPath);
+              break;
           }
         }
-      }
-      else if (node.type === 'VariableDeclaration' && parent && !isVarLoop(parent) && job.analysis.evaluatePureExpressions) {
+      } else if (
+        node.type === 'VariableDeclaration' &&
+        parent &&
+        !isVarLoop(parent) &&
+        job.analysis.evaluatePureExpressions
+      ) {
         for (const decl of node.declarations) {
           if (!decl.init) continue;
           const computed = await computePureStaticValue(decl.init, true);
@@ -737,25 +903,37 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             // var { known } = ...;
             else if (decl.id.type === 'ObjectPattern' && 'value' in computed) {
               for (const prop of decl.id.properties) {
-                if (prop.type !== 'Property' ||
-                    prop.key.type !== 'Identifier' ||
-                    prop.value.type !== 'Identifier' ||
-                    typeof computed.value !== 'object' ||
-                    computed.value === null ||
-                    !(prop.key.name in computed.value))
+                if (
+                  prop.type !== 'Property' ||
+                  prop.key.type !== 'Identifier' ||
+                  prop.value.type !== 'Identifier' ||
+                  typeof computed.value !== 'object' ||
+                  computed.value === null ||
+                  !(prop.key.name in computed.value)
+                )
                   continue;
-                setKnownBinding(prop.value.name, { value: computed.value[prop.key.name] });
+                setKnownBinding(prop.value.name, {
+                  value: computed.value[prop.key.name],
+                });
               }
             }
-            if (!('value' in computed) && isAbsolutePathOrUrl(computed.then) && isAbsolutePathOrUrl(computed.else)) {
+            if (
+              !('value' in computed) &&
+              isAbsolutePathOrUrl(computed.then) &&
+              isAbsolutePathOrUrl(computed.else)
+            ) {
               staticChildValue = computed;
               staticChildNode = decl.init;
               await emitStaticChildAsset();
             }
           }
         }
-      }
-      else if (node.type === 'AssignmentExpression' && parent && !isLoop(parent) && job.analysis.evaluatePureExpressions) {
+      } else if (
+        node.type === 'AssignmentExpression' &&
+        parent &&
+        !isLoop(parent) &&
+        job.analysis.evaluatePureExpressions
+      ) {
         if (!hasKnownBindingValue(node.left.name)) {
           const computed = await computePureStaticValue(node.right, false);
           if (computed && 'value' in computed) {
@@ -766,14 +944,18 @@ export default async function analyze(id: string, code: string, job: Job): Promi
             // var { known } = ...
             else if (node.left.type === 'ObjectPattern') {
               for (const prop of node.left.properties) {
-                if (prop.type !== 'Property' ||
-                    prop.key.type !== 'Identifier' ||
-                    prop.value.type !== 'Identifier' ||
-                    typeof computed.value !== 'object' ||
-                    computed.value === null ||
-                    !(prop.key.name in computed.value))
+                if (
+                  prop.type !== 'Property' ||
+                  prop.key.type !== 'Identifier' ||
+                  prop.value.type !== 'Identifier' ||
+                  typeof computed.value !== 'object' ||
+                  computed.value === null ||
+                  !(prop.key.name in computed.value)
+                )
                   continue;
-                setKnownBinding(prop.value.name, { value: computed.value[prop.key.name] });
+                setKnownBinding(prop.value.name, {
+                  value: computed.value[prop.key.name],
+                });
               }
             }
             if (isAbsolutePathOrUrl(computed.value)) {
@@ -785,58 +967,71 @@ export default async function analyze(id: string, code: string, job: Job): Promi
         }
       }
       // Support require wrappers like function p (x) { ...; var y = require(x); ...; return y;  }
-      else if ((!isESM || job.mixedModules) &&
-               (node.type === 'FunctionDeclaration' || node.type === 'FunctionExpression' || node.type === 'ArrowFunctionExpression') &&
-               (node.arguments || node.params)[0] && (node.arguments || node.params)[0].type === 'Identifier') {
+      else if (
+        (!isESM || job.mixedModules) &&
+        (node.type === 'FunctionDeclaration' ||
+          node.type === 'FunctionExpression' ||
+          node.type === 'ArrowFunctionExpression') &&
+        (node.arguments || node.params)[0] &&
+        (node.arguments || node.params)[0].type === 'Identifier'
+      ) {
         let fnName: any;
         let args: any[];
-        if ((node.type === 'ArrowFunctionExpression' ||  node.type === 'FunctionExpression') &&
-            parent &&
-            parent.type === 'VariableDeclarator' &&
-            parent.id.type === 'Identifier') {
+        if (
+          (node.type === 'ArrowFunctionExpression' ||
+            node.type === 'FunctionExpression') &&
+          parent &&
+          parent.type === 'VariableDeclarator' &&
+          parent.id.type === 'Identifier'
+        ) {
           fnName = parent.id;
           args = node.arguments || node.params;
-        }
-        else if (node.id) {
+        } else if (node.id) {
           fnName = node.id;
           args = node.arguments || node.params;
         }
         if (fnName && node.body.body) {
-          let requireDecl, returned = false;
+          let requireDecl,
+            returned = false;
           for (let i = 0; i < node.body.body.length; i++) {
-            if (node.body.body[i].type === 'VariableDeclaration' && !requireDecl) {
-              requireDecl = node.body.body[i].declarations.find((decl: any) =>
-                decl &&
-                decl.id &&
-                decl.id.type === 'Identifier' &&
-                decl.init &&
-                decl.init.type === 'CallExpression' &&
-                decl.init.callee.type === 'Identifier' &&
-                decl.init.callee.name === 'require' &&
-                knownBindings.require.shadowDepth === 0 &&
-                decl.init.arguments[0] &&
-                decl.init.arguments[0].type === 'Identifier' &&
-                decl.init.arguments[0].name === args[0].name
+            if (
+              node.body.body[i].type === 'VariableDeclaration' &&
+              !requireDecl
+            ) {
+              requireDecl = node.body.body[i].declarations.find(
+                (decl: any) =>
+                  decl &&
+                  decl.id &&
+                  decl.id.type === 'Identifier' &&
+                  decl.init &&
+                  decl.init.type === 'CallExpression' &&
+                  decl.init.callee.type === 'Identifier' &&
+                  decl.init.callee.name === 'require' &&
+                  knownBindings.require.shadowDepth === 0 &&
+                  decl.init.arguments[0] &&
+                  decl.init.arguments[0].type === 'Identifier' &&
+                  decl.init.arguments[0].name === args[0].name,
               );
             }
-            if (requireDecl &&
-                node.body.body[i].type === 'ReturnStatement' &&
-                node.body.body[i].argument &&
-                node.body.body[i].argument.type === 'Identifier' &&
-                node.body.body[i].argument.name === requireDecl.id.name) {
+            if (
+              requireDecl &&
+              node.body.body[i].type === 'ReturnStatement' &&
+              node.body.body[i].argument &&
+              node.body.body[i].argument.type === 'Identifier' &&
+              node.body.body[i].argument.name === requireDecl.id.name
+            ) {
               returned = true;
               break;
             }
           }
-          if (returned)
-            setKnownBinding(fnName.name, { value: BOUND_REQUIRE });
+          if (returned) setKnownBinding(fnName.name, { value: BOUND_REQUIRE });
         }
       }
     },
-    async leave (_node, _parent) {
-      const node: Node = _node as any
-      const parent: Node = _parent as any
-      
+    async leave(_node, _parent) {
+      const node: Node = _node as any;
+      const parent: Node = _parent as any;
+
       if (node.scope) {
         if (scope.parent) {
           scope = scope.parent;
@@ -845,113 +1040,138 @@ export default async function analyze(id: string, code: string, job: Job): Promi
           if (id in knownBindings) {
             if (knownBindings[id].shadowDepth > 0)
               knownBindings[id].shadowDepth--;
-            else
-              delete knownBindings[id];
+            else delete knownBindings[id];
           }
         }
       }
 
       if (staticChildNode && parent) await backtrack(parent, this);
-    }
+    },
   });
 
   await assetEmissionPromises;
   return { assets, deps, imports, isESM };
 
-  async function emitAssetPath (assetPath: string) {
+  async function emitAssetPath(assetPath: string) {
     // verify the asset file / directory exists
     const wildcardIndex = assetPath.indexOf(WILDCARD);
-    const dirIndex = wildcardIndex === -1 ? assetPath.length : assetPath.lastIndexOf(path.sep, wildcardIndex);
+    const dirIndex =
+      wildcardIndex === -1
+        ? assetPath.length
+        : assetPath.lastIndexOf(path.sep, wildcardIndex);
     const basePath = assetPath.substring(0, dirIndex);
     try {
       var stats = await job.stat(basePath);
       if (stats === null) {
-        throw new Error('file not found')
+        throw new Error('file not found');
       }
-    }
-    catch (e) {
+    } catch (e) {
       return;
     }
-    if (wildcardIndex !== -1 && stats.isFile())
-      return;
+    if (wildcardIndex !== -1 && stats.isFile()) return;
     if (stats.isFile()) {
       assets.add(assetPath);
-    }
-    else if (stats.isDirectory()) {
-      if (validWildcard(assetPath))
-        emitAssetDirectory(assetPath);
+    } else if (stats.isDirectory()) {
+      if (validWildcard(assetPath)) emitAssetDirectory(assetPath);
     }
   }
 
-  function validWildcard (assetPath: string) {
+  function validWildcard(assetPath: string) {
     let wildcardSuffix = '';
-    if (assetPath.endsWith(path.sep))
-      wildcardSuffix = path.sep;
+    if (assetPath.endsWith(path.sep)) wildcardSuffix = path.sep;
     else if (assetPath.endsWith(path.sep + WILDCARD))
       wildcardSuffix = path.sep + WILDCARD;
-    else if (assetPath.endsWith(WILDCARD))
-      wildcardSuffix = WILDCARD;
+    else if (assetPath.endsWith(WILDCARD)) wildcardSuffix = WILDCARD;
     // do not emit __dirname
-    if (assetPath === dir + wildcardSuffix)
-    return false;
+    if (assetPath === dir + wildcardSuffix) return false;
     // do not emit cwd
-    if (assetPath === cwd + wildcardSuffix)
-      return false;
+    if (assetPath === cwd + wildcardSuffix) return false;
     // do not emit node_modules
     if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
       return false;
     // do not emit directories above __dirname
-    if (dir.startsWith(assetPath.slice(0, assetPath.length - wildcardSuffix.length) + path.sep))
+    if (
+      dir.startsWith(
+        assetPath.slice(0, assetPath.length - wildcardSuffix.length) + path.sep,
+      )
+    )
       return false;
     // do not emit asset directories higher than the node_modules base if a package
     if (pkgBase) {
-      const nodeModulesBase = id.substring(0, id.indexOf(path.sep + 'node_modules')) + path.sep + 'node_modules' + path.sep;
+      const nodeModulesBase =
+        id.substring(0, id.indexOf(path.sep + 'node_modules')) +
+        path.sep +
+        'node_modules' +
+        path.sep;
       if (!assetPath.startsWith(nodeModulesBase)) {
-        if (job.log) console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
+        if (job.log)
+          console.log(
+            'Skipping asset emission of ' +
+              assetPath.replace(wildcardRegEx, '*') +
+              ' for ' +
+              id +
+              ' as it is outside the package base ' +
+              pkgBase,
+          );
         return false;
       }
     }
     return true;
   }
 
-  function resolveAbsolutePathOrUrl (value: string | URL): string {
-    return value instanceof URL ? fileURLToPath(value) : value.startsWith('file:') ? fileURLToPath(new URL(value)) : path.resolve(value);
+  function resolveAbsolutePathOrUrl(value: string | URL): string {
+    return value instanceof URL
+      ? fileURLToPath(value)
+      : value.startsWith('file:')
+        ? fileURLToPath(new URL(value))
+        : path.resolve(value);
   }
 
-  async function emitStaticChildAsset () {
+  async function emitStaticChildAsset() {
     if (!staticChildValue) {
       return;
     }
 
-    if ('value' in staticChildValue && isAbsolutePathOrUrl(staticChildValue.value)) {
+    if (
+      'value' in staticChildValue &&
+      isAbsolutePathOrUrl(staticChildValue.value)
+    ) {
       try {
         const resolved = resolveAbsolutePathOrUrl(staticChildValue.value);
         await emitAssetPath(resolved);
-      }
-      catch (e) {}
-    }
-    else if ('then' in staticChildValue && 'else' in staticChildValue && isAbsolutePathOrUrl(staticChildValue.then) && isAbsolutePathOrUrl(staticChildValue.else)) {
+      } catch (e) {}
+    } else if (
+      'then' in staticChildValue &&
+      'else' in staticChildValue &&
+      isAbsolutePathOrUrl(staticChildValue.then) &&
+      isAbsolutePathOrUrl(staticChildValue.else)
+    ) {
       let resolvedThen;
-      try { resolvedThen = resolveAbsolutePathOrUrl(staticChildValue.then); }
-      catch (e) {}
+      try {
+        resolvedThen = resolveAbsolutePathOrUrl(staticChildValue.then);
+      } catch (e) {}
       let resolvedElse;
-      try { resolvedElse = resolveAbsolutePathOrUrl(staticChildValue.else); }
-      catch (e) {}
+      try {
+        resolvedElse = resolveAbsolutePathOrUrl(staticChildValue.else);
+      } catch (e) {}
       if (resolvedThen) await emitAssetPath(resolvedThen);
       if (resolvedElse) await emitAssetPath(resolvedElse);
-    }
-    else if (staticChildNode && staticChildNode.type === 'ArrayExpression' && 'value' in staticChildValue && staticChildValue.value instanceof Array) {
+    } else if (
+      staticChildNode &&
+      staticChildNode.type === 'ArrayExpression' &&
+      'value' in staticChildValue &&
+      staticChildValue.value instanceof Array
+    ) {
       for (const value of staticChildValue.value) {
         try {
           const resolved = resolveAbsolutePathOrUrl(value);
           await emitAssetPath(resolved);
-        }
-        catch (e) {}
+        } catch (e) {}
       }
     }
     staticChildNode = staticChildValue = undefined;
   }
-};
+}
 
 function isAst(ast: any): ast is Ast {
   return 'body' in ast;
