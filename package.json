@@ -130,7 +130,7 @@
     "vue": "^2.6.10",
     "vue-server-renderer": "^2.6.10",
     "when": "^3.7.8",
-    "zeromq": "6.0.0-beta.19"
+    "zeromq": "^6.0.0-beta.19"
   },
   "engines": {
     "node": ">=16"
