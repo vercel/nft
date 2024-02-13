@@ -646,36 +646,46 @@ export default async function analyze(id: string, code: string, job: Job): Promi
                 const validNodeGypBuildForkNames = ['node-gyp-build', '@aminya/node-gyp-build'];
                 if (node.callee.arguments[0].type !== 'Literal' ||
                     !validNodeGypBuildForkNames.includes(node.callee.arguments[0].value)) {
-                  throw new Error("Unknown node-gyp-build fork name");
-                }
-
-                const nodeGypBuildForkName: 'node-gyp-build' | '@aminya/node-gyp-build' = node.callee.arguments[0].value;
-
-                let resolved: string | undefined;
-                try {
-                  // use installed version of node-gyp-build since resolving
-                  // binaries can differ among versions
-                  const nodeGypBuildPath = resolveFrom(pathJoinedDir, nodeGypBuildForkName)
-                  resolved = require(nodeGypBuildPath).path(pathJoinedDir)
-                }
-                catch (e) {
                   try {
-                    switch (nodeGypBuildForkName) {
-                      case "node-gyp-build":
-                        resolved = nodeGypBuild.path(pathJoinedDir);
-                        break;
-                      case "@aminya/node-gyp-build":
-                        resolved = aminyaNodeGypBuild.path(pathJoinedDir);
-                        break;
-                      default:
-                        throw new Error("Unknown node-gyp-build fork name");
-                    }
-                  } catch (e) {}
-                }
-                if (resolved) {
-                  staticChildValue = { value: resolved };
-                  staticChildNode = node;
-                  await emitStaticChildAsset();
+                    job.warnings.add(
+                      new Error("Unknown node-gyp-build fork name:" + 
+                                node.callee.arguments[0].value + 
+                                ". " + "Available forks are: " +
+                                validNodeGypBuildForkNames.join(", ") + "."));
+                  } catch(e) {
+                    job.warnings.add(new Error(`Could not determine node-gyp-build fork name.`));
+                  }
+                } else {
+                  const nodeGypBuildForkName: 'node-gyp-build' | '@aminya/node-gyp-build' = node.callee.arguments[0].value;
+                  let resolved: string | undefined;
+                  try {
+                    // use installed version of node-gyp-build since resolving
+                    // binaries can differ among versions
+                    const nodeGypBuildPath = resolveFrom(pathJoinedDir, nodeGypBuildForkName)
+                    resolved = require(nodeGypBuildPath).path(pathJoinedDir)
+                  }
+                  catch (e) {
+                    try {
+                      switch (nodeGypBuildForkName) {
+                        case "node-gyp-build":
+                          resolved = nodeGypBuild.path(pathJoinedDir);
+                          break;
+                        case "@aminya/node-gyp-build":
+                          resolved = aminyaNodeGypBuild.path(pathJoinedDir);
+                          break;
+                        default:
+                          // Very unlikely to happen unless there is a mismatch between
+                          // `validNodeGypBuildForkNames` and the symbols that resolve
+                          // to NODE_GYP_BUILD.
+                          job.warnings.add(new Error(`Unknown node-gyp-build fork name: ${nodeGypBuildForkName}`));
+                      }
+                    } catch (e) {}
+                  }
+                  if (resolved) {
+                    staticChildValue = { value: resolved };
+                    staticChildNode = node;
+                    await emitStaticChildAsset();
+                  }
                 }
               }
             break;
