@@ -128,6 +128,20 @@ function getExportsTarget(exports: PackageTarget, conditions: string[], cjsResol
   return undefined;
 }
 
+function patternKeyCompare(a: string, b: string) {
+  const aPatternIndex = a.indexOf("*");
+  const bPatternIndex = b.indexOf("*");
+  const baseLenA = aPatternIndex === -1 ? a.length : aPatternIndex + 1;
+  const baseLenB = bPatternIndex === -1 ? b.length : bPatternIndex + 1;
+  if (baseLenA > baseLenB) return -1;
+  if (baseLenB > baseLenA) return 1;
+  if (aPatternIndex === -1) return 1;
+  if (bPatternIndex === -1) return -1;
+  if (a.length > b.length) return -1;
+  if (b.length > a.length) return 1;
+  return 0;
+}
+
 function resolveExportsImports (pkgPath: string, obj: PackageTarget, subpath: string, job: Job, isImports: boolean, cjsResolve: boolean): string | undefined {
   let matchObj: { [key: string]: PackageTarget };
   if (isImports) {
@@ -141,17 +155,66 @@ function resolveExportsImports (pkgPath: string, obj: PackageTarget, subpath: st
     matchObj = obj;
   }
 
-  if (subpath in matchObj) {
+  if (subpath in matchObj && !subpath.includes('*')) {
     const target = getExportsTarget(matchObj[subpath], job.conditions, cjsResolve);
     if (typeof target === 'string' && target.startsWith('./'))
       return pkgPath + target.slice(1);
   }
-  for (const match of Object.keys(matchObj).sort((a, b) => b.length - a.length)) {
-    if (match.endsWith('*') && subpath.startsWith(match.slice(0, -1))) {
-      const target = getExportsTarget(matchObj[match], job.conditions, cjsResolve);
-      if (typeof target === 'string' && target.startsWith('./'))
-        return pkgPath + target.slice(1).replace(/\*/g, subpath.slice(match.length - 1));
+
+
+  let bestMatch = "";
+  let bestMatchSubpath;
+
+  for (const match of Object.keys(matchObj)) {
+    const patternIndex = match.indexOf("*");
+    if (
+      patternIndex !== -1 &&
+      subpath.startsWith(match.slice(0, patternIndex))
+    ) {
+      const patternTrailer = match.slice(patternIndex + 1);
+      if (
+        subpath.length >= match.length &&
+        subpath.endsWith(patternTrailer) &&
+        patternKeyCompare(bestMatch, match) === 1 &&
+        match.lastIndexOf("*") === patternIndex
+      ) {
+        bestMatch = match;
+        bestMatchSubpath = subpath.slice(
+          patternIndex,
+          subpath.length - patternTrailer.length
+        );
+      }
+    } else if (
+      match[match.length - 1] === "/" &&
+      subpath.startsWith(match) &&
+      patternKeyCompare(bestMatch, match) === 1
+    ) {
+      bestMatch = match;
+      bestMatchSubpath = subpath.slice(match.length);
     }
+  }
+
+  if (bestMatch) {
+    const target = getExportsTarget(
+      matchObj[bestMatch],
+      job.conditions,
+      cjsResolve
+    );
+    if (typeof target === "string" && target.startsWith("./")) {
+      const patternIndex = target.indexOf("*");
+      if (patternIndex !== -1 && target.lastIndexOf("*") === patternIndex) {
+        return (
+          pkgPath +
+          target.substring(1, patternIndex) +
+          bestMatchSubpath +
+          target.substring(patternIndex + 1)
+        );
+      }
+      return target;
+    }
+  }
+
+  for (const match of Object.keys(matchObj).sort((a, b) => b.length - a.length)) {
     if (!match.endsWith('/'))
       continue;
     if (subpath.startsWith(match)) {

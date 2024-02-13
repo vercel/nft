@@ -1,0 +1,24 @@
+{
+  "name": "y",
+  "type": "module",
+  "exports": {
+    "./*.js": {
+      "module": "./*.js",
+      "default": {
+        "node": "./*b.js"
+      }
+    },
+    "./foo*.js": {
+      "module": "./foo*.js",
+      "default": {
+        "node": "./foo*ar.js"
+      }
+    },
+    "./fo*.js": {
+      "module": "./fo*.js",
+      "default": {
+        "node": "./fo*ba.js"
+      }
+    }
+  }
+}
