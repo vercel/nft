@@ -15,6 +15,8 @@ import resolve from './resolve-dependency.js';
 //@ts-ignore
 import nodeGypBuild from 'node-gyp-build';
 //@ts-ignore
+import aminyaNodeGypBuild from '@aminya/node-gyp-build';
+//@ts-ignore
 import mapboxPregyp from '@mapbox/node-pre-gyp';
 import { Job } from './node-file-trace';
 import { fileURLToPath, pathToFileURL, URL } from 'url';
@@ -125,6 +127,9 @@ const staticModules = Object.assign(Object.create(null), {
   'node-pre-gyp/lib/pre-binding': pregyp,
   'node-pre-gyp/lib/pre-binding.js': pregyp,
   'node-gyp-build': {
+    default: NODE_GYP_BUILD
+  },
+  '@aminya/node-gyp-build': {
     default: NODE_GYP_BUILD
   },
   'nbind': {
@@ -614,18 +619,57 @@ export default async function analyze(id: string, code: string, job: Job): Promi
               }
             break;
             case NODE_GYP_BUILD:
-              if (node.arguments.length === 1 && node.arguments[0].type === 'Identifier' &&
-                  node.arguments[0].name === '__dirname' && knownBindings.__dirname.shadowDepth === 0) {
+              // handle case: require("node-gyp-build")(__dirname)
+              const calledWithDirnameDirectly =
+                node.arguments.length === 1 &&
+                node.arguments[0].type === 'Identifier' &&
+                node.arguments[0].name === '__dirname';
+
+              // handle case: require("node-gyp-build")(path.join(__dirname, ".."))
+              const calledWithPathJoinDirname =
+                node.arguments.length === 1 &&
+                node.arguments[0].callee.object.name === "path" &&
+                node.arguments[0].callee.property.name === "join" &&
+                node.arguments[0].arguments.length === 2 &&
+                node.arguments[0].arguments[0].type === 'Identifier' &&
+                node.arguments[0].arguments[0].name === '__dirname' &&
+                node.arguments[0].arguments[1].type === 'Literal'
+
+              if ((calledWithDirnameDirectly || calledWithPathJoinDirname) &&
+                  knownBindings.__dirname.shadowDepth === 0) {
+
+                // Resolve the path in the case of passing path.join(__dirname, "..") instead of __dirname.
+                const pathJoinedDir =
+                  calledWithPathJoinDirname ? path.join(dir, node.arguments[0].arguments[1].value) : dir;
+
+                // zeromq.js uses @aminya's fork of node-gyp-build, consider it.
+                const validNodeGypBuildForkNames = ['node-gyp-build', '@aminya/node-gyp-build'];
+                if (node.callee.arguments[0].type !== 'Literal' ||
+                    !validNodeGypBuildForkNames.includes(node.callee.arguments[0].value)) {
+                  throw new Error("Unknown node-gyp-build fork name");
+                }
+
+                const nodeGypBuildForkName: 'node-gyp-build' | '@aminya/node-gyp-build' = node.callee.arguments[0].value;
+
                 let resolved: string | undefined;
                 try {
                   // use installed version of node-gyp-build since resolving
                   // binaries can differ among versions
-                  const nodeGypBuildPath = resolveFrom(dir, 'node-gyp-build')
-                  resolved = require(nodeGypBuildPath).path(dir)
+                  const nodeGypBuildPath = resolveFrom(pathJoinedDir, nodeGypBuildForkName)
+                  resolved = require(nodeGypBuildPath).path(pathJoinedDir)
                 }
                 catch (e) {
                   try {
-                    resolved = nodeGypBuild.path(dir);
+                    switch (nodeGypBuildForkName) {
+                      case "node-gyp-build":
+                        resolved = nodeGypBuild.path(pathJoinedDir);
+                        break;
+                      case "@aminya/node-gyp-build":
+                        resolved = aminyaNodeGypBuild.path(pathJoinedDir);
+                        break;
+                      default:
+                        throw new Error("Unknown node-gyp-build fork name");
+                    }
                   } catch (e) {}
                 }
                 if (resolved) {
