@@ -619,73 +619,55 @@ export default async function analyze(id: string, code: string, job: Job): Promi
               }
             break;
             case NODE_GYP_BUILD:
-              // handle case: require("node-gyp-build")(__dirname)
-              const calledWithDirnameDirectly =
+              // handle case: require('node-gyp-build')(__dirname)
+              const withDirname =
                 node.arguments.length === 1 &&
                 node.arguments[0].type === 'Identifier' &&
                 node.arguments[0].name === '__dirname';
 
-              // handle case: require("node-gyp-build")(path.join(__dirname, ".."))
-              const calledWithPathJoinDirname =
+              // handle case: require('node-gyp-build')(path.join(__dirname, '..'))
+              const withPathJoinDirname =
                 node.arguments.length === 1 &&
-                node.arguments[0].callee?.object?.name === "path" &&
-                node.arguments[0].callee?.property?.name === "join" &&
+                node.arguments[0].callee?.object?.name === 'path' &&
+                node.arguments[0].callee?.property?.name === 'join' &&
                 node.arguments[0].arguments.length === 2 &&
                 node.arguments[0].arguments[0].type === 'Identifier' &&
                 node.arguments[0].arguments[0].name === '__dirname' &&
                 node.arguments[0].arguments[1].type === 'Literal'
 
-              if ((calledWithDirnameDirectly || calledWithPathJoinDirname) &&
-                  knownBindings.__dirname.shadowDepth === 0) {
+              if (knownBindings.__dirname.shadowDepth === 0 && (withDirname || withPathJoinDirname)) {
 
-                // Resolve the path in the case of passing path.join(__dirname, "..") instead of __dirname.
-                const pathJoinedDir =
-                  calledWithPathJoinDirname ? path.join(dir, node.arguments[0].arguments[1].value) : dir;
+                const pathJoinedDir = withPathJoinDirname
+                  ? path.join(dir, node.arguments[0].arguments[1].value)
+                  : dir;
 
-                // zeromq.js uses @aminya's fork of node-gyp-build, consider it.
-                const validNodeGypBuildForkNames = ['node-gyp-build', '@aminya/node-gyp-build'];
-                if (node.callee.arguments[0].type !== 'Literal' ||
-                    !validNodeGypBuildForkNames.includes(node.callee.arguments[0].value)) {
+                const nodeGypBuildPkgName = node.callee.arguments[0].value;
+                let resolved: string | undefined;
+                try {
+                  // use installed version of node-gyp-build since resolving
+                  // binaries can differ among versions
+                  const nodeGypBuildPath = resolveFrom(pathJoinedDir, nodeGypBuildPkgName)
+                  resolved = require(nodeGypBuildPath).path(pathJoinedDir)
+                } catch (e) {
                   try {
-                    job.warnings.add(
-                      new Error("Unknown node-gyp-build fork name:" + 
-                                node.callee.arguments[0].value + 
-                                ". " + "Available forks are: " +
-                                validNodeGypBuildForkNames.join(", ") + "."));
-                  } catch(e) {
-                    job.warnings.add(new Error(`Could not determine node-gyp-build fork name.`));
-                  }
-                } else {
-                  const nodeGypBuildForkName: 'node-gyp-build' | '@aminya/node-gyp-build' = node.callee.arguments[0].value;
-                  let resolved: string | undefined;
-                  try {
-                    // use installed version of node-gyp-build since resolving
-                    // binaries can differ among versions
-                    const nodeGypBuildPath = resolveFrom(pathJoinedDir, nodeGypBuildForkName)
-                    resolved = require(nodeGypBuildPath).path(pathJoinedDir)
-                  }
-                  catch (e) {
-                    try {
-                      switch (nodeGypBuildForkName) {
-                        case "node-gyp-build":
-                          resolved = nodeGypBuild.path(pathJoinedDir);
-                          break;
-                        case "@aminya/node-gyp-build":
-                          resolved = aminyaNodeGypBuild.path(pathJoinedDir);
-                          break;
-                        default:
-                          // Very unlikely to happen unless there is a mismatch between
-                          // `validNodeGypBuildForkNames` and the symbols that resolve
-                          // to NODE_GYP_BUILD.
-                          job.warnings.add(new Error(`Unknown node-gyp-build fork name: ${nodeGypBuildForkName}`));
-                      }
-                    } catch (e) {}
-                  }
-                  if (resolved) {
-                    staticChildValue = { value: resolved };
-                    staticChildNode = node;
-                    await emitStaticChildAsset();
-                  }
+                    switch (nodeGypBuildPkgName) {
+                      case 'node-gyp-build':
+                        resolved = nodeGypBuild.path(pathJoinedDir);
+                        break;
+                      case '@aminya/node-gyp-build':
+                        // zeromq uses this fork of node-gyp-build
+                        resolved = aminyaNodeGypBuild.path(pathJoinedDir);
+                        break;
+                      default:
+                        // should never happen since NODE_GYP_BUILD is assigned to these packages only
+                        job.warnings.add(new Error(`Unknown node-gyp-build package name: "${nodeGypBuildPkgName}"`));
+                    }
+                  } catch (e) {}
+                }
+                if (resolved) {
+                  staticChildValue = { value: resolved };
+                  staticChildNode = node;
+                  await emitStaticChildAsset();
                 }
               }
             break;
