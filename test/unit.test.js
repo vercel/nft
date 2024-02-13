@@ -203,10 +203,10 @@ for (const { testName, isRoot } of unitTests) {
       }
       let sortedFileList = [...fileList].sort()
 
-      if (testName === 'microtime-node-gyp') {
+      if (testName === 'microtime-node-gyp' || testName === 'zeromq-node-gyp') {
         let foundMatchingBinary = false
         sortedFileList = sortedFileList.filter(file => {
-          if (file.endsWith('node-napi.node') || file.endsWith('node.napi.node')) {
+          if (file.includes('prebuilds') && file.endsWith('.node')) {
             // remove from fileList for expected checking
             // as it will differ per platform
             foundMatchingBinary = true

@@ -127,6 +127,9 @@ const staticModules = Object.assign(Object.create(null), {
   'node-gyp-build': {
     default: NODE_GYP_BUILD
   },
+  '@aminya/node-gyp-build': {
+    default: NODE_GYP_BUILD
+  },
   'nbind': {
     init: NBIND_INIT,
     default: {
@@ -614,18 +617,39 @@ export default async function analyze(id: string, code: string, job: Job): Promi
               }
             break;
             case NODE_GYP_BUILD:
-              if (node.arguments.length === 1 && node.arguments[0].type === 'Identifier' &&
-                  node.arguments[0].name === '__dirname' && knownBindings.__dirname.shadowDepth === 0) {
+              // handle case: require('node-gyp-build')(__dirname)
+              const withDirname =
+                node.arguments.length === 1 &&
+                node.arguments[0].type === 'Identifier' &&
+                node.arguments[0].name === '__dirname';
+
+              // handle case: require('node-gyp-build')(path.join(__dirname, '..'))
+              const withPathJoinDirname =
+                node.arguments.length === 1 &&
+                node.arguments[0].callee?.object?.name === 'path' &&
+                node.arguments[0].callee?.property?.name === 'join' &&
+                node.arguments[0].arguments.length === 2 &&
+                node.arguments[0].arguments[0].type === 'Identifier' &&
+                node.arguments[0].arguments[0].name === '__dirname' &&
+                node.arguments[0].arguments[1].type === 'Literal'
+
+              if (knownBindings.__dirname.shadowDepth === 0 && (withDirname || withPathJoinDirname)) {
+
+                const pathJoinedDir = withPathJoinDirname
+                  ? path.join(dir, node.arguments[0].arguments[1].value)
+                  : dir;
+
                 let resolved: string | undefined;
                 try {
+                  // the pkg could be 'node-gyp-build' or '@aminya/node-gyp-build'
+                  const pkgName = node.callee.arguments[0].value;
                   // use installed version of node-gyp-build since resolving
                   // binaries can differ among versions
-                  const nodeGypBuildPath = resolveFrom(dir, 'node-gyp-build')
-                  resolved = require(nodeGypBuildPath).path(dir)
-                }
-                catch (e) {
+                  const nodeGypBuildPath = resolveFrom(pathJoinedDir, pkgName)
+                  resolved = require(nodeGypBuildPath).path(pathJoinedDir)
+                } catch (e) {
                   try {
-                    resolved = nodeGypBuild.path(dir);
+                    resolved = nodeGypBuild.path(pathJoinedDir);
                   } catch (e) {}
                 }
                 if (resolved) {
