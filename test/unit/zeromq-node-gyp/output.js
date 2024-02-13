@@ -1,0 +1,9 @@
+[
+  "node_modules/zeromq/lib/draft.js",
+  "node_modules/zeromq/lib/index.js",
+  "node_modules/zeromq/lib/native.js",
+  "node_modules/zeromq/lib/util.js",
+  "node_modules/zeromq/package.json",
+  "node_modules/zeromq/prebuilds/darwin-x64/node.napi.glibc.node",
+  "test/unit/zeromq-node-gyp/input.js",
+];

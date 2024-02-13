@@ -218,6 +218,21 @@ for (const { testName, isRoot } of unitTests) {
         expect(foundMatchingBinary).toBe(true)
       }
 
+      if (testName === 'zeromq-node-gyp') {
+        let foundMatchingBinary = false
+        sortedFileList = sortedFileList.filter(file => {
+          if (file.startsWith('node.napi.')) {
+            // remove from fileList for expected checking
+            // as it will differ per platform
+            foundMatchingBinary = true
+            fileList.delete(file)
+            return false
+          }
+          return true
+        })
+        expect(foundMatchingBinary).toBe(true)
+      }
+
       let expected;
       try {
         expected = JSON.parse(fs.readFileSync(join(unitPath, outputFileName)).toString());
