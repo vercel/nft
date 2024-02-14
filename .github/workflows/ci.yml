@@ -29,19 +29,23 @@ jobs:
         ports:
           - 6379:6379
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           # we lock to 3.11 for a distutils requirement for node-gyp
           python-version: '3.11'
       - name: Prepare Install (if applicable)
         run: node prepare-install.js
+      - name: Enable Corepack
+        run: corepack enable npm
       - name: Install Dependencies
         run: npm install
+      - name: Prettier
+        run: npm run prettier-check
       - name: Build
         run: npm run build
       - name: Run Tests
