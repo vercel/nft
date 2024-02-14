@@ -9,6 +9,7 @@ This is similar to [@vercel/ncc](https://npmjs.com/package/@vercel/ncc) except t
 ## Usage
 
 ### Installation
+
 ```bash
 npm i @vercel/nft
 ```
@@ -64,7 +65,7 @@ Alternatively the explicit list of conditions can be provided:
 
 ```js
 const { fileList } = await nodeFileTrace(files, {
-  conditions: ['node', 'production']
+  conditions: ['node', 'production'],
 });
 ```
 
@@ -78,7 +79,7 @@ This can be disabled with the `exportsOnly` option:
 
 ```js
 const { fileList } = await nodeFileTrace(files, {
-  exportsOnly: true
+  exportsOnly: true,
 });
 ```
 
@@ -93,8 +94,8 @@ Custom resolution path definitions to use.
 ```js
 const { fileList } = await nodeFileTrace(files, {
   paths: {
-    'utils/': '/path/to/utils/'
-  }
+    'utils/': '/path/to/utils/',
+  },
 });
 ```
 
@@ -104,28 +105,31 @@ Trailing slashes map directories, exact paths map exact only.
 
 The following FS functions can be hooked by passing them as options:
 
-* `readFile(path): Promise<string>`
-* `stat(path): Promise<FS.Stats>`
-* `readlink(path): Promise<string>`
-* `resolve(id: string, parent: string): Promise<string | string[]>`
+- `readFile(path): Promise<string>`
+- `stat(path): Promise<FS.Stats>`
+- `readlink(path): Promise<string>`
+- `resolve(id: string, parent: string): Promise<string | string[]>`
 
 ##### Advanced Resolving
 
 When providing a custom resolve hook you are responsible for returning one or more absolute paths to resolved files based on the `id` input. However it may be the case that you only want to augment or override the resolve behavior in certain cases. You can use `nft`'s underlying resolver by importing it. The builtin `resolve` function expects additional arguments that need to be forwarded from the hook
 
-* `resolve(id: string, parent: string, job: Job, isCjs: boolean): Promise<string | string[]>`
+- `resolve(id: string, parent: string, job: Job, isCjs: boolean): Promise<string | string[]>`
 
 Here is an example showing one id being resolved to a bespoke path while all other paths being resolved by the built-in resolver
+
 ```js
 const { nodeFileTrace, resolve } = require('@vercel/nft');
 const files = ['./src/main.js', './src/second.js'];
-const { fileList } = await nodeFileTrace(files, { resolve: async (id, parent, job, isCjs) => {
-  if (id === './src/main.js') {
-    return '/path/to/some/resolved/main/file.js'
-  } else {
-    return resolve(id, parent, job, isCjs)
-  }
-}});
+const { fileList } = await nodeFileTrace(files, {
+  resolve: async (id, parent, job, isCjs) => {
+    if (id === './src/main.js') {
+      return '/path/to/some/resolved/main/file.js';
+    } else {
+      return resolve(id, parent, job, isCjs);
+    }
+  },
+});
 ```
 
 #### TypeScript
@@ -168,7 +172,7 @@ const { fileList } = await nodeFileTrace(files, {
     computeFileReferences: true,
     // evaluate known bindings to assist with glob and file reference analysis
     evaluatePureExpressions: true,
-  }
+  },
 });
 ```
 
@@ -178,7 +182,7 @@ Custom ignores can be provided to skip file inclusion (and consequently analysis
 
 ```js
 const { fileList } = await nodeFileTrace(files, {
-  ignore: ['./node_modules/pkg/file.js']
+  ignore: ['./node_modules/pkg/file.js'],
 });
 ```
 

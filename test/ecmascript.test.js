@@ -6,12 +6,15 @@ const rimraf = require('rimraf');
 const { writeFile } = promises;
 
 const randomTmpId = Math.random().toString().slice(2);
-const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-ecmascript${randomTmpId}`);
+const tmpdir = path.resolve(
+  os.tmpdir(),
+  `node-file-trace-ecmascript${randomTmpId}`,
+);
 rimraf.sync(tmpdir);
 mkdirSync(tmpdir);
 console.log('created directory ' + tmpdir);
 
- // These are tests known to fail so we skip them
+// These are tests known to fail so we skip them
 const ignoreCategories = new Set([
   'Generator function.sent Meta Property',
   'Class and Property Decorators',
@@ -21,7 +24,7 @@ const ignoreCategories = new Set([
 async function runTests(importPath) {
   const { tests } = require(importPath);
   for (const category of tests) {
-    const subtests = category.subtests || [category]
+    const subtests = category.subtests || [category];
     for (const test of subtests) {
       const { name, exec } = test;
       if (ignoreCategories.has(category.name)) {
@@ -30,14 +33,17 @@ async function runTests(importPath) {
       it(`should correctly trace ${importPath} "${category.name}" "${name}"`, async () => {
         let str = exec.toString().replace('{/*', '{').replace('*/}', '}');
         str = `var obj = { exec: ${str} }`;
-        const filename = path.join(tmpdir, `test${Math.random().toString().slice(2)}.js`);
+        const filename = path.join(
+          tmpdir,
+          `test${Math.random().toString().slice(2)}.js`,
+        );
         await writeFile(filename, str, 'utf8');
         const { fileList, warnings } = await nodeFileTrace([filename], {
           base: `${__dirname}/../`,
           processCwd: path.dirname(filename),
           ts: true,
           log: true,
-          mixedModules: true
+          mixedModules: true,
         });
         if (warnings.size > 0) {
           console.log(warnings);

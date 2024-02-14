@@ -8,15 +8,18 @@
   "bin": {
     "nft": "./out/cli.js"
   },
-  "scripts": {
-    "build": "tsc",
-    "prepublishOnly": "tsc && rm out/utils/*.d.ts && rm out/tsconfig.tsbuildinfo",
-    "test": "jest --verbose",
-    "test-verbose": "tsc --sourceMap && jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\""
-  },
   "files": [
     "out"
   ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "tsc && rm out/utils/*.d.ts && rm out/tsconfig.tsbuildinfo",
+    "prettier-check": "prettier --check .",
+    "prettier-fix": "prettier --write .",
+    "test": "jest --verbose",
+    "test-verbose": "tsc --sourceMap && jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\""
+  },
+  "prettier": "@vercel/style-guide/prettier",
   "dependencies": {
     "@mapbox/node-pre-gyp": "^1.0.5",
     "@rollup/pluginutils": "^4.0.0",
@@ -45,6 +48,7 @@
     "@types/graceful-fs": "^4.1.5",
     "@types/micromatch": "^4.0.1",
     "@types/node": "^14.14.37",
+    "@vercel/style-guide": "^5.2.0",
     "analytics-node": "^3.4.0-beta.1",
     "apollo-server-express": "^2.14.2",
     "argon2": "^0.31.1",
@@ -102,6 +106,7 @@
     "pixelmatch": "^5.2.1",
     "playwright-core": "^1.17.1",
     "polyfill-library": "3.93.0",
+    "prettier": "^3.2.5",
     "prismjs": "^1.27.0",
     "pug": "^3.0.1",
     "react": "^16.14.0",
@@ -131,10 +136,10 @@
     "when": "^3.7.8",
     "zeromq": "^6.0.0-beta.19"
   },
+  "packageManager": "npm@10.2.5",
   "engines": {
     "node": ">=16"
   },
-  "packageManager": "npm@10.2.5",
   "publishConfig": {
     "access": "public"
   }

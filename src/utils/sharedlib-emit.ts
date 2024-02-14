@@ -7,10 +7,10 @@ let sharedlibGlob = '';
 switch (os.platform()) {
   case 'darwin':
     sharedlibGlob = '/**/*.@(dylib|so?(.*))';
-  break;
+    break;
   case 'win32':
     sharedlibGlob = '/**/*.dll';
-  break;
+    break;
   default:
     sharedlibGlob = '/**/*.so?(.*)';
 }
@@ -19,11 +19,14 @@ switch (os.platform()) {
 export async function sharedLibEmit(path: string, job: Job) {
   // console.log('Emitting shared libs for ' + path);
   const pkgPath = getPackageBase(path);
-  if (!pkgPath)
-    return;
+  if (!pkgPath) return;
 
   const files = await new Promise<string[]>((resolve, reject) =>
-    glob(pkgPath + sharedlibGlob, { ignore: pkgPath + '/**/node_modules/**/*', dot: true }, (err, files) => err ? reject(err) : resolve(files))
+    glob(
+      pkgPath + sharedlibGlob,
+      { ignore: pkgPath + '/**/node_modules/**/*', dot: true },
+      (err, files) => (err ? reject(err) : resolve(files)),
+    ),
   );
-  await Promise.all(files.map(file => job.emitFile(file, 'sharedlib', path)));
-};
+  await Promise.all(files.map((file) => job.emitFile(file, 'sharedlib', path)));
+}

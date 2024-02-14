@@ -4,9 +4,11 @@ const pkgNameRegEx = /^(@[^\\\/]+[\\\/])?[^\\\/]+/;
 
 export function getPackageBase(id: string): string | undefined {
   const pkgIndex = id.lastIndexOf('node_modules');
-  if (pkgIndex !== -1 &&
-      (id[pkgIndex - 1] === '/' || id[pkgIndex - 1] === '\\') &&
-      (id[pkgIndex + 12] === '/' || id[pkgIndex + 12] === '\\')) {
+  if (
+    pkgIndex !== -1 &&
+    (id[pkgIndex - 1] === '/' || id[pkgIndex - 1] === '\\') &&
+    (id[pkgIndex + 12] === '/' || id[pkgIndex + 12] === '\\')
+  ) {
     const pkgNameMatch = id.slice(pkgIndex + 13).match(pkgNameRegEx);
     if (pkgNameMatch)
       return id.slice(0, pkgIndex + 13 + pkgNameMatch[0].length);
@@ -16,13 +18,15 @@ export function getPackageBase(id: string): string | undefined {
 
 export function getPackageName(id: string): string | undefined {
   const pkgIndex = id.lastIndexOf('node_modules');
-  if (pkgIndex !== -1 &&
-      (id[pkgIndex - 1] === '/' || id[pkgIndex - 1] === '\\') &&
-      (id[pkgIndex + 12] === '/' || id[pkgIndex + 12] === '\\')) {
+  if (
+    pkgIndex !== -1 &&
+    (id[pkgIndex - 1] === '/' || id[pkgIndex - 1] === '\\') &&
+    (id[pkgIndex + 12] === '/' || id[pkgIndex + 12] === '\\')
+  ) {
     const pkgNameMatch = id.slice(pkgIndex + 13).match(pkgNameRegEx);
     if (pkgNameMatch && pkgNameMatch.length > 0) {
-      return pkgNameMatch[0].replace(/\\/g,  '/');
+      return pkgNameMatch[0].replace(/\\/g, '/');
     }
   }
   return undefined;
-};
+}

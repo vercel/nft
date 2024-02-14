@@ -34,9 +34,19 @@ export function isIdentifierRead(node: Node, parent: Node) {
 }
 
 export function isVarLoop(node: Node) {
-  return node.type === 'ForStatement' || node.type === 'ForInStatement' || node.type === 'ForOfStatement';
+  return (
+    node.type === 'ForStatement' ||
+    node.type === 'ForInStatement' ||
+    node.type === 'ForOfStatement'
+  );
 }
 
 export function isLoop(node: Node) {
-  return node.type === 'ForStatement' || node.type === 'ForInStatement' || node.type === 'ForOfStatement' || node.type === 'WhileStatement' || node.type === 'DoWhileStatement';
+  return (
+    node.type === 'ForStatement' ||
+    node.type === 'ForInStatement' ||
+    node.type === 'ForOfStatement' ||
+    node.type === 'WhileStatement' ||
+    node.type === 'DoWhileStatement'
+  );
 }

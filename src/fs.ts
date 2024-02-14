@@ -1,7 +1,7 @@
-import type { Stats } from "fs";
-import { resolve } from "path";
-import fs from "graceful-fs";
-import { Sema } from "async-sema";
+import type { Stats } from 'fs';
+import { resolve } from 'path';
+import fs from 'graceful-fs';
+import { Sema } from 'async-sema';
 
 const fsReadFile = fs.promises.readFile;
 const fsReadlink = fs.promises.readlink;
@@ -17,7 +17,11 @@ export class CachedFileSystem {
     cache,
     fileIOConcurrency,
   }: {
-    cache?: { fileCache?: Map<string, Promise<string | null>>, statCache?: Map<string, Promise<Stats | null>>, symlinkCache?: Map<string, Promise<string | null>> };
+    cache?: {
+      fileCache?: Map<string, Promise<string | null>>;
+      statCache?: Map<string, Promise<Stats | null>>;
+      symlinkCache?: Map<string, Promise<string | null>>;
+    };
     fileIOConcurrency: number;
   }) {
     this.fileIOQueue = new Sema(fileIOConcurrency);
@@ -73,7 +77,7 @@ export class CachedFileSystem {
       if (stats) this.statCache.set(resolve(path, link), stats);
       return link;
     } catch (e: any) {
-      if (e.code !== "EINVAL" && e.code !== "ENOENT" && e.code !== "UNKNOWN")
+      if (e.code !== 'EINVAL' && e.code !== 'ENOENT' && e.code !== 'UNKNOWN')
         throw e;
       return null;
     }
@@ -83,7 +87,7 @@ export class CachedFileSystem {
     try {
       return (await fsReadFile(path)).toString();
     } catch (e: any) {
-      if (e.code === "ENOENT" || e.code === "EISDIR") {
+      if (e.code === 'ENOENT' || e.code === 'EISDIR') {
         return null;
       }
       throw e;
@@ -94,7 +98,7 @@ export class CachedFileSystem {
     try {
       return await fsStat(path);
     } catch (e: any) {
-      if (e.code === "ENOENT") {
+      if (e.code === 'ENOENT') {
         return null;
       }
       throw e;
@@ -103,7 +107,7 @@ export class CachedFileSystem {
 
   private async executeFileIO<Return>(
     path: string,
-    fileIO: (path: string) => Promise<Return>
+    fileIO: (path: string) => Promise<Return>,
   ): Promise<Return> {
     await this.fileIOQueue.acquire();
 

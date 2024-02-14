@@ -35,11 +35,13 @@ export interface NodeFileTraceOptions {
   conditions?: string[];
   exportsOnly?: boolean;
   ignore?: string | string[] | ((path: string) => boolean);
-  analysis?: boolean | {
-    emitGlobs?: boolean;
-    computeFileReferences?: boolean;
-    evaluatePureExpressions?: boolean;
-  };
+  analysis?:
+    | boolean
+    | {
+        emitGlobs?: boolean;
+        computeFileReferences?: boolean;
+        evaluatePureExpressions?: boolean;
+      };
   cache?: any;
   paths?: Record<string, string>;
   ts?: boolean;
@@ -48,17 +50,31 @@ export interface NodeFileTraceOptions {
   readFile?: (path: string) => Promise<Buffer | string | null>;
   stat?: (path: string) => Promise<Stats | null>;
   readlink?: (path: string) => Promise<string | null>;
-  resolve?: (id: string, parent: string, job: Job, cjsResolve: boolean) => Promise<string | string[]>;
+  resolve?: (
+    id: string,
+    parent: string,
+    job: Job,
+    cjsResolve: boolean,
+  ) => Promise<string | string[]>;
   fileIOConcurrency?: number;
 }
 
-export type NodeFileTraceReasonType = 'initial' | 'resolve' | 'dependency' | 'asset' | 'sharedlib';
+export type NodeFileTraceReasonType =
+  | 'initial'
+  | 'resolve'
+  | 'dependency'
+  | 'asset'
+  | 'sharedlib';
 
-export interface NodeFileTraceReasons extends Map<string, {
-  type: NodeFileTraceReasonType[];
-  ignored: boolean;
-  parents: Set<string>;
-}> {}
+export interface NodeFileTraceReasons
+  extends Map<
+    string,
+    {
+      type: NodeFileTraceReasonType[];
+      ignored: boolean;
+      parents: Set<string>;
+    }
+  > {}
 
 export interface NodeFileTraceResult {
   fileList: Set<string>;

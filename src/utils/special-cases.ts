@@ -4,32 +4,32 @@ import { getPackageName } from './get-package-base';
 import { readFileSync } from 'graceful-fs';
 import { Job } from '../node-file-trace';
 import { Ast } from './types';
-type Node = Ast['body'][0]
+type Node = Ast['body'][0];
 
 const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
-  '@generated/photon' ({ id, emitAssetDirectory }) {
+  '@generated/photon'({ id, emitAssetDirectory }) {
     if (id.endsWith('@generated/photon/index.js')) {
       emitAssetDirectory(resolve(dirname(id), 'runtime/'));
     }
   },
-  'argon2' ({ id, emitAssetDirectory }) {
+  argon2({ id, emitAssetDirectory }) {
     if (id.endsWith('argon2/argon2.js')) {
       emitAssetDirectory(resolve(dirname(id), 'build', 'Release'));
       emitAssetDirectory(resolve(dirname(id), 'prebuilds'));
       emitAssetDirectory(resolve(dirname(id), 'lib', 'binding'));
     }
   },
-  'bull' ({ id, emitAssetDirectory }) {
+  bull({ id, emitAssetDirectory }) {
     if (id.endsWith('bull/lib/commands/index.js')) {
       emitAssetDirectory(resolve(dirname(id)));
     }
   },
-  'camaro' ({ id, emitAsset }) {
+  camaro({ id, emitAsset }) {
     if (id.endsWith('camaro/dist/camaro.js')) {
       emitAsset(resolve(dirname(id), 'camaro.wasm'));
     }
   },
-  'esbuild' ({ id, emitAssetDirectory }) {
+  esbuild({ id, emitAssetDirectory }) {
     if (id.endsWith('esbuild/lib/main.js')) {
       const file = resolve(id, '..', '..', 'package.json');
       const pkg = JSON.parse(readFileSync(file, 'utf8'));
@@ -39,60 +39,93 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       }
     }
   },
-  'google-gax' ({ id, ast, emitAssetDirectory }) {
+  'google-gax'({ id, ast, emitAssetDirectory }) {
     if (id.endsWith('google-gax/build/src/grpc.js')) {
       // const googleProtoFilesDir = path.normalize(google_proto_files_1.getProtoPath('..'));
       // ->
       // const googleProtoFilesDir = resolve(__dirname, '../../../google-proto-files');
       for (const statement of ast.body) {
-        if (statement.type === 'VariableDeclaration' &&
-            statement.declarations[0].id.type === 'Identifier' &&
-            statement.declarations[0].id.name === 'googleProtoFilesDir') {
-          emitAssetDirectory(resolve(dirname(id), '../../../google-proto-files'));
+        if (
+          statement.type === 'VariableDeclaration' &&
+          statement.declarations[0].id.type === 'Identifier' &&
+          statement.declarations[0].id.name === 'googleProtoFilesDir'
+        ) {
+          emitAssetDirectory(
+            resolve(dirname(id), '../../../google-proto-files'),
+          );
         }
       }
     }
   },
-  'oracledb' ({ id, ast, emitAsset }) {
+  oracledb({ id, ast, emitAsset }) {
     if (id.endsWith('oracledb/lib/oracledb.js')) {
       for (const statement of ast.body) {
-        if (statement.type === 'ForStatement' &&
-            'body' in statement.body &&
-            statement.body.body &&
-            Array.isArray(statement.body.body) &&
-            statement.body.body[0] &&
-            statement.body.body[0].type === 'TryStatement' &&
-            statement.body.body[0].block.body[0] &&
-            statement.body.body[0].block.body[0].type === 'ExpressionStatement' &&
-            statement.body.body[0].block.body[0].expression.type === 'AssignmentExpression' &&
-            statement.body.body[0].block.body[0].expression.operator === '=' &&
-            statement.body.body[0].block.body[0].expression.left.type === 'Identifier' &&
-            statement.body.body[0].block.body[0].expression.left.name === 'oracledbCLib' &&
-            statement.body.body[0].block.body[0].expression.right.type === 'CallExpression' &&
-            statement.body.body[0].block.body[0].expression.right.callee.type === 'Identifier' &&
-            statement.body.body[0].block.body[0].expression.right.callee.name === 'require' &&
-            statement.body.body[0].block.body[0].expression.right.arguments.length === 1 &&
-            statement.body.body[0].block.body[0].expression.right.arguments[0].type === 'MemberExpression' &&
-            statement.body.body[0].block.body[0].expression.right.arguments[0].computed === true &&
-            statement.body.body[0].block.body[0].expression.right.arguments[0].object.type === 'Identifier' &&
-            statement.body.body[0].block.body[0].expression.right.arguments[0].object.name === 'binaryLocations' &&
-            statement.body.body[0].block.body[0].expression.right.arguments[0].property.type === 'Identifier' &&
-            statement.body.body[0].block.body[0].expression.right.arguments[0].property.name === 'i') {
-          statement.body.body[0].block.body[0].expression.right.arguments = [{ type: 'Literal', value: '_' }];
-          const version = (global as any)._unit ? '3.0.0' : JSON.parse(readFileSync(id.slice(0, -15) + 'package.json', 'utf8')).version;
-          const useVersion = Number(version.slice(0, version.indexOf('.'))) >= 4;
-          const binaryName = 'oracledb-' + (useVersion ? version : 'abi' + process.versions.modules) + '-' + process.platform + '-' + process.arch + '.node';
+        if (
+          statement.type === 'ForStatement' &&
+          'body' in statement.body &&
+          statement.body.body &&
+          Array.isArray(statement.body.body) &&
+          statement.body.body[0] &&
+          statement.body.body[0].type === 'TryStatement' &&
+          statement.body.body[0].block.body[0] &&
+          statement.body.body[0].block.body[0].type === 'ExpressionStatement' &&
+          statement.body.body[0].block.body[0].expression.type ===
+            'AssignmentExpression' &&
+          statement.body.body[0].block.body[0].expression.operator === '=' &&
+          statement.body.body[0].block.body[0].expression.left.type ===
+            'Identifier' &&
+          statement.body.body[0].block.body[0].expression.left.name ===
+            'oracledbCLib' &&
+          statement.body.body[0].block.body[0].expression.right.type ===
+            'CallExpression' &&
+          statement.body.body[0].block.body[0].expression.right.callee.type ===
+            'Identifier' &&
+          statement.body.body[0].block.body[0].expression.right.callee.name ===
+            'require' &&
+          statement.body.body[0].block.body[0].expression.right.arguments
+            .length === 1 &&
+          statement.body.body[0].block.body[0].expression.right.arguments[0]
+            .type === 'MemberExpression' &&
+          statement.body.body[0].block.body[0].expression.right.arguments[0]
+            .computed === true &&
+          statement.body.body[0].block.body[0].expression.right.arguments[0]
+            .object.type === 'Identifier' &&
+          statement.body.body[0].block.body[0].expression.right.arguments[0]
+            .object.name === 'binaryLocations' &&
+          statement.body.body[0].block.body[0].expression.right.arguments[0]
+            .property.type === 'Identifier' &&
+          statement.body.body[0].block.body[0].expression.right.arguments[0]
+            .property.name === 'i'
+        ) {
+          statement.body.body[0].block.body[0].expression.right.arguments = [
+            { type: 'Literal', value: '_' },
+          ];
+          const version = (global as any)._unit
+            ? '3.0.0'
+            : JSON.parse(
+                readFileSync(id.slice(0, -15) + 'package.json', 'utf8'),
+              ).version;
+          const useVersion =
+            Number(version.slice(0, version.indexOf('.'))) >= 4;
+          const binaryName =
+            'oracledb-' +
+            (useVersion ? version : 'abi' + process.versions.modules) +
+            '-' +
+            process.platform +
+            '-' +
+            process.arch +
+            '.node';
           emitAsset(resolve(id, '../../build/Release/' + binaryName));
         }
       }
     }
   },
-  'phantomjs-prebuilt' ({ id, emitAssetDirectory }) {
+  'phantomjs-prebuilt'({ id, emitAssetDirectory }) {
     if (id.endsWith('phantomjs-prebuilt/lib/phantomjs.js')) {
       emitAssetDirectory(resolve(dirname(id), '..', 'bin'));
     }
   },
-  'remark-prism' ({ id, emitAssetDirectory }) {
+  'remark-prism'({ id, emitAssetDirectory }) {
     const file = 'remark-prism/src/highlight.js';
     if (id.endsWith(file)) {
       try {
@@ -103,13 +136,13 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       }
     }
   },
-  'semver' ({ id, emitAsset }) {
+  semver({ id, emitAsset }) {
     if (id.endsWith('semver/index.js')) {
       // See https://github.com/npm/node-semver/blob/master/CHANGELOG.md#710
       emitAsset(resolve(id.replace('index.js', 'preload.js')));
     }
   },
-  'sharp': async ({ id, emitAssetDirectory, job }) => {
+  sharp: async ({ id, emitAssetDirectory, job }) => {
     if (id.endsWith('sharp/lib/index.js')) {
       const file = resolve(id, '..', '..', 'package.json');
       const pkg = JSON.parse(readFileSync(file, 'utf8'));
@@ -121,19 +154,26 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
           const file = resolve(dir, 'package.json');
           const pkg = JSON.parse(readFileSync(file, 'utf8'));
           for (const innerDep of Object.keys(pkg.optionalDependencies || {})) {
-            const innerDir = resolve(await job.realpath(dir), '..', '..', innerDep);
+            const innerDir = resolve(
+              await job.realpath(dir),
+              '..',
+              '..',
+              innerDep,
+            );
             emitAssetDirectory(innerDir);
           }
         } catch (err: any) {
           if (err && err.code !== 'ENOENT') {
-            console.error(`Error reading "sharp" dependencies from "${dir}/package.json"'`);
+            console.error(
+              `Error reading "sharp" dependencies from "${dir}/package.json"'`,
+            );
             throw err;
           }
         }
       }
     }
   },
-  'shiki' ({ id, emitAssetDirectory }) {
+  shiki({ id, emitAssetDirectory }) {
     if (id.endsWith('/dist/index.js')) {
       emitAssetDirectory(resolve(dirname(id), '..', 'languages'));
       emitAssetDirectory(resolve(dirname(id), '..', 'themes'));
@@ -141,20 +181,26 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
   },
   'socket.io': async function ({ id, ast, job }) {
     if (id.endsWith('socket.io/lib/index.js')) {
-      async function replaceResolvePathStatement (statement: Node) {
-        if (statement.type === 'ExpressionStatement' &&
-            statement.expression.type === 'AssignmentExpression' &&
-            statement.expression.operator === '=' &&
-            statement.expression.right.type === 'CallExpression' &&
-            statement.expression.right.callee.type === 'Identifier' &&
-            statement.expression.right.callee.name === 'read' &&
-            statement.expression.right.arguments.length >= 1 &&
-            statement.expression.right.arguments[0].type === 'CallExpression' &&
-            statement.expression.right.arguments[0].callee.type === 'Identifier' &&
-            statement.expression.right.arguments[0].callee.name === 'resolvePath' &&
-            statement.expression.right.arguments[0].arguments.length === 1 &&
-            statement.expression.right.arguments[0].arguments[0].type === 'Literal') {
-          const arg = statement.expression.right.arguments[0].arguments[0].value;
+      async function replaceResolvePathStatement(statement: Node) {
+        if (
+          statement.type === 'ExpressionStatement' &&
+          statement.expression.type === 'AssignmentExpression' &&
+          statement.expression.operator === '=' &&
+          statement.expression.right.type === 'CallExpression' &&
+          statement.expression.right.callee.type === 'Identifier' &&
+          statement.expression.right.callee.name === 'read' &&
+          statement.expression.right.arguments.length >= 1 &&
+          statement.expression.right.arguments[0].type === 'CallExpression' &&
+          statement.expression.right.arguments[0].callee.type ===
+            'Identifier' &&
+          statement.expression.right.arguments[0].callee.name ===
+            'resolvePath' &&
+          statement.expression.right.arguments[0].arguments.length === 1 &&
+          statement.expression.right.arguments[0].arguments[0].type ===
+            'Literal'
+        ) {
+          const arg =
+            statement.expression.right.arguments[0].arguments[0].value;
           let resolved: string;
           try {
             const dep = await resolveDependency(String(arg), id, job);
@@ -163,8 +209,7 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
             } else {
               return undefined;
             }
-          }
-          catch (e) {
+          } catch (e) {
             return undefined;
           }
           // The asset relocator will then pick up the AST rewriting from here
@@ -178,56 +223,74 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
             operator: '+',
             left: {
               type: 'Identifier',
-              name: '__dirname'
+              name: '__dirname',
             },
             right: {
               type: 'Literal',
               value: relResolved,
-              raw: JSON.stringify(relResolved)
-            }
+              raw: JSON.stringify(relResolved),
+            },
           };
         }
         return undefined;
       }
 
       for (const statement of ast.body) {
-        if (statement.type === 'ExpressionStatement' &&
-            statement.expression.type === 'AssignmentExpression' &&
-            statement.expression.operator === '=' &&
-            statement.expression.left.type === 'MemberExpression' &&
-            statement.expression.left.object.type === 'MemberExpression' &&
-            statement.expression.left.object.object.type === 'Identifier' &&
-            statement.expression.left.object.object.name === 'Server' &&
-            statement.expression.left.object.property.type === 'Identifier' &&
-            statement.expression.left.object.property.name === 'prototype' &&
-            statement.expression.left.property.type === 'Identifier' &&
-            statement.expression.left.property.name === 'serveClient' &&
-            statement.expression.right.type === 'FunctionExpression') {
-          
+        if (
+          statement.type === 'ExpressionStatement' &&
+          statement.expression.type === 'AssignmentExpression' &&
+          statement.expression.operator === '=' &&
+          statement.expression.left.type === 'MemberExpression' &&
+          statement.expression.left.object.type === 'MemberExpression' &&
+          statement.expression.left.object.object.type === 'Identifier' &&
+          statement.expression.left.object.object.name === 'Server' &&
+          statement.expression.left.object.property.type === 'Identifier' &&
+          statement.expression.left.object.property.name === 'prototype' &&
+          statement.expression.left.property.type === 'Identifier' &&
+          statement.expression.left.property.name === 'serveClient' &&
+          statement.expression.right.type === 'FunctionExpression'
+        ) {
           for (const node of statement.expression.right.body.body) {
-            if (node.type === 'IfStatement' && node.consequent && 'body' in node.consequent && node.consequent.body) {
+            if (
+              node.type === 'IfStatement' &&
+              node.consequent &&
+              'body' in node.consequent &&
+              node.consequent.body
+            ) {
               const ifBody = node.consequent.body;
               let replaced: boolean | undefined = false;
-              if (Array.isArray(ifBody) && ifBody[0] && ifBody[0].type === 'ExpressionStatement') {
+              if (
+                Array.isArray(ifBody) &&
+                ifBody[0] &&
+                ifBody[0].type === 'ExpressionStatement'
+              ) {
                 replaced = await replaceResolvePathStatement(ifBody[0]);
               }
-              if (Array.isArray(ifBody) && ifBody[1] && ifBody[1].type === 'TryStatement' && ifBody[1].block.body && ifBody[1].block.body[0]) {
-                replaced = await replaceResolvePathStatement(ifBody[1].block.body[0]) || replaced;
+              if (
+                Array.isArray(ifBody) &&
+                ifBody[1] &&
+                ifBody[1].type === 'TryStatement' &&
+                ifBody[1].block.body &&
+                ifBody[1].block.body[0]
+              ) {
+                replaced =
+                  (await replaceResolvePathStatement(
+                    ifBody[1].block.body[0],
+                  )) || replaced;
               }
               return;
             }
           }
-          
         }
       }
     }
   },
-  'typescript' ({ id, emitAssetDirectory }) {
+  typescript({ id, emitAssetDirectory }) {
     if (id.endsWith('typescript/lib/tsc.js')) {
       emitAssetDirectory(resolve(id, '../'));
     }
   },
-  'uglify-es' ({ id, emitAsset }) {
+  'uglify-es'({ id, emitAsset }) {
     if (id.endsWith('uglify-es/tools/node.js')) {
       emitAsset(resolve(id, '../../lib/utils.js'));
       emitAsset(resolve(id, '../../lib/ast.js'));
@@ -243,13 +306,13 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(id, '../exports.js'));
     }
   },
-  'uglify-js' ({ id, emitAsset, emitAssetDirectory }) {
+  'uglify-js'({ id, emitAsset, emitAssetDirectory }) {
     if (id.endsWith('uglify-js/tools/node.js')) {
       emitAssetDirectory(resolve(id, '../../lib'));
       emitAsset(resolve(id, '../exports.js'));
     }
   },
-  'playwright-core' ({ id, emitAsset }) {
+  'playwright-core'({ id, emitAsset }) {
     if (id.endsWith('playwright-core/index.js')) {
       emitAsset(resolve(dirname(id), 'browsers.json'));
     }
@@ -259,11 +322,11 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAsset(resolve(dirname(id), '../data/geo.dat'));
     }
   },
-  'pixelmatch'({ id, emitDependency }) {
+  pixelmatch({ id, emitDependency }) {
     if (id.endsWith('pixelmatch/index.js')) {
       emitDependency(resolve(dirname(id), 'bin/pixelmatch'));
     }
-  }
+  },
 };
 
 interface SpecialCaseOpts {
@@ -275,9 +338,24 @@ interface SpecialCaseOpts {
   job: Job;
 }
 
-export default async function handleSpecialCases({ id, ast, emitDependency, emitAsset, emitAssetDirectory, job }: SpecialCaseOpts) {
+export default async function handleSpecialCases({
+  id,
+  ast,
+  emitDependency,
+  emitAsset,
+  emitAssetDirectory,
+  job,
+}: SpecialCaseOpts) {
   const pkgName = getPackageName(id);
   const specialCase = specialCases[pkgName || ''];
-  id = id.replace(/\\/g,  '/');
-  if (specialCase) await specialCase({ id, ast, emitDependency, emitAsset, emitAssetDirectory, job });
-};
+  id = id.replace(/\\/g, '/');
+  if (specialCase)
+    await specialCase({
+      id,
+      ast,
+      emitDependency,
+      emitAsset,
+      emitAssetDirectory,
+      job,
+    });
+}
