@@ -172,6 +172,19 @@ const { fileList } = await nodeFileTrace(files, {
     computeFileReferences: true,
     // evaluate known bindings to assist with glob and file reference analysis
     evaluatePureExpressions: true,
+    // optional hook into the analysis step to inspect or modify the generated AST
+    transformAST: async (path, ast) => {
+      await walk(ast, {
+        async enter(node) {
+          if (
+            node.type === 'ImportDeclaration' &&
+            node.source.value === 'foo'
+          ) {
+            this.remove();
+          }
+        },
+      });
+    },
   },
 });
 ```

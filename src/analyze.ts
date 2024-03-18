@@ -338,6 +338,10 @@ export default async function analyze(
     }
   }
 
+  if (job.analysis.transformAST) {
+    await job.analysis.transformAST(id, ast);
+  }
+
   const importMetaUrl = pathToFileURL(id).href;
 
   const knownBindings: Record<

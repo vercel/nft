@@ -1,5 +1,6 @@
 const fs = require('fs');
 const { join, relative } = require('path');
+const { asyncWalk } = require('estree-walker');
 const { nodeFileTrace } = require('../out/node-file-trace');
 const gracefulFS = require('graceful-fs');
 const analyze = require('../out/analyze.js').default;
@@ -122,6 +123,25 @@ for (const { testName, isRoot } of unitTests) {
         inputFileNames.push('input-2.js', 'input-3.js', 'input-4.js');
       }
 
+      // disable analysis for basic-analysis unit tests
+      let analysis = !testName.startsWith('basic-analysis');
+
+      if (testName === 'imports-transform-ast') {
+        analysis = {
+          transformAST: async (path, ast) => {
+            expect(path).toEqual(join(unitPath, 'input.js'));
+
+            await asyncWalk(ast, {
+              async enter(node) {
+                if (node.type === 'ImportDeclaration') {
+                  this.remove();
+                }
+              },
+            });
+          },
+        };
+      }
+
       const { fileList, reasons } = await nodeFileTrace(
         inputFileNames.map((file) => join(unitPath, file)),
         {
@@ -135,8 +155,7 @@ for (const { testName, isRoot } of unitTests) {
           exportsOnly: testName.startsWith('exports-only'),
           ts: true,
           log: true,
-          // disable analysis for basic-analysis unit tests
-          analysis: !testName.startsWith('basic-analysis'),
+          analysis,
           mixedModules: true,
           // Ignore unit test output "actual.js", and ignore GitHub Actions preinstalled packages
           ignore: (str) =>
