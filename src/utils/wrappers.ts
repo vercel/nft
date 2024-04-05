@@ -148,7 +148,7 @@ export function handleWrappers(ast: Ast) {
         const arg = body[0].expression.arguments[0];
         arg.params = [];
         try {
-          // @ts-ignore If it doesn't exist thats ok
+          // @ts-ignore If it doesn't exist that's ok
           delete arg.scope.declarations.require;
         } catch (e) {}
       }
@@ -399,7 +399,7 @@ export function handleWrappers(ast: Ast) {
           const funcExpression = wrapper.arguments[0];
           funcExpression.params = [];
           try {
-            // @ts-ignore If scope doesn't exist thats ok
+            // @ts-ignore If scope doesn't exist that's ok
             const scope = funcExpression.scope;
             delete scope.declarations.require;
             delete scope.declarations.exports;
