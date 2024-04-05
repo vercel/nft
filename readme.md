@@ -36,7 +36,7 @@ By default the `process.cwd()` is used:
 
 ```js
 const { fileList } = await nodeFileTrace(files, {
-  base: process.cwd()
+  base: process.cwd(),
 });
 ```
 
@@ -51,7 +51,7 @@ Setting the `processCwd` option allows this analysis to be guided to the right p
 
 ```js
 const { fileList } = await nodeFileTrace(files, {
-  processCwd: path.resolve(__dirname)
+  processCwd: path.resolve(__dirname),
 });
 ```
 
