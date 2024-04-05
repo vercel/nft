@@ -37,7 +37,7 @@ By default the `process.cwd()` is used:
 ```js
 const { fileList } = await nodeFileTrace(files, {
   base: process.cwd()
-}
+});
 ```
 
 Any files/folders above the `base` are ignored in the listing and analysis.
@@ -52,7 +52,7 @@ Setting the `processCwd` option allows this analysis to be guided to the right p
 ```js
 const { fileList } = await nodeFileTrace(files, {
   processCwd: path.resolve(__dirname)
-}
+});
 ```
 
 By default `processCwd` is the same as `base`.
