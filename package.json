@@ -94,7 +94,6 @@
     "microtime": "^3.0.0",
     "mongoose": "^5.13.20",
     "mysql": "^2.17.1",
-    "npm": "^6.14.6",
     "oracledb": "^6.2.0",
     "paraphrase": "1.8.0",
     "passport": "^0.6.0",
