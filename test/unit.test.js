@@ -234,7 +234,11 @@ for (const { testName, isRoot } of unitTests) {
       }
       let sortedFileList = [...fileList].sort();
 
-      if (testName === 'microtime-node-gyp' || testName === 'zeromq-node-gyp') {
+      if (
+        testName === 'microtime-node-gyp' ||
+        testName === 'zeromq-node-gyp' ||
+        testName === '@datadog-pprof'
+      ) {
         let foundMatchingBinary = false;
         sortedFileList = sortedFileList.filter((file) => {
           if (file.includes('prebuilds') && file.endsWith('.node')) {

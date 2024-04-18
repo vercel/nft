@@ -38,6 +38,7 @@
   "devDependencies": {
     "@azure/cosmos": "^2.1.7",
     "@bugsnag/js": "^6.3.2",
+    "@datadog/pprof": "^5.2.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@google-cloud/bigquery": "^4.1.4",
     "@google-cloud/firestore": "^7.6.0",

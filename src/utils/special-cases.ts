@@ -24,6 +24,11 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAssetDirectory(resolve(dirname(id)));
     }
   },
+  '@datadog/pprof'({ id, emitAssetDirectory }) {
+    if (id.endsWith('@datadog/pprof/out/src/index.js')) {
+      emitAssetDirectory(resolve(dirname(id), '..', '..', 'prebuilds'));
+    }
+  },
   camaro({ id, emitAsset }) {
     if (id.endsWith('camaro/dist/camaro.js')) {
       emitAsset(resolve(dirname(id), 'camaro.wasm'));
