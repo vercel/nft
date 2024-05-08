@@ -12,6 +12,12 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitAssetDirectory(resolve(dirname(id), 'runtime/'));
     }
   },
+  '@serialport/bindings-cpp'({ id, emitAssetDirectory }) {
+    if (id.endsWith('@serialport/bindings-cpp/dist/index.js')) {
+      emitAssetDirectory(resolve(dirname(id), '..', 'build', 'Release'));
+      emitAssetDirectory(resolve(dirname(id), '..', 'prebuilds'));
+    }
+  },
   argon2({ id, emitAssetDirectory }) {
     if (id.endsWith('argon2/argon2.js')) {
       emitAssetDirectory(resolve(dirname(id), 'build', 'Release'));

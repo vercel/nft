@@ -120,6 +120,7 @@
     "saslprep": "^1.0.3",
     "semver": "^7.5.2",
     "sequelize": "^6.29.0",
+    "serialport": "^12.0.0",
     "sharp": "^0.33.1",
     "shiki": "^0.14.5",
     "socket.io": "^2.4.0",
