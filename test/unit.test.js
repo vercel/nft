@@ -17,6 +17,7 @@ const nodeGypTests = [
 ];
 
 const skipOnWindows = [
+  'datadog-pprof-node-gyp',
   'yarn-workspaces',
   'yarn-workspaces-base-root',
   'yarn-workspace-esm',
