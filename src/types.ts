@@ -1,4 +1,5 @@
 import { Job } from './node-file-trace';
+import { Node } from './utils/types';
 
 export interface Stats {
   isFile(): boolean;
@@ -41,6 +42,7 @@ export interface NodeFileTraceOptions {
         emitGlobs?: boolean;
         computeFileReferences?: boolean;
         evaluatePureExpressions?: boolean;
+        transformAST?: (path: string, node: Node) => Promise<void>;
       };
   cache?: any;
   paths?: Record<string, string>;

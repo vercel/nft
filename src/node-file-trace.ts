@@ -9,6 +9,7 @@ import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency, { NotFoundError } from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
+import { Node } from './utils/types';
 import { join } from 'path';
 import { CachedFileSystem } from './fs';
 
@@ -61,6 +62,7 @@ export class Job {
     emitGlobs?: boolean;
     computeFileReferences?: boolean;
     evaluatePureExpressions?: boolean;
+    transformAST?: (path: string, node: Node) => Promise<void>;
   };
   private analysisCache: Map<string, AnalyzeResult>;
   public fileList: Set<string>;
