@@ -754,46 +754,38 @@ export default async function analyze(
               break;
             case NODE_GYP_BUILD:
               // handle case: require('node-gyp-build')(__dirname)
-              const withDirname =
-                node.arguments.length === 1 &&
-                node.arguments[0].type === 'Identifier' &&
-                node.arguments[0].name === '__dirname';
+              // handle case: require('node-gyp-build')(join(__dirname, ''))
+              // also case: require('@aminya/node-gyp-build')(__dirname)
 
-              // handle case: require('node-gyp-build')(path.join(__dirname, '..'))
-              const withPathJoinDirname =
-                node.arguments.length === 1 &&
-                node.arguments[0].callee?.object?.name === 'path' &&
-                node.arguments[0].callee?.property?.name === 'join' &&
-                node.arguments[0].arguments.length === 2 &&
-                node.arguments[0].arguments[0].type === 'Identifier' &&
-                node.arguments[0].arguments[0].name === '__dirname' &&
-                node.arguments[0].arguments[1].type === 'Literal';
-
-              if (
-                knownBindings.__dirname.shadowDepth === 0 &&
-                (withDirname || withPathJoinDirname)
-              ) {
-                const pathJoinedDir = withPathJoinDirname
-                  ? path.join(dir, node.arguments[0].arguments[1].value)
-                  : dir;
-
-                let resolved: string | undefined;
-                try {
-                  // the pkg could be 'node-gyp-build' or '@aminya/node-gyp-build'
-                  const pkgName = node.callee.arguments[0].value;
-                  // use installed version of node-gyp-build since resolving
-                  // binaries can differ among versions
-                  const nodeGypBuildPath = resolveFrom(pathJoinedDir, pkgName);
-                  resolved = require(nodeGypBuildPath).path(pathJoinedDir);
-                } catch (e) {
+              if (node.arguments.length) {
+                const arg = await computePureStaticValue(
+                  node.arguments[0],
+                  false,
+                );
+                if (arg && 'value' in arg && arg.value) {
+                  const pathJoinedDir = arg.value;
+                  let resolved: string | undefined;
                   try {
-                    resolved = nodeGypBuild.path(pathJoinedDir);
-                  } catch (e) {}
-                }
-                if (resolved) {
-                  staticChildValue = { value: resolved };
-                  staticChildNode = node;
-                  await emitStaticChildAsset();
+                    // the pkg could be 'node-gyp-build' or '@aminya/node-gyp-build'
+                    const pkgName =
+                      node?.callee?.arguments?.[0]?.value || 'node-gyp-build';
+                    // use installed version of node-gyp-build since resolving
+                    // binaries can differ among versions
+                    const nodeGypBuildPath = resolveFrom(
+                      pathJoinedDir,
+                      pkgName,
+                    );
+                    resolved = require(nodeGypBuildPath).path(pathJoinedDir);
+                  } catch (e) {
+                    try {
+                      resolved = nodeGypBuild.path(pathJoinedDir);
+                    } catch (e) {}
+                  }
+                  if (resolved) {
+                    staticChildValue = { value: resolved };
+                    staticChildNode = node;
+                    await emitStaticChildAsset();
+                  }
                 }
               }
               break;

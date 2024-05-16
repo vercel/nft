@@ -10,7 +10,14 @@ const readFile = gracefulFS.promises.readFile;
 
 global._unit = true;
 
+const nodeGypTests = [
+  'datadog-pprof-node-gyp',
+  'microtime-node-gyp',
+  'zeromq-node-gyp',
+];
+
 const skipOnWindows = [
+  'datadog-pprof-node-gyp',
   'yarn-workspaces',
   'yarn-workspaces-base-root',
   'yarn-workspace-esm',
@@ -234,7 +241,7 @@ for (const { testName, isRoot } of unitTests) {
       }
       let sortedFileList = [...fileList].sort();
 
-      if (testName === 'microtime-node-gyp' || testName === 'zeromq-node-gyp') {
+      if (nodeGypTests.includes(testName)) {
         let foundMatchingBinary = false;
         sortedFileList = sortedFileList.filter((file) => {
           if (file.includes('prebuilds') && file.endsWith('.node')) {
