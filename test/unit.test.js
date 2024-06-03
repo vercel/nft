@@ -8,6 +8,8 @@ const stat = gracefulFS.promises.stat;
 const readlink = gracefulFS.promises.readlink;
 const readFile = gracefulFS.promises.readFile;
 
+jest.setTimeout(5_000);
+
 global._unit = true;
 
 const nodeGypTests = [
