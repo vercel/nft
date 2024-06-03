@@ -20,6 +20,6 @@ export type EvaluatedValue = StaticValue | ConditionalValue | undefined;
 export interface Node {
   start: number;
   end: number;
-  type: string;
+  type: ESTreeNode['type'];
   [propName: string]: any;
 }

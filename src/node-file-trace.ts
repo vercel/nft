@@ -4,12 +4,11 @@ import {
   NodeFileTraceReasons,
   NodeFileTraceReasonType,
 } from './types';
-import { basename, dirname, extname, relative, resolve, sep } from 'path';
+import { basename, dirname, extname, join, relative, resolve, sep } from 'path';
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency, { NotFoundError } from './resolve-dependency';
 import { isMatch } from 'micromatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
-import { join } from 'path';
 import { CachedFileSystem } from './fs';
 
 function inPath(path: string, parent: string) {
