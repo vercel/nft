@@ -129,6 +129,7 @@ for (const { testName, isRoot } of unitTests) {
         inputFileNames.push('input-2.js', 'input-3.js', 'input-4.js');
       }
 
+      const startTime = Date.now();
       const { fileList, reasons } = await nodeFileTrace(
         inputFileNames.map((file) => join(unitPath, file)),
         {
@@ -154,6 +155,9 @@ for (const { testName, isRoot } of unitTests) {
             : undefined,
         },
       );
+
+      const totalTime = Date.now() - startTime;
+      expect(totalTime).toBeLessThan(1000);
 
       const normalizeFilesRoot = (f) =>
         (isRoot ? relative(join('./', __dirname, '..'), f) : f).replace(
