@@ -68,6 +68,7 @@ export class Job {
   public warnings: Set<Error>;
   public reasons: NodeFileTraceReasons = new Map();
   private cachedFileSystem: CachedFileSystem;
+  private remappings: Map<string, Set<string>> = new Map();
 
   constructor({
     base = process.cwd(),
@@ -152,6 +153,16 @@ export class Job {
     this.esmFileList = new Set();
     this.processed = new Set();
     this.warnings = new Set();
+  }
+
+  addRemapping(path: string, dep: string) {
+    if (path === dep) return;
+    let deps = this.remappings.get(path);
+    if (!deps) {
+      deps = new Set();
+      this.remappings.set(path, deps);
+    }
+    deps.add(dep);
   }
 
   async readlink(path: string) {
@@ -315,6 +326,14 @@ export class Job {
       return;
     }
     this.processed.add(path);
+
+    // Additional dependencies.
+    const additionalDeps = this.remappings.get(path);
+    if (additionalDeps) {
+      await Promise.all(
+        [...additionalDeps].map(async (dep) => this.emitDependency(dep, path)),
+      );
+    }
 
     const emitted = await this.emitFile(path, 'dependency', parent);
     if (!emitted) return;

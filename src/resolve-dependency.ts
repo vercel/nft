@@ -128,6 +128,7 @@ interface PkgCfg {
   main: string | undefined;
   exports: PackageTarget;
   imports: { [key: string]: PackageTarget };
+  browser?: string | { [key: string]: string };
 }
 
 async function getPkgCfg(
@@ -250,6 +251,33 @@ function resolveExportsImports(
   return undefined;
 }
 
+async function resolveRemappings(
+  pkgPath: string,
+  pkgCfg: PkgCfg,
+  parent: string,
+  job: Job,
+): Promise<void> {
+  if (job.conditions?.includes('browser')) {
+    const { browser: pkgBrowser } = pkgCfg;
+    if (typeof pkgBrowser === 'object') {
+      for (const [key, value] of Object.entries(pkgBrowser)) {
+        if (!key.startsWith('./') || !value.startsWith('./')) {
+          continue;
+        }
+        const keyResolved = await resolveFile(pkgPath + sep + key, parent, job);
+        const valueResolved = await resolveFile(
+          pkgPath + sep + value,
+          parent,
+          job,
+        );
+        if (keyResolved && valueResolved) {
+          job.addRemapping(keyResolved, valueResolved);
+        }
+      }
+    }
+  }
+}
+
 async function packageImportsResolve(
   name: string,
   parent: string,
@@ -355,6 +383,16 @@ async function resolvePackage(
     if (!stat || !stat.isDirectory()) continue;
     const pkgCfg = await getPkgCfg(nodeModulesDir + sep + pkgName, job);
     const { exports: pkgExports } = pkgCfg || {};
+
+    if (pkgCfg) {
+      await resolveRemappings(
+        nodeModulesDir + sep + pkgName,
+        pkgCfg ?? {},
+        parent,
+        job,
+      );
+    }
+
     if (
       job.conditions &&
       pkgExports !== undefined &&
