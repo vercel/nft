@@ -387,7 +387,7 @@ async function resolvePackage(
     if (pkgCfg) {
       await resolveRemappings(
         nodeModulesDir + sep + pkgName,
-        pkgCfg ?? {},
+        pkgCfg,
         parent,
         job,
       );
