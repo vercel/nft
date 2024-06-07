@@ -131,10 +131,21 @@ for (const { testName, isRoot } of unitTests) {
         inputFileNames.push('input-2.js', 'input-3.js', 'input-4.js');
       }
 
+      // Type: { conditions?: string[] }
+      let testOpts = {};
+      try {
+        testOpts = JSON.parse(
+          fs.readFileSync(join(unitPath, 'test-opts.json')).toString(),
+        );
+      } catch {
+        // Ignore.
+      }
+
       const startTime = Date.now();
       const { fileList, reasons } = await nodeFileTrace(
         inputFileNames.map((file) => join(unitPath, file)),
         {
+          conditions: testOpts.conditions,
           base: isRoot ? '/' : `${__dirname}/../`,
           processCwd: unitPath,
           paths: {
