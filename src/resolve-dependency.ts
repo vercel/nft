@@ -262,9 +262,6 @@ async function resolveRemappings(
     if (!pkgBrowser) {
       return;
     }
-    if (typeof pkgBrowser === 'string') {
-      return;
-    }
     if (typeof pkgBrowser === 'object') {
       for (const [key, value] of Object.entries(pkgBrowser)) {
         if (typeof value !== 'string') {
