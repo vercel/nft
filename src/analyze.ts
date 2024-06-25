@@ -67,6 +67,7 @@ const FS_FN = Symbol();
 const FS_DIR_FN = Symbol();
 const BINDINGS = Symbol();
 const NODE_GYP_BUILD = Symbol();
+const MODULE_FN = Symbol();
 const fsSymbols = {
   access: FS_FN,
   accessSync: FS_FN,
@@ -94,6 +95,9 @@ const fsExtraSymbols = {
   readJsonSync: FS_FN,
   readJSONSync: FS_FN,
 };
+const moduleSymbols = {
+  register: MODULE_FN,
+};
 const staticModules = Object.assign(Object.create(null), {
   bindings: {
     default: BINDINGS,
@@ -110,6 +114,10 @@ const staticModules = Object.assign(Object.create(null), {
   fs: {
     default: fsSymbols,
     ...fsSymbols,
+  },
+  module: {
+    default: moduleSymbols,
+    ...moduleSymbols,
   },
   'fs-extra': {
     default: fsExtraSymbols,
@@ -875,6 +883,14 @@ export default async function analyze(
               )
                 pjsonPath = path.resolve(pjsonPath, '../../package.json');
               if (pjsonPath !== rootPjson) assets.add(pjsonPath);
+              break;
+            case MODULE_FN:
+              if (
+                node.arguments.length &&
+                node.arguments[0].type === 'Literal'
+              ) {
+                await processRequireArg(node.arguments[0]);
+              }
               break;
           }
         }
