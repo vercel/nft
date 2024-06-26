@@ -55,7 +55,7 @@
     "@vercel/style-guide": "^5.2.0",
     "analytics-node": "^3.4.0-beta.1",
     "apollo-server-express": "^2.14.2",
-    "argon2": "^0.31.1",
+    "argon2": "^0.40.3",
     "auth0": "^3.0.1",
     "axios": "^1.6.0",
     "azure-storage": "^2.10.3",
