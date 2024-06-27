@@ -895,7 +895,7 @@ export default async function analyze(
               break;
             case MODULE_FN:
               if (
-                node.arguments.length > 1 &&
+                node.arguments.length &&
                 // TODO: We only cater for the case where the first argument is a string
                 node.arguments[0].type === 'Literal'
               ) {
@@ -903,9 +903,10 @@ export default async function analyze(
                 // It's a relative URL
                 if (pathOrSpecifier.startsWith('.')) {
                   // Compute the parentURL if it's statically analyzable
-                  const computedParentURL = await computePureStaticValue(
-                    node.arguments[1],
-                  );
+                  const computedParentURL =
+                    node.arguments.length > 1
+                      ? await computePureStaticValue(node.arguments[1])
+                      : undefined;
 
                   if (computedParentURL && 'value' in computedParentURL) {
                     const parentURL =
