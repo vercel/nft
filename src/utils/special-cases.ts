@@ -19,7 +19,7 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
     }
   },
   argon2({ id, emitAssetDirectory }) {
-    if (id.endsWith('argon2/argon2.js')) {
+    if (id.endsWith('argon2/argon2.cjs')) {
       emitAssetDirectory(resolve(dirname(id), 'build', 'Release'));
       emitAssetDirectory(resolve(dirname(id), 'prebuilds'));
       emitAssetDirectory(resolve(dirname(id), 'lib', 'binding'));
