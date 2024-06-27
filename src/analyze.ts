@@ -915,8 +915,10 @@ export default async function analyze(
                     // Resolve the path from the parentURL
                     const srcURL = new URL(pathOrSpecifier, parentURL).href;
 
-                    const cwd = path.dirname(parentURL);
-                    const srcPath = path.relative(cwd, srcURL);
+                    const srcPath = path.relative(
+                      path.dirname(importMetaUrl),
+                      srcURL,
+                    );
                     const relativeSrcPath = srcPath.startsWith('.')
                       ? srcPath
                       : './' + srcPath;
