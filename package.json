@@ -81,7 +81,6 @@
     "graphql": "^14.4.2",
     "highlights": "^3.1.6",
     "hot-shots": "^6.3.0",
-    "import-in-the-middle": "^1.8.1",
     "ioredis": "^4.11.1",
     "isomorphic-unfetch": "^3.0.0",
     "jest": "^27.4.5",

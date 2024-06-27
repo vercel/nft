@@ -37,6 +37,7 @@ const acorn = Parser.extend(
 );
 
 import os from 'os';
+import url from 'url';
 import { handleWrappers } from './utils/wrappers';
 import resolveFrom from 'resolve-from';
 import {
@@ -67,7 +68,6 @@ const FS_FN = Symbol();
 const FS_DIR_FN = Symbol();
 const BINDINGS = Symbol();
 const NODE_GYP_BUILD = Symbol();
-const MODULE_FN = Symbol();
 const fsSymbols = {
   access: FS_FN,
   accessSync: FS_FN,
@@ -95,6 +95,7 @@ const fsExtraSymbols = {
   readJsonSync: FS_FN,
   readJSONSync: FS_FN,
 };
+const MODULE_FN = Symbol();
 const moduleSymbols = {
   register: MODULE_FN,
 };
@@ -138,6 +139,10 @@ const staticModules = Object.assign(Object.create(null), {
   os: {
     default: os,
     ...os,
+  },
+  url: {
+    default: url,
+    ...url,
   },
   '@mapbox/node-pre-gyp': {
     default: mapboxPregyp,
@@ -538,15 +543,19 @@ export default async function analyze(
     let computed = await computePureStaticValue(expression, true);
     if (!computed) return;
 
+    function add(value: string) {
+      (isImport ? imports : deps).add(value);
+    }
+
     if ('value' in computed && typeof computed.value === 'string') {
-      if (!computed.wildcards) (isImport ? imports : deps).add(computed.value);
+      if (!computed.wildcards) add(computed.value);
       else if (computed.wildcards.length >= 1)
         emitWildcardRequire(computed.value);
     } else {
       if ('then' in computed && typeof computed.then === 'string')
-        (isImport ? imports : deps).add(computed.then);
+        add(computed.then);
       if ('else' in computed && typeof computed.else === 'string')
-        (isImport ? imports : deps).add(computed.else);
+        add(computed.else);
     }
   }
 
@@ -886,10 +895,37 @@ export default async function analyze(
               break;
             case MODULE_FN:
               if (
-                node.arguments.length &&
+                node.arguments.length > 1 &&
                 node.arguments[0].type === 'Literal'
               ) {
-                await processRequireArg(node.arguments[0]);
+                const pathOrSpecifier = node.arguments[0].value;
+                // It's a relative URL
+                if (pathOrSpecifier.startsWith('.')) {
+                  // Compute the parentURL if it's statically analyzable
+                  const computedParentURL = await computePureStaticValue(
+                    node.arguments[1],
+                  );
+
+                  if (computedParentURL && 'value' in computedParentURL) {
+                    const parentURL =
+                      computedParentURL.value instanceof URL
+                        ? computedParentURL.value.href
+                        : computedParentURL.value;
+                    // Resolve the path from the parentURL
+                    const srcURL = new URL(pathOrSpecifier, parentURL).href;
+
+                    const cwd = path.dirname(parentURL);
+                    const srcPath = path.relative(cwd, srcURL);
+                    const relativeSrcPath = srcPath.startsWith('.')
+                      ? srcPath
+                      : './' + srcPath;
+
+                    imports.add(relativeSrcPath);
+                  }
+                } else {
+                  // It's a bare specifier
+                  imports.add(pathOrSpecifier);
+                }
               }
               break;
           }
