@@ -896,6 +896,7 @@ export default async function analyze(
             case MODULE_FN:
               if (
                 node.arguments.length > 1 &&
+                // TODO: We only cater for the case where the first argument is a string
                 node.arguments[0].type === 'Literal'
               ) {
                 const pathOrSpecifier = node.arguments[0].value;
@@ -923,7 +924,7 @@ export default async function analyze(
                     imports.add(relativeSrcPath);
                   }
                 } else {
-                  // It's a bare specifier
+                  // It's a bare specifier, so just add into the imports
                   imports.add(pathOrSpecifier);
                 }
               }
