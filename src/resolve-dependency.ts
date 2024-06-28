@@ -250,7 +250,6 @@ function resolveExportsImports(
   }
   return undefined;
 }
-import os from 'os';
 
 async function resolveRemappings(
   pkgPath: string,
@@ -260,24 +259,18 @@ async function resolveRemappings(
 ): Promise<void> {
   if (job.conditions?.includes('browser')) {
     const { browser: pkgBrowser } = pkgCfg;
-    if (os.platform() !== 'win32') {
-      if (!pkgBrowser) {
-        return;
-      }
+    if (!pkgBrowser) {
+      return;
     }
     if (typeof pkgBrowser === 'object') {
-      // @ts-ignore
       for (const [key, value] of Object.entries(pkgBrowser)) {
-        if (os.platform() !== 'win32') {
-          if (typeof value !== 'string') {
-            /**
-             * `false` can be used to specify that a file is not meant to be included.
-             * Downstream processing is expected to handle this case, and it should remain in the mapping result
-             */
-            continue;
-          }
+        if (typeof value !== 'string') {
+          /**
+           * `false` can be used to specify that a file is not meant to be included.
+           * Downstream processing is expected to handle this case, and it should remain in the mapping result
+           */
+          continue;
         }
-        // @ts-ignore
         if (!key.startsWith('./') || !value.startsWith('./')) {
           continue;
         }
