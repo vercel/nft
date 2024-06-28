@@ -916,11 +916,13 @@ export default async function analyze(
                     // Resolve the srcURL from the parentURL
                     const srcURL = new URL(pathOrSpecifier, parentURL).href;
 
-                    // Resolve the srcPath relative to the current file
-                    const srcPath = path.relative(
-                      path.dirname(importMetaUrl),
-                      srcURL,
+                    const currentDirURL = importMetaUrl.slice(
+                      0,
+                      importMetaUrl.lastIndexOf('/'),
                     );
+
+                    // Resolve the srcPath relative to the current file
+                    const srcPath = path.relative(currentDirURL, srcURL);
                     // Make it a proper relative path
                     const relativeSrcPath = srcPath.startsWith('.')
                       ? srcPath
