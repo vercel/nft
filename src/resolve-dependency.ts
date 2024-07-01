@@ -128,7 +128,7 @@ interface PkgCfg {
   main: string | undefined;
   exports: PackageTarget;
   imports: { [key: string]: PackageTarget };
-  browser?: string | { [key: string]: string };
+  browser?: unknown;
 }
 
 async function getPkgCfg(
@@ -259,8 +259,18 @@ async function resolveRemappings(
 ): Promise<void> {
   if (job.conditions?.includes('browser')) {
     const { browser: pkgBrowser } = pkgCfg;
+    if (!pkgBrowser) {
+      return;
+    }
     if (typeof pkgBrowser === 'object') {
       for (const [key, value] of Object.entries(pkgBrowser)) {
+        if (typeof value !== 'string') {
+          /**
+           * `false` can be used to specify that a file is not meant to be included.
+           * Downstream processing is expected to handle this case, and it should remain in the mapping result
+           */
+          continue;
+        }
         if (!key.startsWith('./') || !value.startsWith('./')) {
           continue;
         }
