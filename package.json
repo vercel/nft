@@ -17,7 +17,7 @@
     "prepublishOnly": "tsc && rm out/utils/*.d.ts && rm out/tsconfig.tsbuildinfo",
     "prettier-check": "prettier --check .",
     "prettier-fix": "prettier --write .",
-    "test": "jest --verbose",
+    "test": "cat package-lock.json && jest --verbose",
     "test-verbose": "tsc --sourceMap && jest --verbose --coverage --globals \"{\\\"coverage\\\":true}\""
   },
   "prettier": "@vercel/style-guide/prettier",
