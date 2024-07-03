@@ -38,8 +38,6 @@ jobs:
         with:
           # we lock to 3.11 for a distutils requirement for node-gyp
           python-version: '3.11'
-      - name: Prepare Install (if applicable)
-        run: node prepare-install.js
       - name: Enable Corepack
         run: corepack enable npm
       - name: Install Dependencies
