@@ -12,7 +12,26 @@ jest.setTimeout(200_000);
 
 const integrationDir = `${__dirname}${path.sep}integration`;
 
-for (const integrationTest of readdirSync(integrationDir)) {
+const integrationTests = readdirSync(integrationDir);
+const filteredTestsToRun = integrationTests.filter((testName) => {
+  const isWin = process.platform === 'win32';
+  // Filter the integration tests that will never work in Windows
+  if (
+    isWin &&
+    [
+      'argon2.js',
+      'highlights.js',
+      'hot-shots.js',
+      'loopback.js',
+      'playwright-core.js',
+    ].includes(testName)
+  ) {
+    return false;
+  }
+  return true;
+});
+
+for (const integrationTest of filteredTestsToRun) {
   let currentIntegrationDir = integrationDir;
 
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
