@@ -32,8 +32,6 @@ const filteredTestsToRun = integrationTests.filter((testName) => {
 });
 
 for (const integrationTest of filteredTestsToRun) {
-  console.log('Integration test: ' + integrationTest);
-
   let currentIntegrationDir = integrationDir;
 
   it(`should correctly trace and correctly execute ${integrationTest}`, async () => {
