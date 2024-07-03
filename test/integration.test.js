@@ -15,6 +15,7 @@ const integrationDir = `${__dirname}${path.sep}integration`;
 const integrationTests = readdirSync(integrationDir);
 const filteredTestsToRun = integrationTests.filter((testName) => {
   const isWin = process.platform === 'win32';
+  // Filter the integration tests that will never work in Windows
   if (
     isWin &&
     [
