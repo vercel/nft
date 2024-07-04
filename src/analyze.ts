@@ -926,7 +926,7 @@ export default async function analyze(
                     // Make it a proper relative path
                     const relativeSrcPath = srcPath.startsWith('.')
                       ? srcPath
-                      : '.' + path.sep + srcPath;
+                      : './' + srcPath;
 
                     imports.add(relativeSrcPath);
                   }
