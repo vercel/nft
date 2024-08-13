@@ -912,7 +912,10 @@ export default async function analyze(
                     const parentURL =
                       computedParentURL.value instanceof URL
                         ? computedParentURL.value.href
-                        : computedParentURL.value;
+                        : typeof computedParentURL.value === 'string'
+                          ? computedParentURL.value
+                          : computedParentURL.value.parentURL;
+
                     // Resolve the srcURL from the parentURL
                     const srcURL = new URL(pathOrSpecifier, parentURL).href;
 
