@@ -57,7 +57,7 @@
     "apollo-server-express": "^2.14.2",
     "argon2": "^0.31.1",
     "auth0": "^3.0.1",
-    "axios": "^1.6.0",
+    "axios": "^1.7.4",
     "azure-storage": "^2.10.3",
     "bcrypt": "^5.0.1",
     "browserify-middleware": "^8.1.1",
