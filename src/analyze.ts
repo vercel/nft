@@ -37,6 +37,7 @@ const acorn = Parser.extend(
 );
 
 import os from 'os';
+import url from 'url';
 import { handleWrappers } from './utils/wrappers';
 import resolveFrom from 'resolve-from';
 import {
@@ -94,6 +95,10 @@ const fsExtraSymbols = {
   readJsonSync: FS_FN,
   readJSONSync: FS_FN,
 };
+const MODULE_FN = Symbol();
+const moduleSymbols = {
+  register: MODULE_FN,
+};
 const staticModules = Object.assign(Object.create(null), {
   bindings: {
     default: BINDINGS,
@@ -110,6 +115,10 @@ const staticModules = Object.assign(Object.create(null), {
   fs: {
     default: fsSymbols,
     ...fsSymbols,
+  },
+  module: {
+    default: moduleSymbols,
+    ...moduleSymbols,
   },
   'fs-extra': {
     default: fsExtraSymbols,
@@ -130,6 +139,10 @@ const staticModules = Object.assign(Object.create(null), {
   os: {
     default: os,
     ...os,
+  },
+  url: {
+    default: url,
+    ...url,
   },
   '@mapbox/node-pre-gyp': {
     default: mapboxPregyp,
@@ -530,15 +543,19 @@ export default async function analyze(
     let computed = await computePureStaticValue(expression, true);
     if (!computed) return;
 
+    function add(value: string) {
+      (isImport ? imports : deps).add(value);
+    }
+
     if ('value' in computed && typeof computed.value === 'string') {
-      if (!computed.wildcards) (isImport ? imports : deps).add(computed.value);
+      if (!computed.wildcards) add(computed.value);
       else if (computed.wildcards.length >= 1)
         emitWildcardRequire(computed.value);
     } else {
       if ('then' in computed && typeof computed.then === 'string')
-        (isImport ? imports : deps).add(computed.then);
+        add(computed.then);
       if ('else' in computed && typeof computed.else === 'string')
-        (isImport ? imports : deps).add(computed.else);
+        add(computed.else);
     }
   }
 
@@ -875,6 +892,52 @@ export default async function analyze(
               )
                 pjsonPath = path.resolve(pjsonPath, '../../package.json');
               if (pjsonPath !== rootPjson) assets.add(pjsonPath);
+              break;
+            case MODULE_FN:
+              if (
+                node.arguments.length &&
+                // TODO: We only cater for the case where the first argument is a string
+                node.arguments[0].type === 'Literal'
+              ) {
+                const pathOrSpecifier = node.arguments[0].value;
+                // It's a relative URL
+                if (pathOrSpecifier.startsWith('.')) {
+                  // Compute the parentURL if it's statically analyzable
+                  const computedParentURL =
+                    node.arguments.length > 1
+                      ? await computePureStaticValue(node.arguments[1])
+                      : undefined;
+
+                  if (computedParentURL && 'value' in computedParentURL) {
+                    const parentURL =
+                      computedParentURL.value instanceof URL
+                        ? computedParentURL.value.href
+                        : typeof computedParentURL.value === 'string'
+                          ? computedParentURL.value
+                          : computedParentURL.value.parentURL;
+
+                    // Resolve the srcURL from the parentURL
+                    const srcURL = new URL(pathOrSpecifier, parentURL).href;
+
+                    const currentDirURL = importMetaUrl.slice(
+                      0,
+                      importMetaUrl.lastIndexOf('/'),
+                    );
+
+                    // Resolve the srcPath relative to the current file
+                    const srcPath = path.relative(currentDirURL, srcURL);
+                    // Make it a proper relative path
+                    const relativeSrcPath = srcPath.startsWith('.')
+                      ? srcPath
+                      : './' + srcPath;
+
+                    imports.add(relativeSrcPath);
+                  }
+                } else {
+                  // It's a bare specifier, so just add into the imports
+                  imports.add(pathOrSpecifier);
+                }
+              }
               break;
           }
         }
