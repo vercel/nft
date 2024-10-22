@@ -333,6 +333,15 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       emitDependency(resolve(dirname(id), 'bin/pixelmatch'));
     }
   },
+  'geoip-lite'({ id, emitAsset }) {
+    if (id.endsWith('geoip-lite/lib/geoip.js')) {
+      emitAsset(resolve(dirname(id), '../data/geoip-city.dat'));
+      emitAsset(resolve(dirname(id), '../data/geoip-city6.dat'));
+      emitAsset(resolve(dirname(id), '../data/geoip-city-names.dat'));
+      emitAsset(resolve(dirname(id), '../data/geoip-country.dat'));
+      emitAsset(resolve(dirname(id), '../data/geoip-country6.dat'));
+    }
+  },
 };
 
 interface SpecialCaseOpts {
