@@ -78,6 +78,7 @@
     "firebase-admin": "^12.0.0",
     "fluent-ffmpeg": "^2.1.2",
     "geo-tz": "^7.0.1",
+    "geoip-lite": "^1.4.10",
     "graphql": "^14.4.2",
     "highlights": "^3.1.6",
     "hot-shots": "^6.3.0",
