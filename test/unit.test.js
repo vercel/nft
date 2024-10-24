@@ -66,8 +66,7 @@ function resetFileIOMocks() {
 
 afterEach(resetFileIOMocks);
 
-const unitTests2 = [{ testName: 'a-url-error', isRoot: false }];
-for (const { testName, isRoot } of unitTests2) {
+for (const { testName, isRoot } of unitTests) {
   const testSuffix = `${testName} from ${isRoot ? 'root' : 'cwd'}`;
   if (
     process.platform === 'win32' &&
