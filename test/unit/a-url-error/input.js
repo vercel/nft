@@ -1,1 +1,1 @@
-const URLParser = typeof URL === 'undefined' ? require('url').URL : URL;
+const URLParser = typeof window === 'undefined' ? URL : 'b'
