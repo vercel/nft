@@ -9,5 +9,5 @@ In our case, we only need to test parsing and not actually execute the tests.
 You can run the following script from this directory to update this test suite.
 
 ```sh
-node update-all-data.js
+node update-all-data.mjs
 ```
