@@ -1,15 +1,11 @@
 import { readdir, writeFile } from 'fs/promises';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+const dir = new URL('./', import.meta.url);
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const files = await readdir(__dirname);
+const files = await readdir(dir);
 for (const file of files.filter(f => f.startsWith('data-'))) {
   const url = `https://raw.githubusercontent.com/kangax/compat-table/gh-pages/${file}`;
   const res = await fetch(url);
   const text = await res.text();
-  await writeFile(join(__dirname, file), text);
+  await writeFile(new URL(file, dir), text);
 }
 console.log('Update complete!')
