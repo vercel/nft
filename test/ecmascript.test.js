@@ -19,6 +19,8 @@ const ignoreCategories = new Set([
   'Generator function.sent Meta Property',
   'Class and Property Decorators',
   'throw expressions',
+  'RegExp Pattern Modifiers',
+  'Duplicate named capturing groups',
 ]);
 
 async function runTests(importPath) {

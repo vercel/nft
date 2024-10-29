@@ -975,7 +975,8 @@ exports.tests = [
         safari15: true,
         graalvm21_3_3: true,
         hermes0_7_0: true,
-        reactnative0_70_3: true
+        reactnative0_70_3: true,
+        rhino1_7_15: true,
       }
     }
   ],
@@ -1081,7 +1082,8 @@ exports.tests = [
       opera11: true,
       graalvm21_3_3: true,
       hermes0_7_0: true,
-      reactnative0_70_3: true
+      reactnative0_70_3: true,
+      rhino1_7_15: true,
     }
   },
   {
@@ -2211,7 +2213,8 @@ exports.tests = [
       jerryscript1_0: true,
       hermes0_7_0: true,
       reactnative0_70_3: true,
-      rhino1_7_13: true
+      rhino1_7_13: false,
+      rhino1_7_15: false
     }
   },
   {

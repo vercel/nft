@@ -3,13 +3,14 @@ var common = require('./data-common');
 var babel = common.babel;
 var typescript = common.typescript;
 // var firefox = common.firefox;
-var graalvm = common.graalvm;
+// var graalvm = common.graalvm;
 
 exports.name = 'ES Next';
 exports.target_file = 'esnext/index.html';
 exports.skeleton_file = 'esnext/skeleton.html';
 
 var STAGE2 = 'Stage 2';
+var STAGE27 = 'Stage 2.7';
 var STAGE3 = 'Stage 3';
 
 exports.tests = [
@@ -42,7 +43,7 @@ exports.tests = [
 },
 {
   name: 'Class and Property Decorators',
-  category: STAGE2,
+  category: STAGE3,
   significance: 'medium',
   spec: 'https://github.com/tc39/proposal-decorators',
   subtests: [
@@ -78,7 +79,7 @@ exports.tests = [
 },
 {
   name: 'ShadowRealm',
-  category: STAGE3,
+  category: STAGE27,
   significance: 'large',
   spec: 'https://github.com/tc39/proposal-shadowrealm',
   exec: function () {/*
@@ -91,6 +92,12 @@ exports.tests = [
     ie11: false,
     firefox10: false,
     firefox52: false,
+    firefox103: false,
+    firefox107: {
+      val: 'flagged',
+      note_id: 'ff-shadow-realm',
+      note_html: 'The feature has to be enabled via <code>javascript.options.experimental.shadow_realms</code> setting under <code>about:config</code>.'
+    },
     opera10_50: false,
     chrome77: false,
     duktape2_0: false,
@@ -203,225 +210,6 @@ exports.tests = [
         chrome77: false,
         duktape2_0: false,
         graalvm19: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    }
-  ]
-},
-{
-  name: 'Set methods',
-  spec: 'https://github.com/tc39/proposal-set-methods',
-  category: STAGE2,
-  significance: 'medium',
-  subtests: [
-    {
-      name: 'Set.prototype.intersection',
-      exec: function () {/*
-        var set = new Set([1, 2, 3]).intersection(new Set([2, 3, 4]));
-        return set.size === 2
-          && set.has(2)
-          && set.has(3);
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox2: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        graalvm21_3_3: graalvm.newSetMethodsFlag,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Set.prototype.union',
-      exec: function () {/*
-        var set = new Set([1, 2]).union(new Set([2, 3]));
-        return set.size === 3
-          && set.has(1)
-          && set.has(2)
-          && set.has(3);
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox2: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        graalvm21_3_3: graalvm.newSetMethodsFlag,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Set.prototype.difference',
-      exec: function () {/*
-        var set = new Set([1, 2, 3]).difference(new Set([3, 4]));
-        return set.size === 2
-          && set.has(1)
-          && set.has(2);
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox2: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        graalvm21_3_3: graalvm.newSetMethodsFlag,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Set.prototype.symmetricDifference',
-      exec: function () {/*
-        var set = new Set([1, 2]).symmetricDifference(new Set([2, 3]));
-        return set.size === 2
-          && set.has(1)
-          && set.has(3);
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox2: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        graalvm21_3_3: graalvm.newSetMethodsFlag,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Set.prototype.isDisjointFrom',
-      exec: function () {/*
-        return new Set([1, 2, 3]).isDisjointFrom([4, 5, 6]);
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox2: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        graalvm20_1: graalvm.es2021flag,
-        graalvm21_3_3: graalvm.newSetMethodsFlag,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Set.prototype.isSubsetOf',
-      exec: function () {/*
-        return new Set([1, 2, 3]).isSubsetOf([5, 4, 3, 2, 1]);
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox2: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        graalvm21_3_3: graalvm.newSetMethodsFlag,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Set.prototype.isSupersetOf',
-      exec: function () {/*
-        return new Set([5, 4, 3, 2, 1]).isSupersetOf([1, 2, 3]);
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox2: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm19: false,
-        graalvm21_3_3: graalvm.newSetMethodsFlag,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    }
-  ]
-},
-{
-  name: 'ArrayBuffer.prototype.transfer',
-  category: STAGE2,
-  significance: 'small',
-  spec: 'https://github.com/domenic/proposal-arraybuffer-transfer/',
-  subtests: [
-    {
-      name: 'ArrayBuffer.prototype.transfer()',
-      exec: function () {/*
-        const buffer1 = new Uint8Array([1, 2]).buffer;
-        const buffer2 = buffer1.transfer();
-        return buffer1.byteLength === 0
-          && buffer2.byteLength === 2;
-      */},
-      res: {
-        ie11: false,
-        firefox10: false,
-        firefox52: false,
-        chrome70: false,
-        safari12: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'ArrayBuffer.prototype.realloc()',
-      exec: function () {/*
-        const buffer1 = new ArrayBuffer(1024);
-        const buffer2 = buffer1.realloc(256);
-        return buffer1.byteLength === 0
-          && buffer2.byteLength === 256;
-      */},
-      res: {
-        ie11: false,
-        firefox10: false,
-        firefox52: false,
-        chrome70: false,
-        safari12: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
         hermes0_7_0: false,
         reactnative0_70_3: false,
         rhino1_7_13: false
@@ -581,384 +369,11 @@ exports.tests = [
   }
 },
 {
-  name: 'Iterator Helpers',
+  name: 'Async Iterator Helpers',
   category: STAGE2,
   significance: 'large',
-  spec: 'https://github.com/tc39/proposal-iterator-helpers',
+  spec: 'https://github.com/tc39/proposal-async-iterator-helpers',
   subtests: [
-    {
-      name: 'instanceof Iterator',
-      exec: function () {/*
-        return [1, 2, 3].values() instanceof Iterator;
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'extends Iterator',
-      exec: function () {/*
-        class Class extends Iterator { }
-        const instance = new Class();
-        return instance[Symbol.iterator]() === instance;
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.from, iterable',
-      exec: function () {/*
-        const iterator = Iterator.from([1, 2, 3]);
-        return 'next' in iterator
-          && iterator instanceof Iterator
-          && Array.from(iterator).join() === '1,2,3';
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.from, iterator',
-      exec: function () {/*
-        const iterator = Iterator.from({
-          i: 0,
-          next() {
-            return { value: ++this.i, done: this.i > 3 };
-          }
-        });
-        return 'next' in iterator
-          && iterator instanceof Iterator
-          && Array.from(iterator).join() === '1,2,3';
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.asIndexedPairs',
-      exec: function () {/*
-        return Array.from([1, 2, 3].values().asIndexedPairs()).join() === '0,1,1,2,2,3';
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.drop',
-      exec: function () {/*
-        return Array.from([1, 2, 3].values().drop(1)).join() === '2,3';
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.every',
-      exec: function () {/*
-        return [1, 2, 3].values().every(it => typeof it === 'number');
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.filter',
-      exec: function () {/*
-        return Array.from([1, 2, 3].values().filter(it => it % 2)).join() === '1,3';
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.find',
-      exec: function () {/*
-        return [1, 2, 3].values().find(it => it % 2) === 1;
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.flatMap',
-      exec: function () {/*
-        return Array.from([1, 2, 3].values().flatMap(it => [it, 0])).join() === '1,0,2,0,3,0';
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.forEach',
-      exec: function () {/*
-        let result = '';
-        [1, 2, 3].values().forEach(it => result += it);
-        return result === '123';
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.map',
-      exec: function () {/*
-        return Array.from([1, 2, 3].values().map(it => it * it)).join() === '1,4,9';
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.reduce',
-      exec: function () {/*
-        return [1, 2, 3].values().reduce((a, b) => a + b) === 6;
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.some',
-      exec: function () {/*
-        return [1, 2, 3].values().some(it => typeof it === 'number');
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.take',
-      exec: function () {/*
-        return Array.from([1, 2, 3].values().take(2)).join() === '1,2';
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype.toArray',
-      exec: function () {/*
-        const array = [1, 2, 3].values().toArray();
-        return Array.isArray(array) && array.join() === '1,2,3';
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
-      name: 'Iterator.prototype[@@toStringTag]',
-      exec: function () {/*
-        return Iterator.prototype[Symbol.toStringTag] === 'Iterator';
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
     {
       name: 'instanceof AsyncIterator',
       exec: function () {/*
@@ -972,6 +387,16 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers',
+          note_html: 'The feature is only available on Nightly builds, and has to be enabled via <code>javascript.options.experimental.async_iterator_helpers</code> setting under <code>about:config</code>.'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -995,6 +420,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1103,35 +537,6 @@ exports.tests = [
       }
     },
     {
-      name: 'AsyncIterator.prototype.asIndexedPairs',
-      exec: function () {/*
-        async function toArray(iterator) {
-          const result = [];
-          for await (const it of iterator) result.push(it);
-          return result;
-        }
-
-        toArray((async function*() { yield * [1, 2, 3] })().asIndexedPairs()).then(it => {
-          if (it.join() === '0,1,1,2,2,3') asyncTestPassed();
-        });
-      */},
-      res: {
-        babel6corejs2: false,
-        babel7corejs3: babel.corejs,
-        typescript1corejs2: typescript.fallthrough,
-        typescript3_2corejs3: typescript.corejs,
-        ie11: false,
-        firefox10: false,
-        firefox60: false,
-        chrome77: false,
-        duktape2_0: false,
-        graalvm21_3_3: false,
-        hermes0_7_0: false,
-        reactnative0_70_3: false,
-        rhino1_7_13: false
-      }
-    },
-    {
       name: 'AsyncIterator.prototype.drop',
       exec: function () {/*
         async function toArray(iterator) {
@@ -1152,6 +557,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1175,6 +589,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1204,6 +627,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1227,6 +659,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1256,6 +697,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1280,6 +730,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1309,6 +768,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1332,6 +800,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1355,6 +832,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1384,6 +870,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1407,6 +902,15 @@ exports.tests = [
         ie11: false,
         firefox10: false,
         firefox60: false,
+        firefox116: false,
+        firefox117: {
+          val: 'flagged',
+          note_id: 'ff-iterator-helpers'
+        },
+        firefox128: {
+          val: 'flagged',
+          note_id: 'ff-async-iterator-helpers'
+        },
         chrome77: false,
         duktape2_0: false,
         graalvm21_3_3: false,
@@ -1438,12 +942,157 @@ exports.tests = [
     }
   ]
 },
+{
+  name: 'RegExp Escaping',
+  category: STAGE3,
+  significance: 'medium',
+  spec: 'https://github.com/tc39/proposal-regex-escaping',
+  exec: function () {/*
+    return RegExp.escape("The Quick Brown Fox") === "The\\ Quick\\ Brown\\ Fox" &&
+      RegExp.escape("(*.*)") === "\\(\\*\\.\\*\\)" &&
+      RegExp.escape("｡^･ｪ･^｡") === "｡\\^･ｪ･\\^｡" &&
+      RegExp.escape("\\d \\D (?:)") === "\\\\d \\\\D \\(\\?\\:\\)";
+  */},
+  res: {
+    chrome129: false,
+    firefox115: false,
+  }
+},
+{
+  name: 'Uint8Array to/from base64 and hex',
+  category: STAGE3,
+  significance: 'small',
+  spec: 'https://github.com/tc39/proposal-arraybuffer-base64',
+  subtests: [
+    {
+      name: 'Uint8Array.toBase64()',
+      exec: function () {/*
+        const arr = new Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]);
+        return arr.toBase64() === "SGVsbG8gV29ybGQ=";
+      */},
+      res: {
+        ie11: false,
+        chrome129: false,
+        firefox115: false,
+        firefox125: false,
+        firefox126: {
+          val: 'flagged',
+          note_id: 'ff-uint8-hex-base64',
+          note_html: 'The feature has to be enabled via <code>javascript.options.experimental.uint8array_base64</code> setting under <code>about:config</code>.'
+        },
+        firefox133: true,
+      }
+    },
+    {
+      name: 'Uint8Array.fromBase64()',
+      exec: function () {/*
+        const arr1 = new Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]);
+        const arr2 = Uint8Array.fromBase64("SGVsbG8gV29ybGQ=");
+        return arr1.length === arr2.length &&
+               arr1.every((element, index) => element === arr2[index]);
+      */},
+      res: {
+        ie11: false,
+        chrome129: false,
+        firefox115: false,
+        firefox125: false,
+        firefox126: {
+          val: 'flagged',
+          note_id: 'ff-uint8-hex-base64',
+        },
+        firefox133: true,
+
+      }
+    },
+    {
+      name: 'Uint8Array.setFromBase64()',
+      exec: function () {/*
+        const arr1 = new Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]);
+        let arr2 = new Uint8Array(16);
+        let { read, written } = arr2.setFromBase64("SGVsbG8gV29ybGQ=");
+        return read == 16 && written == 11 &&
+               arr1.every((element, index) => element === arr2[index]);
+      */},
+      res: {
+        ie11: false,
+        chrome129: false,
+        firefox115: false,
+        firefox125: false,
+        firefox126: {
+          val: 'flagged',
+          note_id: 'ff-uint8-hex-base64',
+        },
+        firefox133: true,
+      }
+    },
+    {
+      name: 'Uint8Array.toHex()',
+      exec: function () {/*
+        const arr = new Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]);
+        return arr.toHex() === "48656c6c6f20576f726c64";
+      */},
+      res: {
+        ie11: false,
+        chrome129: false,
+        firefox115: false,
+        firefox125: false,
+        firefox126: {
+          val: 'flagged',
+          note_id: 'ff-uint8-hex-base64',
+        },
+        firefox133: true,
+      }
+    },
+    {
+      name: 'Uint8Array.fromHex()',
+      exec: function () {/*
+        const arr1 = new Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]);
+        const arr2 = Uint8Array.fromHex("48656c6c6f20576f726c64");
+        return arr1.length === arr2.length &&
+               arr1.every((element, index) => element === arr2[index]);
+      */},
+      res: {
+        ie11: false,
+        chrome129: false,
+        firefox115: false,
+        firefox125: false,
+        firefox126: {
+          val: 'flagged',
+          note_id: 'ff-uint8-hex-base64',
+        },
+        firefox133: true,
+      }
+    },
+        {
+      name: 'Uint8Array.setFromHex()',
+      exec: function () {/*
+        const arr1 = new Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]);
+        let arr2 = new Uint8Array(16);
+        let { read, written } = arr2.setFromHex("48656c6c6f20576f726c64");
+        return read == 22 && written == 11 &&
+               arr1.every((element, index) => element === arr2[index]);
+      */},
+      res: {
+        ie11: false,
+        chrome129: false,
+        firefox115: false,
+        firefox125: false,
+        firefox126: {
+          val: 'flagged',
+          note_id: 'ff-uint8-hex-base64',
+        },
+        firefox133: true,
+      }
+    },
+
+  ]
+},
 ];
 
 
 //Shift annex B features to the bottom
 exports.tests = exports.tests.reduce(function(a,e) {
-  var index = [STAGE3, STAGE2].indexOf(e.category);
+  var index = [STAGE3, STAGE27, STAGE2].indexOf(e.category);
   if (index === -1) {
     console.log('"' + a.category + '" is not an ESnext category!');
   }
