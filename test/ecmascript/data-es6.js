@@ -61,7 +61,8 @@ exports.tests = [
         jerryscript2_0: false,
         hermes0_7_0: false,
         reactnative0_70_3: false,
-        rhino1_7_13: true
+        rhino1_7_13: false,
+        rhino1_7_15: false,
       }
     },
     {
@@ -98,7 +99,8 @@ exports.tests = [
         jerryscript2_0: false,
         hermes0_7_0: false,
         reactnative0_70_3: false,
-        rhino1_7_13: true
+        rhino1_7_13: false,
+        rhino1_7_15: false,
       }
     }
   ]
@@ -2170,7 +2172,8 @@ exports.tests = [
         jerryscript2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -2202,7 +2205,8 @@ exports.tests = [
         jerryscript2_0: true,
         hermes0_7_0: false,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -2308,7 +2312,8 @@ exports.tests = [
         jerryscript2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     }
   ],
@@ -2785,6 +2790,7 @@ exports.tests = [
         tr: true,
         babel7corejs3: babel.corejs,
         typescript1corejs2: typescript.notDownlevelIteration,
+        closure20230228: true,
         es6tr: true,
         ie11: false,
         edge12: true,
@@ -4732,7 +4738,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -4769,7 +4776,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -5536,7 +5544,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -5579,7 +5588,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -5603,6 +5613,7 @@ exports.tests = [
         tr: true,
         babel6corejs2: false,
         typescript1corejs2: false,
+        closure20230228: true,
         firefox2: false,
         firefox27: true,
         opera10_50: false,
@@ -5667,7 +5678,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -5710,7 +5722,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -6338,7 +6351,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -6633,7 +6647,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -6669,7 +6684,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -8193,7 +8209,8 @@ exports.tests = [
       jerryscript2_2_0: true,
       hermes0_7_0: false,
       reactnative0_70_3: false,
-      rhino1_7_13: false
+      rhino1_7_13: false,
+      rhino1_7_15: true,
     }}
     ].map(function(m) {
       var eqFn = ' === "function"';
@@ -8436,7 +8453,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -8889,7 +8907,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: false,
         reactnative0_70_3: false,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     }
   ],
@@ -9116,7 +9135,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -9571,7 +9591,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: false,
         reactnative0_70_3: false,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     }
   ],
@@ -9830,7 +9851,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -10233,7 +10255,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -12197,12 +12220,15 @@ exports.tests = [
         // RegExp.prototype.flags -> Get -> [[Get]]
         var expected = [];
         // Sorted alphabetically by shortname – "gimsuy".
+        if ('hasIndices' in RegExp.prototype) expected.push('hasIndices');
         if ('global' in RegExp.prototype) expected.push('global');
         if ('ignoreCase' in RegExp.prototype) expected.push('ignoreCase');
         if ('multiline' in RegExp.prototype) expected.push('multiline');
         if ('dotAll' in RegExp.prototype) expected.push('dotAll');
         if ('unicode' in RegExp.prototype) expected.push('unicode');
+        if ('unicodeSets' in RegExp.prototype) expected.push('unicodeSets');
         if ('sticky' in RegExp.prototype) expected.push('sticky');
+
         var actual = [];
         var p = new Proxy({}, { get: function(o, k) { actual.push(k); return o[k]; }});
         Object.getOwnPropertyDescriptor(RegExp.prototype, 'flags').get.call(p);
@@ -12297,7 +12323,8 @@ exports.tests = [
         RegExp.prototype[Symbol.match].call(p);
         p.global = true;
         RegExp.prototype[Symbol.match].call(p);
-        return get + '' === "global,exec,global,unicode,exec";
+        var str = get + '';
+        return str === "global,exec,global,unicode,exec" || str === 'flags,exec,flags,exec';
       */},
       res: {
         ie11: false,
@@ -12326,7 +12353,8 @@ exports.tests = [
         RegExp.prototype[Symbol.replace].call(p);
         p.global = true;
         RegExp.prototype[Symbol.replace].call(p);
-        return get + '' === "global,exec,global,unicode,exec";
+        var str = get + '';
+        return str === "global,exec,global,unicode,exec" || str === 'flags,exec,flags,exec';
       */},
       res: {
         ie11: false,
@@ -16864,9 +16892,13 @@ exports.tests = [
     {
       name: 'duplicate identifier',
       exec: function(){/*
-        var d = function d([d]) { return d };
-        if (d([true]) !== true) return false;
-
+        try {
+          eval('var d = function d([d]) { return d };');
+          if (d([true]) !== true) return false;
+        } catch (e) {
+          return !(e instanceof SyntaxError);
+        }
+        
         try {
           eval('var f = function f([id, id]) { return id }');
           return false;
@@ -16883,8 +16915,9 @@ exports.tests = [
         closure: true,
         typescript1corejs2: true,
         firefox2: true,
-        safari13: false,
-        safari15: false,
+        safari11: false,
+        safari16_2: false,
+        safari16_3: true,
         edge13: edge.experimental,
         edge14: true,
         xs6: true,
@@ -16959,7 +16992,8 @@ exports.tests = [
         hermes0_7_0: false,
         hermes0_12_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -17076,7 +17110,8 @@ exports.tests = [
         hermes0_7_0: false,
         hermes0_12_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -17118,7 +17153,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: false,
         reactnative0_70_3: false,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -17164,7 +17200,8 @@ exports.tests = [
         hermes0_7_0: false,
         hermes0_12_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -17206,7 +17243,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: false,
         reactnative0_70_3: false,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -18037,7 +18075,8 @@ exports.tests = [
         jerryscript2_3_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -18435,7 +18474,8 @@ exports.tests = [
         jerryscript2_3_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     }
   ],
@@ -19027,7 +19067,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -19055,7 +19096,8 @@ exports.tests = [
         jerryscript2_4_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -19082,7 +19124,8 @@ exports.tests = [
         jerryscript2_4_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -19106,7 +19149,8 @@ exports.tests = [
         jerryscript2_4_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     }
   ]
@@ -19558,7 +19602,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -19760,7 +19805,8 @@ exports.tests = [
         firefox99: true,
         graalvm21_3_3: true,
         hermes0_7_0: true,
-        reactnative0_70_3: true
+        reactnative0_70_3: true,
+        rhino1_7_15: true,
       }
     },
     {
@@ -20290,7 +20336,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -20322,7 +20369,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -20354,7 +20402,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -20423,7 +20472,7 @@ exports.tests = [
         jerryscript2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
       }
     },
     {
@@ -20553,7 +20602,8 @@ exports.tests = [
         jerryscript2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -20628,7 +20678,8 @@ exports.tests = [
         jerryscript2_1_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -20769,7 +20820,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: false,
         reactnative0_70_3: false,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     }
   ]
@@ -21181,7 +21233,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -21212,7 +21265,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -21310,7 +21364,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -21342,7 +21397,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -21376,7 +21432,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -21440,7 +21497,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: false,
         reactnative0_70_3: false,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     }
   ],
@@ -21785,7 +21843,8 @@ exports.tests = [
         safari15: true,
         graalvm21_3_3: true,
         hermes0_7_0: true,
-        reactnative0_70_3: true
+        reactnative0_70_3: true,
+        rhino1_7_15: true,
       }
     },
     {
@@ -23886,7 +23945,8 @@ exports.tests = [
         jerryscript1_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -23934,7 +23994,8 @@ exports.tests = [
         jerryscript2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -23982,7 +24043,8 @@ exports.tests = [
         jerryscript1_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -24023,7 +24085,8 @@ exports.tests = [
         jerryscript1_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
@@ -24212,7 +24275,8 @@ exports.tests = [
         jerryscript2_0: false,
         jerryscript2_4_0: true,
         hermes0_7_0: true,
-        reactnative0_70_3: true
+        reactnative0_70_3: true,
+        rhino1_7_15: true,
       }
     },
     {
@@ -24259,6 +24323,7 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: false,
         reactnative0_70_3: false,
+        rhino1_7_15: true,
       }
     }
   ],
@@ -24477,7 +24542,8 @@ exports.tests = [
         jerryscript2_2_0: true,
         hermes0_7_0: true,
         reactnative0_70_3: true,
-        rhino1_7_13: false
+        rhino1_7_13: false,
+        rhino1_7_15: true,
       }
     },
     {
