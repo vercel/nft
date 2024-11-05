@@ -22,7 +22,7 @@
   },
   "prettier": "@vercel/style-guide/prettier",
   "dependencies": {
-    "@mapbox/node-pre-gyp": "^1.0.5",
+    "@mapbox/node-pre-gyp": "^1.0.11",
     "@rollup/pluginutils": "^4.0.0",
     "acorn": "^8.6.0",
     "acorn-import-attributes": "^1.9.5",
