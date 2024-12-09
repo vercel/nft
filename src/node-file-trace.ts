@@ -7,7 +7,7 @@ import {
 import { basename, dirname, extname, join, relative, resolve, sep } from 'path';
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency, { NotFoundError } from './resolve-dependency';
-import { isMatch } from 'micromatch';
+import { isMatch } from 'picomatch';
 import { sharedLibEmit } from './utils/sharedlib-emit';
 import { CachedFileSystem } from './fs';
 
