@@ -1,5 +1,5 @@
 import os from 'os';
-import glob from 'glob';
+import { convertPathToPattern, glob } from 'tinyglobby';
 import { getPackageBase } from './get-package-base';
 import { Job } from '../node-file-trace';
 
@@ -20,13 +20,12 @@ export async function sharedLibEmit(path: string, job: Job) {
   // console.log('Emitting shared libs for ' + path);
   const pkgPath = getPackageBase(path);
   if (!pkgPath) return;
-
-  const files = await new Promise<string[]>((resolve, reject) =>
-    glob(
-      pkgPath + sharedlibGlob,
-      { ignore: pkgPath + '/**/node_modules/**/*', dot: true },
-      (err, files) => (err ? reject(err) : resolve(files)),
-    ),
-  );
+  if (job.log) {
+    console.log(`Globbing sharedlib: ${convertPathToPattern(pkgPath) + sharedlibGlob}`);
+  }
+  const files = await glob(convertPathToPattern(pkgPath) + sharedlibGlob, {
+    ignore: [convertPathToPattern(pkgPath) + '/**/node_modules/**/*'],
+    dot: true,
+  });
   await Promise.all(files.map((file) => job.emitFile(file, 'sharedlib', path)));
 }
