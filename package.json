@@ -34,7 +34,7 @@
     "node-gyp-build": "^4.2.2",
     "picomatch": "^4.0.2",
     "resolve-from": "^5.0.0",
-    "tinyglobby": "^0.2.10"
+    "tinyglobby": "https://pkg.pr.new/tinyglobby@76"
   },
   "devDependencies": {
     "@azure/cosmos": "^2.1.7",
