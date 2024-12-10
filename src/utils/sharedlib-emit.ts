@@ -20,7 +20,9 @@ export async function sharedLibEmit(path: string, job: Job) {
   // console.log('Emitting shared libs for ' + path);
   const pkgPath = getPackageBase(path);
   if (!pkgPath) return;
-
+  if (job.log) {
+    console.log(`Globbing sharedlib: ${convertPathToPattern(pkgPath) + sharedlibGlob}`);
+  }
   const files = await glob(convertPathToPattern(pkgPath) + sharedlibGlob, {
     ignore: [convertPathToPattern(pkgPath) + '/**/node_modules/**/*'],
     dot: true,
