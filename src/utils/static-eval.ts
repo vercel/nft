@@ -327,7 +327,7 @@ const visitors: Record<
 
     return {
       test: node.test,
-      then: thenValue.value,
+      then: thenValue.value === URL ? undefined : thenValue.value,
       else: elseValue.value,
     };
   },
