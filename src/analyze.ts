@@ -552,8 +552,8 @@ export default async function analyze(
       else if (computed.wildcards.length >= 1)
         emitWildcardRequire(computed.value);
     } else {
-      if ('then' in computed && typeof computed.then === 'string')
-        add(computed.then);
+      if ('ifTrue' in computed && typeof computed.ifTrue === 'string')
+        add(computed.ifTrue);
       if ('else' in computed && typeof computed.else === 'string')
         add(computed.else);
     }
@@ -585,8 +585,8 @@ export default async function analyze(
       if (
         ('value' in curStaticValue &&
           typeof curStaticValue.value !== 'symbol') ||
-        ('then' in curStaticValue &&
-          typeof curStaticValue.then !== 'symbol' &&
+        ('ifTrue' in curStaticValue &&
+          typeof curStaticValue.ifTrue !== 'symbol' &&
           typeof curStaticValue.else !== 'symbol')
       ) {
         staticChildValue = curStaticValue;
@@ -974,7 +974,7 @@ export default async function analyze(
             }
             if (
               !('value' in computed) &&
-              isAbsolutePathOrUrl(computed.then) &&
+              isAbsolutePathOrUrl(computed.ifTrue) &&
               isAbsolutePathOrUrl(computed.else)
             ) {
               staticChildValue = computed;
@@ -1196,14 +1196,14 @@ export default async function analyze(
         await emitAssetPath(resolved);
       } catch (e) {}
     } else if (
-      'then' in staticChildValue &&
+      'ifTrue' in staticChildValue &&
       'else' in staticChildValue &&
-      isAbsolutePathOrUrl(staticChildValue.then) &&
+      isAbsolutePathOrUrl(staticChildValue.ifTrue) &&
       isAbsolutePathOrUrl(staticChildValue.else)
     ) {
       let resolvedThen;
       try {
-        resolvedThen = resolveAbsolutePathOrUrl(staticChildValue.then);
+        resolvedThen = resolveAbsolutePathOrUrl(staticChildValue.ifTrue);
       } catch (e) {}
       let resolvedElse;
       try {
