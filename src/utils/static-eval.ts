@@ -16,7 +16,7 @@ export async function evaluate(
 
   // walk returns:
   // 1. Single known value: { value: value }
-  // 2. Conditional value: { test, then, else }
+  // 2. Conditional value: { test, ifTrue, else }
   // 3. Unknown value: undefined
   function walk(node: Node) {
     const visitor = visitors[node.type];
@@ -130,79 +130,79 @@ const visitors: Record<
     if ('test' in l && 'value' in r) {
       const v: any = r.value;
       if (op === '==')
-        return { test: l.test, then: l.then == v, else: l.else == v };
+        return { test: l.test, ifTrue: l.ifTrue == v, else: l.else == v };
       if (op === '===')
-        return { test: l.test, then: l.then === v, else: l.else === v };
+        return { test: l.test, ifTrue: l.ifTrue === v, else: l.else === v };
       if (op === '!=')
-        return { test: l.test, then: l.then != v, else: l.else != v };
+        return { test: l.test, ifTrue: l.ifTrue != v, else: l.else != v };
       if (op === '!==')
-        return { test: l.test, then: l.then !== v, else: l.else !== v };
+        return { test: l.test, ifTrue: l.ifTrue !== v, else: l.else !== v };
       if (op === '+')
-        return { test: l.test, then: l.then + v, else: l.else + v };
+        return { test: l.test, ifTrue: l.ifTrue + v, else: l.else + v };
       if (op === '-')
-        return { test: l.test, then: l.then - v, else: l.else - v };
+        return { test: l.test, ifTrue: l.ifTrue - v, else: l.else - v };
       if (op === '*')
-        return { test: l.test, then: l.then * v, else: l.else * v };
+        return { test: l.test, ifTrue: l.ifTrue * v, else: l.else * v };
       if (op === '/')
-        return { test: l.test, then: l.then / v, else: l.else / v };
+        return { test: l.test, ifTrue: l.ifTrue / v, else: l.else / v };
       if (op === '%')
-        return { test: l.test, then: l.then % v, else: l.else % v };
+        return { test: l.test, ifTrue: l.ifTrue % v, else: l.else % v };
       if (op === '<')
-        return { test: l.test, then: l.then < v, else: l.else < v };
+        return { test: l.test, ifTrue: l.ifTrue < v, else: l.else < v };
       if (op === '<=')
-        return { test: l.test, then: l.then <= v, else: l.else <= v };
+        return { test: l.test, ifTrue: l.ifTrue <= v, else: l.else <= v };
       if (op === '>')
-        return { test: l.test, then: l.then > v, else: l.else > v };
+        return { test: l.test, ifTrue: l.ifTrue > v, else: l.else > v };
       if (op === '>=')
-        return { test: l.test, then: l.then >= v, else: l.else >= v };
+        return { test: l.test, ifTrue: l.ifTrue >= v, else: l.else >= v };
       if (op === '|')
-        return { test: l.test, then: l.then | v, else: l.else | v };
+        return { test: l.test, ifTrue: l.ifTrue | v, else: l.else | v };
       if (op === '&')
-        return { test: l.test, then: l.then & v, else: l.else & v };
+        return { test: l.test, ifTrue: l.ifTrue & v, else: l.else & v };
       if (op === '^')
-        return { test: l.test, then: l.then ^ v, else: l.else ^ v };
+        return { test: l.test, ifTrue: l.ifTrue ^ v, else: l.else ^ v };
       if (op === '&&')
-        return { test: l.test, then: l.then && v, else: l.else && v };
+        return { test: l.test, ifTrue: l.ifTrue && v, else: l.else && v };
       if (op === '||')
-        return { test: l.test, then: l.then || v, else: l.else || v };
+        return { test: l.test, ifTrue: l.ifTrue || v, else: l.else || v };
     } else if ('test' in r && 'value' in l) {
       const v: any = l.value;
       if (op === '==')
-        return { test: r.test, then: v == r.then, else: v == r.else };
+        return { test: r.test, ifTrue: v == r.ifTrue, else: v == r.else };
       if (op === '===')
-        return { test: r.test, then: v === r.then, else: v === r.else };
+        return { test: r.test, ifTrue: v === r.ifTrue, else: v === r.else };
       if (op === '!=')
-        return { test: r.test, then: v != r.then, else: v != r.else };
+        return { test: r.test, ifTrue: v != r.ifTrue, else: v != r.else };
       if (op === '!==')
-        return { test: r.test, then: v !== r.then, else: v !== r.else };
+        return { test: r.test, ifTrue: v !== r.ifTrue, else: v !== r.else };
       if (op === '+')
-        return { test: r.test, then: v + r.then, else: v + r.else };
+        return { test: r.test, ifTrue: v + r.ifTrue, else: v + r.else };
       if (op === '-')
-        return { test: r.test, then: v - r.then, else: v - r.else };
+        return { test: r.test, ifTrue: v - r.ifTrue, else: v - r.else };
       if (op === '*')
-        return { test: r.test, then: v * r.then, else: v * r.else };
+        return { test: r.test, ifTrue: v * r.ifTrue, else: v * r.else };
       if (op === '/')
-        return { test: r.test, then: v / r.then, else: v / r.else };
+        return { test: r.test, ifTrue: v / r.ifTrue, else: v / r.else };
       if (op === '%')
-        return { test: r.test, then: v % r.then, else: v % r.else };
+        return { test: r.test, ifTrue: v % r.ifTrue, else: v % r.else };
       if (op === '<')
-        return { test: r.test, then: v < r.then, else: v < r.else };
+        return { test: r.test, ifTrue: v < r.ifTrue, else: v < r.else };
       if (op === '<=')
-        return { test: r.test, then: v <= r.then, else: v <= r.else };
+        return { test: r.test, ifTrue: v <= r.ifTrue, else: v <= r.else };
       if (op === '>')
-        return { test: r.test, then: v > r.then, else: v > r.else };
+        return { test: r.test, ifTrue: v > r.ifTrue, else: v > r.else };
       if (op === '>=')
-        return { test: r.test, then: v >= r.then, else: v >= r.else };
+        return { test: r.test, ifTrue: v >= r.ifTrue, else: v >= r.else };
       if (op === '|')
-        return { test: r.test, then: v | r.then, else: v | r.else };
+        return { test: r.test, ifTrue: v | r.ifTrue, else: v | r.else };
       if (op === '&')
-        return { test: r.test, then: v & r.then, else: v & r.else };
+        return { test: r.test, ifTrue: v & r.ifTrue, else: v & r.else };
       if (op === '^')
-        return { test: r.test, then: v ^ r.then, else: v ^ r.else };
+        return { test: r.test, ifTrue: v ^ r.ifTrue, else: v ^ r.else };
       if (op === '&&')
-        return { test: r.test, then: v && r.then, else: l && r.else };
+        return { test: r.test, ifTrue: v && r.ifTrue, else: l && r.else };
       if (op === '||')
-        return { test: r.test, then: v || r.then, else: l || r.else };
+        return { test: r.test, ifTrue: v || r.ifTrue, else: l || r.else };
     } else if ('value' in l && 'value' in r) {
       if (op === '==') return { value: l.value == r.value };
       if (op === '===') return { value: l.value === r.value };
@@ -280,7 +280,7 @@ const visitors: Record<
         if (predicate) return;
         predicate = x.test;
         argsElse = args.concat([]);
-        args.push(x.then);
+        args.push(x.ifTrue);
         argsElse.push(x.else);
       } else {
         args.push(x.value);
@@ -304,7 +304,7 @@ const visitors: Record<
       }
       const resultElse = await fn.apply(ctx, argsElse);
       if (result === UNKNOWN) return;
-      return { test: predicate, then: result, else: resultElse };
+      return { test: predicate, ifTrue: result, else: resultElse };
     } catch (e) {
       return;
     }
@@ -327,7 +327,7 @@ const visitors: Record<
 
     return {
       test: node.test,
-      then: thenValue.value,
+      ifTrue: thenValue.value,
       else: elseValue.value,
     };
   },
@@ -444,7 +444,7 @@ const visitors: Record<
           try {
             return {
               test,
-              then: new URL(arg.then, parent.value),
+              ifTrue: new URL(arg.ifTrue, parent.value),
               else: new URL(arg.else, parent.value),
             };
           } catch {
@@ -454,7 +454,7 @@ const visitors: Record<
         try {
           return {
             test,
-            then: new URL(arg.then),
+            ifTrue: new URL(arg.ifTrue),
             else: new URL(arg.else),
           };
         } catch {
@@ -512,7 +512,7 @@ const visitors: Record<
       if ('value' in val) {
         val.value += node.quasis[i].value.cooked;
       } else {
-        val.then += node.quasis[i].value.cooked;
+        val.ifTrue += node.quasis[i].value.cooked;
         val.else += node.quasis[i].value.cooked;
       }
       let exprValue = await walk(node.expressions[i]);
@@ -527,7 +527,7 @@ const visitors: Record<
             val.wildcards = [...(val.wildcards || []), ...exprValue.wildcards];
         } else {
           if (exprValue.wildcards) return;
-          val.then += exprValue.value;
+          val.ifTrue += exprValue.value;
           val.else += exprValue.value;
         }
       } else if ('value' in val) {
@@ -537,7 +537,7 @@ const visitors: Record<
         }
         val = {
           test: exprValue.test,
-          then: val.value + exprValue.then,
+          ifTrue: val.value + exprValue.ifTrue,
           else: val.value + exprValue.else,
         };
       } else {
@@ -548,7 +548,7 @@ const visitors: Record<
     if ('value' in val) {
       val.value += node.quasis[i].value.cooked;
     } else {
-      val.then += node.quasis[i].value.cooked;
+      val.ifTrue += node.quasis[i].value.cooked;
       val.else += node.quasis[i].value.cooked;
     }
     return val;
@@ -575,13 +575,13 @@ const visitors: Record<
       if (node.operator === '!') return { value: !val.value };
     } else if ('test' in val && 'wildcards' in val === false) {
       if (node.operator === '+')
-        return { test: val.test, then: +val.then, else: +val.else };
+        return { test: val.test, ifTrue: +val.ifTrue, else: +val.else };
       if (node.operator === '-')
-        return { test: val.test, then: -val.then, else: -val.else };
+        return { test: val.test, ifTrue: -val.ifTrue, else: -val.else };
       if (node.operator === '~')
-        return { test: val.test, then: ~val.then, else: ~val.else };
+        return { test: val.test, ifTrue: ~val.ifTrue, else: ~val.else };
       if (node.operator === '!')
-        return { test: val.test, then: !val.then, else: !val.else };
+        return { test: val.test, ifTrue: !val.ifTrue, else: !val.else };
     }
     return undefined;
   },
