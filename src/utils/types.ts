@@ -8,7 +8,6 @@ export interface StaticValue {
 
 export interface ConditionalValue {
   test: string;
-  // then is reserved for thenables
   ifTrue: any;
   else: any;
 }
