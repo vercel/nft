@@ -1,29 +1,38 @@
+import { safeStringify } from './safe-stringify';
 import { EvaluatedValue, StaticValue, ConditionalValue, Node } from './types';
-import { URL } from 'url';
-type Walk = (node: Node) => EvaluatedValue;
+type Walk = (node: Node) => Promise<EvaluatedValue>;
 type State = { computeBranches: boolean; vars: Record<string, any> };
 
+const walkCache = new Map<string, EvaluatedValue>();
+
 export async function evaluate(
-  ast: Node,
-  vars = {},
-  computeBranches = true,
+  ast: Readonly<Node>,
+  vars: Readonly<Record<string, string>> = {},
+  computeBranches: Readonly<boolean> = true,
 ): Promise<EvaluatedValue> {
   const state: State = {
     computeBranches,
     vars,
   };
+  const stateCacheKey = safeStringify(state);
   return walk(ast);
 
   // walk returns:
   // 1. Single known value: { value: value }
   // 2. Conditional value: { test, ifTrue, else }
   // 3. Unknown value: undefined
-  function walk(node: Node) {
+  async function walk(node: Node) {
+    const walkCacheKey = stateCacheKey + safeStringify(node);
+    let result = walkCache.get(walkCacheKey);
+    if (result) {
+      return result;
+    }
     const visitor = visitors[node.type];
     if (visitor) {
-      return visitor.call(state, node, walk);
+      result = await visitor.call(state, node, walk);
     }
-    return undefined;
+    walkCache.set(walkCacheKey, result);
+    return result;
   }
 }
 
@@ -359,7 +368,7 @@ const visitors: Record<
       if (typeof obj.value === 'string' && node.property.name === 'concat') {
         return {
           value: {
-            [FUNCTION]: (...args: string[]) => obj.value.concat(args),
+            [FUNCTION]: (...args: string[]) => obj.value.concat(...args),
           },
         };
       }
