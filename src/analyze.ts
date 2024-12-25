@@ -1082,6 +1082,20 @@ export default async function analyze(
           if (returned) setKnownBinding(fnName.name, { value: BOUND_REQUIRE });
         }
       }
+      // Support module.createRequire
+      if (
+        node.type === 'CallExpression' &&
+        node.callee.type === 'MemberExpression' &&
+        node.callee.object.type === 'Identifier' &&
+        node.callee.object.name === 'module' &&
+        node.callee.property.type === 'Identifier' &&
+        node.callee.property.name === 'createRequire'
+      ) {
+        if (parent.type === 'VariableDeclarator') {
+          const requireName = parent.id.name;
+          setKnownBinding(requireName, { value: BOUND_REQUIRE });
+        }
+      }
     },
     async leave(_node, _parent) {
       const node: Node = _node as any;
