@@ -1,6 +1,5 @@
 import { EvaluatedValue, StaticValue, ConditionalValue, Node } from './types';
-import { URL } from 'url';
-type Walk = (node: Node) => EvaluatedValue;
+type Walk = (node: Node) => Promise<EvaluatedValue> | undefined;
 type State = { computeBranches: boolean; vars: Record<string, any> };
 
 export async function evaluate(
