@@ -143,7 +143,7 @@
   },
   "packageManager": "npm@10.2.5",
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "publishConfig": {
     "access": "public"
