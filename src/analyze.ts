@@ -300,7 +300,7 @@ export default async function analyze(
         .filter(
           (name) =>
             !excludeAssetExtensions.has(path.extname(name)) &&
-            !excludeAssetFiles.has(path.basename(name))
+            !excludeAssetFiles.has(path.basename(name)),
         )
         .forEach((file) => assets.add(file));
     });
