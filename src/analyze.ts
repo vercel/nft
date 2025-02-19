@@ -290,11 +290,13 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + assetDirPath + wildcardPattern);
-      const files = await glob(assetDirPath + wildcardPattern, {
-        ignore: assetDirPath + '/**/node_modules/**/*',
-        dot: true,
-        onlyFiles: true,
-      });
+      const files = (
+        await glob(assetDirPath + wildcardPattern, {
+          ignore: assetDirPath + '/**/node_modules/**/*',
+          dot: true,
+          onlyFiles: true,
+        })
+      ).map((f) => (f.endsWith('/') ? f : f + '/'));
       files
         .filter(
           (name) =>
@@ -507,10 +509,12 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + wildcardDirPath + wildcardPattern);
-      const files = await glob(wildcardDirPath + wildcardPattern, {
-        ignore: wildcardDirPath + '/**/node_modules/**/*',
-        onlyFiles: true,
-      });
+      const files = (
+        await glob(wildcardDirPath + wildcardPattern, {
+          ignore: wildcardDirPath + '/**/node_modules/**/*',
+          onlyFiles: true,
+        })
+      ).map((f) => (f.endsWith('/') ? f : f + '/'));
       files
         .filter(
           (name) =>
