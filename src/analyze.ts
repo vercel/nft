@@ -270,17 +270,18 @@ export default async function analyze(
 
   const emitAssetDirectory = (wildcardPath: string) => {
     if (!job.analysis.emitGlobs) return;
+    wildcardPath = wildcardPath.replaceAll(path.sep, path.posix.sep);
     const wildcardIndex = wildcardPath.indexOf(WILDCARD);
     const dirIndex =
       wildcardIndex === -1
         ? wildcardPath.length
-        : wildcardPath.lastIndexOf(path.sep, wildcardIndex);
+        : wildcardPath.lastIndexOf(path.posix.sep, wildcardIndex);
     const assetDirPath = wildcardPath.substring(0, dirIndex);
     const patternPath = wildcardPath.slice(dirIndex);
     const wildcardPattern =
       patternPath
         .replace(wildcardRegEx, (_match, index) => {
-          return patternPath[index - 1] === path.sep ? '**/*' : '*';
+          return patternPath[index - 1] === path.posix.sep ? '**/*' : '*';
         })
         .replace(repeatGlobRegEx, '/**/*') || '/**/*';
 
@@ -289,22 +290,17 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + assetDirPath + wildcardPattern);
-      const files = await glob(
-        assetDirPath.replaceAll(path.sep, path.posix.sep) + wildcardPattern,
-        {
-          mark: true,
-          ignore:
-            assetDirPath.replaceAll(path.sep, path.posix.sep) +
-            '/**/node_modules/**/*',
-          dot: true,
-        },
-      );
+      const files = await glob(assetDirPath + wildcardPattern, {
+        mark: true,
+        ignore: assetDirPath + '/**/node_modules/**/*',
+        dot: true,
+        nodir: true,
+      });
       files
         .filter(
           (name) =>
             !excludeAssetExtensions.has(path.extname(name)) &&
-            !excludeAssetFiles.has(path.basename(name)) &&
-            !name.endsWith('/'),
+            !excludeAssetFiles.has(path.basename(name))
         )
         .forEach((file) => assets.add(file));
     });
@@ -484,18 +480,21 @@ export default async function analyze(
     )
       return;
 
-    wildcardRequire = path.resolve(dir, wildcardRequire);
+    wildcardRequire = path
+      .resolve(dir, wildcardRequire)
+      .replaceAll(path.sep, path.posix.sep);
 
     const wildcardIndex = wildcardRequire.indexOf(WILDCARD);
     const dirIndex =
       wildcardIndex === -1
         ? wildcardRequire.length
-        : wildcardRequire.lastIndexOf(path.sep, wildcardIndex);
+        : wildcardRequire.lastIndexOf(path.posix.sep, wildcardIndex);
     const wildcardDirPath = wildcardRequire.substring(0, dirIndex);
+
     const patternPath = wildcardRequire.slice(dirIndex);
     let wildcardPattern =
       patternPath.replace(wildcardRegEx, (_match, index) => {
-        return patternPath[index - 1] === path.sep ? '**/*' : '*';
+        return patternPath[index - 1] === path.posix.sep ? '**/*' : '*';
       }) || '/**/*';
 
     if (!wildcardPattern.endsWith('*'))
@@ -509,21 +508,16 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + wildcardDirPath + wildcardPattern);
-      const files = await glob(
-        wildcardDirPath.replaceAll(path.sep, path.posix.sep) + wildcardPattern,
-        {
-          mark: true,
-          ignore:
-            wildcardDirPath.replaceAll(path.sep, path.posix.sep) +
-            '/**/node_modules/**/*',
-        },
-      );
+      const files = await glob(wildcardDirPath + wildcardPattern, {
+        mark: true,
+        ignore: wildcardDirPath + '/**/node_modules/**/*',
+        nodir: true,
+      });
       files
         .filter(
           (name) =>
             !excludeAssetExtensions.has(path.extname(name)) &&
-            !excludeAssetFiles.has(path.basename(name)) &&
-            !name.endsWith('/'),
+            !excludeAssetFiles.has(path.basename(name)),
         )
         .forEach((file) => deps.add(file));
     });
