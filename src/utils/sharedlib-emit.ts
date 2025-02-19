@@ -1,5 +1,6 @@
 import os from 'os';
-import glob from 'glob';
+import path from 'path';
+import { glob } from 'tinyglobby';
 import { getPackageBase } from './get-package-base';
 import { Job } from '../node-file-trace';
 
@@ -16,17 +17,18 @@ switch (os.platform()) {
 }
 
 // helper for emitting the associated shared libraries when a binary is emitted
-export async function sharedLibEmit(path: string, job: Job) {
+export async function sharedLibEmit(p: string, job: Job) {
   // console.log('Emitting shared libs for ' + path);
-  const pkgPath = getPackageBase(path);
+  const pkgPath = getPackageBase(p);
   if (!pkgPath) return;
 
-  const files = await new Promise<string[]>((resolve, reject) =>
-    glob(
-      pkgPath + sharedlibGlob,
-      { ignore: pkgPath + '/**/node_modules/**/*', dot: true },
-      (err, files) => (err ? reject(err) : resolve(files)),
-    ),
+  const files = await glob(
+    pkgPath.replaceAll(path.sep, path.posix.sep) + sharedlibGlob,
+    {
+      ignore:
+        pkgPath.replaceAll(path.sep, path.posix.sep) + '/**/node_modules/**/*',
+      dot: true,
+    },
   );
-  await Promise.all(files.map((file) => job.emitFile(file, 'sharedlib', path)));
+  await Promise.all(files.map((file) => job.emitFile(file, 'sharedlib', p)));
 }

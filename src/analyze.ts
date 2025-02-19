@@ -11,7 +11,7 @@ import {
 import { Parser } from 'acorn';
 import bindings from 'bindings';
 import { isIdentifierRead, isLoop, isVarLoop } from './utils/ast-helpers';
-import glob from 'glob';
+import { glob } from 'tinyglobby';
 import { getPackageBase } from './utils/get-package-base';
 import { pregyp, nbind } from './utils/binary-locators';
 import {
@@ -270,17 +270,18 @@ export default async function analyze(
 
   const emitAssetDirectory = (wildcardPath: string) => {
     if (!job.analysis.emitGlobs) return;
+    wildcardPath = wildcardPath.replaceAll(path.sep, path.posix.sep);
     const wildcardIndex = wildcardPath.indexOf(WILDCARD);
     const dirIndex =
       wildcardIndex === -1
         ? wildcardPath.length
-        : wildcardPath.lastIndexOf(path.sep, wildcardIndex);
+        : wildcardPath.lastIndexOf(path.posix.sep, wildcardIndex);
     const assetDirPath = wildcardPath.substring(0, dirIndex);
     const patternPath = wildcardPath.slice(dirIndex);
     const wildcardPattern =
       patternPath
         .replace(wildcardRegEx, (_match, index) => {
-          return patternPath[index - 1] === path.sep ? '**/*' : '*';
+          return patternPath[index - 1] === path.posix.sep ? '**/*' : '*';
         })
         .replace(repeatGlobRegEx, '/**/*') || '/**/*';
 
@@ -289,23 +290,16 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + assetDirPath + wildcardPattern);
-      const files = await new Promise<string[]>((resolve, reject) =>
-        glob(
-          assetDirPath + wildcardPattern,
-          {
-            mark: true,
-            ignore: assetDirPath + '/**/node_modules/**/*',
-            dot: true,
-          },
-          (err, files) => (err ? reject(err) : resolve(files)),
-        ),
-      );
+      const files = await glob(assetDirPath + wildcardPattern, {
+        ignore: assetDirPath + '/**/node_modules/**/*',
+        dot: true,
+        onlyFiles: true,
+      });
       files
         .filter(
           (name) =>
             !excludeAssetExtensions.has(path.extname(name)) &&
-            !excludeAssetFiles.has(path.basename(name)) &&
-            !name.endsWith('/'),
+            !excludeAssetFiles.has(path.basename(name)),
         )
         .forEach((file) => assets.add(file));
     });
@@ -485,18 +479,21 @@ export default async function analyze(
     )
       return;
 
-    wildcardRequire = path.resolve(dir, wildcardRequire);
+    wildcardRequire = path
+      .resolve(dir, wildcardRequire)
+      .replaceAll(path.sep, path.posix.sep);
 
     const wildcardIndex = wildcardRequire.indexOf(WILDCARD);
     const dirIndex =
       wildcardIndex === -1
         ? wildcardRequire.length
-        : wildcardRequire.lastIndexOf(path.sep, wildcardIndex);
+        : wildcardRequire.lastIndexOf(path.posix.sep, wildcardIndex);
     const wildcardDirPath = wildcardRequire.substring(0, dirIndex);
+
     const patternPath = wildcardRequire.slice(dirIndex);
     let wildcardPattern =
       patternPath.replace(wildcardRegEx, (_match, index) => {
-        return patternPath[index - 1] === path.sep ? '**/*' : '*';
+        return patternPath[index - 1] === path.posix.sep ? '**/*' : '*';
       }) || '/**/*';
 
     if (!wildcardPattern.endsWith('*'))
@@ -510,19 +507,15 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + wildcardDirPath + wildcardPattern);
-      const files = await new Promise<string[]>((resolve, reject) =>
-        glob(
-          wildcardDirPath + wildcardPattern,
-          { mark: true, ignore: wildcardDirPath + '/**/node_modules/**/*' },
-          (err, files) => (err ? reject(err) : resolve(files)),
-        ),
-      );
+      const files = await glob(wildcardDirPath + wildcardPattern, {
+        ignore: wildcardDirPath + '/**/node_modules/**/*',
+        onlyFiles: true,
+      });
       files
         .filter(
           (name) =>
             !excludeAssetExtensions.has(path.extname(name)) &&
-            !excludeAssetFiles.has(path.basename(name)) &&
-            !name.endsWith('/'),
+            !excludeAssetFiles.has(path.basename(name)),
         )
         .forEach((file) => deps.add(file));
     });
