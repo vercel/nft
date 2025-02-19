@@ -1,5 +1,5 @@
 import os from 'os';
-import { glob } from 'glob';
+import { escape, glob } from 'glob';
 import { getPackageBase } from './get-package-base';
 import { Job } from '../node-file-trace';
 
@@ -21,10 +21,9 @@ export async function sharedLibEmit(path: string, job: Job) {
   const pkgPath = getPackageBase(path);
   if (!pkgPath) return;
 
-  const files = await glob(pkgPath + sharedlibGlob, {
-    ignore: pkgPath + '/**/node_modules/**/*',
+  const files = await glob(escape(pkgPath) + sharedlibGlob, {
+    ignore: escape(pkgPath) + '/**/node_modules/**/*',
     dot: true,
-    windowsPathsNoEscape: true,
   });
   await Promise.all(files.map((file) => job.emitFile(file, 'sharedlib', path)));
 }

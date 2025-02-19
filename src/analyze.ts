@@ -11,7 +11,7 @@ import {
 import { Parser } from 'acorn';
 import bindings from 'bindings';
 import { isIdentifierRead, isLoop, isVarLoop } from './utils/ast-helpers';
-import { glob } from 'glob';
+import { escape, glob } from 'glob';
 import { getPackageBase } from './utils/get-package-base';
 import { pregyp, nbind } from './utils/binary-locators';
 import {
@@ -289,11 +289,10 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + assetDirPath + wildcardPattern);
-      const files = await glob(assetDirPath + wildcardPattern, {
+      const files = await glob(escape(assetDirPath) + wildcardPattern, {
         mark: true,
-        ignore: assetDirPath + '/**/node_modules/**/*',
+        ignore: escape(assetDirPath) + '/**/node_modules/**/*',
         dot: true,
-        windowsPathsNoEscape: true,
       });
       files
         .filter(
@@ -505,10 +504,9 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + wildcardDirPath + wildcardPattern);
-      const files = await glob(wildcardDirPath + wildcardPattern, {
+      const files = await glob(escape(wildcardDirPath) + wildcardPattern, {
         mark: true,
-        ignore: wildcardDirPath + '/**/node_modules/**/*',
-        windowsPathsNoEscape: true,
+        ignore: escape(wildcardDirPath) + '/**/node_modules/**/*',
       });
       files
         .filter(
