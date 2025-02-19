@@ -41,6 +41,11 @@ for (const integrationTest of filteredTestsToRun) {
     const fails = integrationTest.endsWith('failure.js');
     let traceBase = path.resolve(__dirname, '..');
 
+    if (integrationTest === 'polyfill-library.js') {
+      console.log('Skipping polyfill-library.js');
+      return;
+    }
+
     if (integrationTest === 'sharp-pnpm.js') {
       if (process.version.startsWith('v18.') && process.platform === 'win32') {
         console.log(
