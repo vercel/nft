@@ -11,7 +11,7 @@ import {
 import { Parser } from 'acorn';
 import bindings from 'bindings';
 import { isIdentifierRead, isLoop, isVarLoop } from './utils/ast-helpers';
-import { escape, glob } from 'glob';
+import { glob } from 'glob';
 import { getPackageBase } from './utils/get-package-base';
 import { pregyp, nbind } from './utils/binary-locators';
 import {
@@ -289,11 +289,16 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + assetDirPath + wildcardPattern);
-      const files = await glob(escape(assetDirPath) + wildcardPattern, {
-        mark: true,
-        ignore: escape(assetDirPath) + '/**/node_modules/**/*',
-        dot: true,
-      });
+      const files = await glob(
+        assetDirPath.replaceAll(path.sep, path.posix.sep) + wildcardPattern,
+        {
+          mark: true,
+          ignore:
+            assetDirPath.replaceAll(path.sep, path.posix.sep) +
+            '/**/node_modules/**/*',
+          dot: true,
+        },
+      );
       files
         .filter(
           (name) =>
@@ -504,10 +509,15 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + wildcardDirPath + wildcardPattern);
-      const files = await glob(escape(wildcardDirPath) + wildcardPattern, {
-        mark: true,
-        ignore: escape(wildcardDirPath) + '/**/node_modules/**/*',
-      });
+      const files = await glob(
+        wildcardDirPath.replaceAll(path.sep, path.posix.sep) + wildcardPattern,
+        {
+          mark: true,
+          ignore:
+            wildcardDirPath.replaceAll(path.sep, path.posix.sep) +
+            '/**/node_modules/**/*',
+        },
+      );
       files
         .filter(
           (name) =>
