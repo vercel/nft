@@ -11,7 +11,7 @@ import {
 import { Parser } from 'acorn';
 import bindings from 'bindings';
 import { isIdentifierRead, isLoop, isVarLoop } from './utils/ast-helpers';
-import { glob } from 'tinyglobby';
+import { glob } from 'glob';
 import { getPackageBase } from './utils/get-package-base';
 import { pregyp, nbind } from './utils/binary-locators';
 import {
@@ -293,8 +293,8 @@ export default async function analyze(
       const files = await glob(assetDirPath + wildcardPattern, {
         ignore: assetDirPath + '/**/node_modules/**/*',
         dot: true,
-        onlyFiles: true,
-        expandDirectories: false,
+        mark: true,
+        nodir: true,
       });
       files
         .filter(
@@ -510,8 +510,8 @@ export default async function analyze(
       if (job.log) console.log('Globbing ' + wildcardDirPath + wildcardPattern);
       const files = await glob(wildcardDirPath + wildcardPattern, {
         ignore: wildcardDirPath + '/**/node_modules/**/*',
-        onlyFiles: true,
-        expandDirectories: false,
+        mark: true,
+        nodir: true,
       });
       files
         .filter(
