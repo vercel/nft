@@ -29,6 +29,7 @@ export async function sharedLibEmit(p: string, job: Job) {
         pkgPath.replaceAll(path.sep, path.posix.sep) + '/**/node_modules/**/*',
       dot: true,
       expandDirectories: false,
+      followSymbolicLinks: false,
     },
   );
   await Promise.all(files.map((file) => job.emitFile(file, 'sharedlib', p)));
