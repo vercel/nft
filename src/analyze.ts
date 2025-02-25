@@ -296,6 +296,7 @@ export default async function analyze(
         onlyFiles: true,
         expandDirectories: false,
         followSymbolicLinks: false,
+        absolute: true,
       });
       files
         .filter(
@@ -514,6 +515,7 @@ export default async function analyze(
         onlyFiles: true,
         expandDirectories: false,
         followSymbolicLinks: false,
+        absolute: true,
       });
       files
         .filter(

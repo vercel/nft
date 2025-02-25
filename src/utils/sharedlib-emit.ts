@@ -30,6 +30,7 @@ export async function sharedLibEmit(p: string, job: Job) {
       dot: true,
       expandDirectories: false,
       followSymbolicLinks: false,
+      absolute: true,
     },
   );
   await Promise.all(files.map((file) => job.emitFile(file, 'sharedlib', p)));
