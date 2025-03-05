@@ -186,7 +186,10 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
     }
   },
   'socket.io': async function ({ id, ast, job }) {
-    if (id.endsWith('socket.io/dist/index.js')) {
+    if (
+      id.endsWith('socket.io/dist/index.js') ||
+      id.endsWith('socket.io/lib/index.js')
+    ) {
       async function replaceResolvePathStatement(statement: Node) {
         if (
           statement.type === 'ExpressionStatement' &&
