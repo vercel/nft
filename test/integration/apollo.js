@@ -22,4 +22,4 @@ async function startApolloServer(typeDefs, resolvers){
   server.applyMiddleware({app, path: '/graphql'});
 }
 
-startApolloServer(typeDefs, resolvers);
+startApolloServer(typeDefs, resolvers).catch(console.error);
