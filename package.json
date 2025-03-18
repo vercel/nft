@@ -61,7 +61,7 @@
     "azure-storage": "^2.10.3",
     "bcrypt": "^5.0.1",
     "browserify-middleware": "^8.1.1",
-    "bull": "^3.10.0",
+    "bull": "^4.16.5",
     "bullmq": "^5.41.3",
     "camaro": "^6.1.0",
     "chromeless": "^1.5.2",
