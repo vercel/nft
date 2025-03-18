@@ -111,7 +111,7 @@
     "playwright-core": "^1.17.1",
     "polyfill-library": "3.93.0",
     "prettier": "^3.2.5",
-    "prismjs": "^1.27.0",
+    "prismjs": "^1.30.0",
     "pug": "^3.0.3",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
