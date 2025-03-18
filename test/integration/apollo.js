@@ -15,7 +15,11 @@ const resolvers = {
   }
 };
 
+async function startApolloServer(typeDefs, resolvers){
+  const server = new ApolloServer({typeDefs, resolvers})
+  const app = express();
+  await server.start();
+  server.applyMiddleware({app, path: '/graphql'});
+}
 
-const server = new ApolloServer({ typeDefs, resolvers });
-const app = express();
-server.applyMiddleware({ app });
+startApolloServer(typeDefs, resolvers).catch(console.error);
