@@ -31,7 +31,7 @@
     "estree-walker": "2.0.2",
     "glob": "^10.4.5",
     "graceful-fs": "^4.2.9",
-    "node-gyp-build": "^4.2.2",
+    "node-gyp-build": "~4.7.1",
     "picomatch": "^4.0.2",
     "resolve-from": "^5.0.0"
   },
