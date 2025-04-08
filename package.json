@@ -62,7 +62,7 @@
     "bcrypt": "^5.0.1",
     "browserify-middleware": "^8.1.1",
     "bull": "^4.16.5",
-    "bullmq": "^4.10.0",
+    "bullmq": "^5.48.0",
     "camaro": "^6.1.0",
     "chromeless": "^1.5.2",
     "consolidate": "^0.15.1",
@@ -136,8 +136,7 @@
     "uglify-js": "^3.6.0",
     "unified": "^10.1.0",
     "vm2": "^3.9.18",
-    "vue": "^2.6.10",
-    "vue-server-renderer": "^2.6.10",
+    "vue": "^3.5.13",
     "when": "^3.7.8",
     "zeromq": "^6.0.0-beta.19"
   },
