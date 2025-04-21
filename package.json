@@ -36,6 +36,7 @@
     "resolve-from": "^5.0.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.787.0",
     "@azure/cosmos": "^2.1.7",
     "@bugsnag/js": "^6.3.2",
     "@datadog/pprof": "^5.2.0",
