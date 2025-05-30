@@ -119,7 +119,6 @@
     "redis": "^3.1.1",
     "remark-parse": "^11.0.0",
     "remark-prism": "^1.3.6",
-    "rimraf": "^6.0.1",
     "rxjs": "^7.8.2",
     "saslprep": "^1.0.3",
     "semver": "^7.5.2",

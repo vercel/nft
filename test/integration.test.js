@@ -2,8 +2,7 @@ const { promises, readdirSync, mkdirSync } = require('fs');
 const path = require('path');
 const { nodeFileTrace } = require('../out/node-file-trace');
 const os = require('os');
-const rimraf = require('rimraf');
-const { readFile, writeFile, readlink, symlink, copyFile } = promises;
+const { readFile, writeFile, readlink, symlink, copyFile, rm } = promises;
 const { fork, exec: execOrig } = require('child_process');
 
 const exec = require('util').promisify(execOrig);
@@ -53,7 +52,7 @@ for (const integrationTest of filteredTestsToRun) {
         os.tmpdir(),
         `node-file-trace-${integrationTest}-${rand}`,
       );
-      rimraf.sync(tmpdir);
+      await rm(tmpdir, { recursive: true, force: true });
       mkdirSync(tmpdir);
       await copyFile(
         path.join(integrationDir, integrationTest),
@@ -87,7 +86,7 @@ for (const integrationTest of filteredTestsToRun) {
     );
     // warnings.forEach(warning => console.warn(warning));
     const tmpdir = path.resolve(os.tmpdir(), `node-file-trace-${rand}`);
-    rimraf.sync(tmpdir);
+    await rm(tmpdir, { recursive: true, force: true });
     mkdirSync(tmpdir);
 
     await Promise.all(
@@ -118,7 +117,7 @@ for (const integrationTest of filteredTestsToRun) {
     });
     const code = await new Promise((resolve) => ps.on('close', resolve));
     expect(code).toBe(fails ? 1 : 0);
-    rimraf.sync(tmpdir);
+    await rm(tmpdir, { recursive: true, force: true });
 
     // TODO: ensure analysis cache is safe for below case
     // seems this fails with cache since < 0.14.0
