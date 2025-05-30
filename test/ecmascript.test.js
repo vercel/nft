@@ -1,8 +1,7 @@
-const { promises, mkdirSync } = require('fs');
+const { promises, mkdirSync, rmSync } = require('fs');
 const path = require('path');
 const { nodeFileTrace } = require('../out/node-file-trace');
 const os = require('os');
-const rimraf = require('rimraf');
 const { writeFile } = promises;
 
 const randomTmpId = Math.random().toString().slice(2);
@@ -10,7 +9,7 @@ const tmpdir = path.resolve(
   os.tmpdir(),
   `node-file-trace-ecmascript${randomTmpId}`,
 );
-rimraf.sync(tmpdir);
+rmSync(tmpdir, { recursive: true, force: true });
 mkdirSync(tmpdir);
 console.log('created directory ' + tmpdir);
 
