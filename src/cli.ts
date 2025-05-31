@@ -2,8 +2,7 @@
 
 import { join, dirname, relative, isAbsolute, sep } from 'path';
 import { promises, statSync, lstatSync } from 'graceful-fs';
-const { copyFile, mkdir } = promises;
-const rimraf = require('rimraf');
+const { copyFile, mkdir, rm } = promises;
 import { nodeFileTrace } from './node-file-trace';
 import { NodeFileTraceReasons } from './types';
 
@@ -62,7 +61,7 @@ async function cli(
       }
     }
   } else if (action === 'build') {
-    rimraf.sync(join(cwd, outputDir));
+    await rm(join(cwd, outputDir), { recursive: true, force: true });
     for (const f of allFiles) {
       const src = join(cwd, f);
       const dest = join(cwd, outputDir, f);
