@@ -52,7 +52,7 @@ for (const integrationTest of filteredTestsToRun) {
         os.tmpdir(),
         `node-file-trace-${integrationTest}-${rand}`,
       );
-      await rm(tmpdir, { recursive: true, force: true });
+      await promises.rm(tmpdir, { recursive: true, force: true });
       mkdirSync(tmpdir);
       await copyFile(
         path.join(integrationDir, integrationTest),
