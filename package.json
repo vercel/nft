@@ -71,7 +71,6 @@
     "cowsay": "^1.4.0",
     "es-get-iterator": "^1.1.0",
     "esbuild": "^0.25.0",
-    "esm": "^3.2.25",
     "express": "^4.21.2",
     "fast-glob": "^3.1.1",
     "fetch-h2": "^3.0.2",
