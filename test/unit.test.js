@@ -10,6 +10,7 @@ const readFile = gracefulFS.promises.readFile;
 
 global._unit = true;
 
+const originalProcessVersions = process.versions;
 const nodeGypTests = [
   'datadog-pprof-node-gyp',
   'microtime-node-gyp',
@@ -82,6 +83,24 @@ for (const { testName, isRoot } of unitTests) {
   const unitPath = join(__dirname, 'unit', testName);
 
   it(`should correctly trace ${testSuffix}`, async () => {
+    // Mock Node.js version for module-sync-condition tests
+    if (testName === 'module-sync-condition') {
+      Object.defineProperty(process, 'versions', {
+        value: { node: '22.0.0' },
+        configurable: true,
+      });
+    } else if (testName === 'module-sync-condition-node20') {
+      Object.defineProperty(process, 'versions', {
+        value: { node: '20.19.0' },
+        configurable: true,
+      });
+    } else {
+      Object.defineProperty(process, 'versions', {
+        value: originalProcessVersions,
+        configurable: true,
+      });
+    }
+
     // We mock readFile because when node-file-trace is integrated into @now/node
     // this is the hook that triggers TypeScript compilation. So if this doesn't
     // get called, the TypeScript files won't get compiled: Currently this is only

@@ -1,0 +1,11 @@
+{
+  "name": "test-pkg-sync",
+  "type": "module", 
+  "exports": {
+    ".": {
+      "module-sync": "./module-sync.js",
+      "import": "./import.js",
+      "default": "./fallback.js"
+    }
+  }
+} 
