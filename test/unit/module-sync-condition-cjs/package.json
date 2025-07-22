@@ -1,6 +1,6 @@
 {
-  "name": "test-pkg-sync",
-  "type": "module", 
+  "name": "test-pkg-sync-cjs",
+  "type": "commonjs", 
   "exports": {
     ".": {
       "module-sync": "./module-sync.js",

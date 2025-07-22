@@ -1,5 +1,5 @@
 {
-  "name": "test-pkg-sync-fallback",
+  "name": "test-pkg-sync-es",
   "type": "module", 
   "exports": {
     ".": {

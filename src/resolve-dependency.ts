@@ -169,9 +169,7 @@ function getExportsTarget(
         condition === 'default' ||
         (condition === 'require' && cjsResolve) ||
         (condition === 'import' && !cjsResolve) ||
-        (condition === 'module-sync' &&
-          getNodeMajorVersion() >= 22 &&
-          !cjsResolve) ||
+        (condition === 'module-sync' && getNodeMajorVersion() >= 22) ||
         conditions.includes(condition)
       ) {
         const target = getExportsTarget(
