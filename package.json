@@ -39,7 +39,7 @@
     "@aws-sdk/client-s3": "^3.787.0",
     "@azure/cosmos": "^4.3.0",
     "@bugsnag/js": "^8.2.0",
-    "@datadog/pprof": "^5.2.0",
+    "@datadog/pprof": "^5.9.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@google-cloud/bigquery": "^7.9.2",
     "@google-cloud/firestore": "^7.6.0",
