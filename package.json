@@ -81,7 +81,6 @@
     "geo-tz": "^7.0.1",
     "geoip-lite": "^1.4.10",
     "graphql": "^16.10.0",
-    "highlights": "^3.1.6",
     "hot-shots": "^10.2.1",
     "ioredis": "^5.6.0",
     "isomorphic-unfetch": "^4.0.2",

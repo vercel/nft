@@ -17,13 +17,9 @@ const filteredTestsToRun = integrationTests.filter((testName) => {
   // Filter the integration tests that will never work in Windows
   if (
     isWin &&
-    [
-      'argon2.js',
-      'highlights.js',
-      'hot-shots.js',
-      'loopback.js',
-      'playwright-core.js',
-    ].includes(testName)
+    ['argon2.js', 'hot-shots.js', 'loopback.js', 'playwright-core.js'].includes(
+      testName,
+    )
   ) {
     return false;
   }
