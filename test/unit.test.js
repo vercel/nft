@@ -25,6 +25,8 @@ const skipOnWindows = [
   'require-symlink',
 ];
 const skipOnMac = [];
+const skipOnNode20AndBelow = ['module-sync-condition-es'];
+const skipOnNode22AndAbove = ['module-sync-condition-es-node20'];
 if (process.platform === 'darwin' && process.arch === 'arm64') {
   skipOnMac.push('microtime-node-gyp');
 }
@@ -68,6 +70,7 @@ afterEach(resetFileIOMocks);
 
 for (const { testName, isRoot } of unitTests) {
   const testSuffix = `${testName} from ${isRoot ? 'root' : 'cwd'}`;
+  const nodeVersion = parseInt(process.versions.node.split('.')[0], 10);
   if (
     process.platform === 'win32' &&
     (isRoot || skipOnWindows.includes(testName))
@@ -77,6 +80,14 @@ for (const { testName, isRoot } of unitTests) {
   }
   if (process.platform === 'darwin' && skipOnMac.includes(testName)) {
     console.log(`Skipping unit test on macOS: ${testSuffix}`);
+    continue;
+  }
+  if (nodeVersion < 22 && skipOnNode20AndBelow.includes(testName)) {
+    console.log(`Skipping unit test on Node.js 20 or below: ${testSuffix}`);
+    continue;
+  }
+  if (nodeVersion >= 22 && skipOnNode22AndAbove.includes(testName)) {
+    console.log(`Skipping unit test on Node.js 22 or above: ${testSuffix}`);
     continue;
   }
   const unitPath = join(__dirname, 'unit', testName);

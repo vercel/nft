@@ -1,6 +1,7 @@
 import { isAbsolute, resolve, sep } from 'path';
 import { builtinModules } from 'module';
 import { Job } from './node-file-trace';
+import { getNodeMajorVersion } from './utils/node-version';
 
 // node resolver
 // custom implementation to emit only needed package.json files for resolver
@@ -168,6 +169,7 @@ function getExportsTarget(
         condition === 'default' ||
         (condition === 'require' && cjsResolve) ||
         (condition === 'import' && !cjsResolve) ||
+        (condition === 'module-sync' && getNodeMajorVersion() >= 22) ||
         conditions.includes(condition)
       ) {
         const target = getExportsTarget(
