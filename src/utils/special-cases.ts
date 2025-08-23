@@ -45,6 +45,12 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       }
     }
   },
+  'ffmpeg-static'({ id, emitAsset }) {
+    if (id.endsWith('ffmpeg-static/index.js')) {
+      const bin = require(id);
+      emitAsset(bin);
+    }
+  },
   'google-gax'({ id, ast, emitAssetDirectory }) {
     if (id.endsWith('google-gax/build/src/grpc.js')) {
       // const googleProtoFilesDir = path.normalize(google_proto_files_1.getProtoPath('..'));
