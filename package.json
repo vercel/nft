@@ -123,7 +123,7 @@
     "semver": "^7.5.2",
     "sequelize": "^6.29.0",
     "serialport": "^13.0.0",
-    "sharp": "^0.34.1",
+    "sharp": "^0.34.3",
     "shiki": "^0.14.5",
     "socket.io": "^2.4.0",
     "socket.io-client": "^2.2.0",
