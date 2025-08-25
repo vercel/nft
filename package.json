@@ -74,6 +74,7 @@
     "express": "^4.21.2",
     "fast-glob": "^3.1.1",
     "fetch-h2": "^3.0.2",
+    "ffmpeg-static": "^5.2.0",
     "firebase": "^11.2.0",
     "firebase-admin": "^13.2.0",
     "fluent-ffmpeg": "^2.1.2",
