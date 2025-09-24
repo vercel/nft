@@ -1198,6 +1198,14 @@ export default async function analyze(
 
     if (
       'value' in staticChildValue &&
+      typeof staticChildValue.value === 'string' &&
+      staticChildValue.value.startsWith('.')
+    ) {
+      staticChildValue.value = path.resolve(dir, staticChildValue.value);
+    }
+
+    if (
+      'value' in staticChildValue &&
       isAbsolutePathOrUrl(staticChildValue.value)
     ) {
       try {
