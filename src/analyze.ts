@@ -1201,7 +1201,7 @@ export default async function analyze(
       typeof staticChildValue.value === 'string' &&
       staticChildValue.value.startsWith('.')
     ) {
-      staticChildValue.value = path.resolve(dir, staticChildValue.value);
+      staticChildValue.value = path.resolve(cwd, staticChildValue.value);
     }
 
     if (
