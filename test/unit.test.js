@@ -90,7 +90,11 @@ for (const { testName, isRoot } of unitTests) {
     console.log(`Skipping unit test on Node.js 22 or above: ${testSuffix}`);
     continue;
   }
-  const unitPath = join(__dirname, 'unit', testName);
+  let unitPath = join(__dirname, 'unit', testName);
+
+  if (testName === 'fs-relative-emission') {
+    unitPath += '/main';
+  }
 
   it(`should correctly trace ${testSuffix}`, async () => {
     // We mock readFile because when node-file-trace is integrated into @now/node
