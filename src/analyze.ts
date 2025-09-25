@@ -1198,18 +1198,20 @@ export default async function analyze(
 
     if (
       'value' in staticChildValue &&
-      typeof staticChildValue.value === 'string' &&
-      staticChildValue.value.startsWith('.')
-    ) {
-      staticChildValue.value = path.resolve(cwd, staticChildValue.value);
-    }
-
-    if (
-      'value' in staticChildValue &&
       isAbsolutePathOrUrl(staticChildValue.value)
     ) {
       try {
         const resolved = resolveAbsolutePathOrUrl(staticChildValue.value);
+        await emitAssetPath(resolved);
+      } catch (e) {}
+    } else if (
+      'value' in staticChildValue &&
+      typeof staticChildValue.value === 'string'
+    ) {
+      try {
+        const resolved = resolveAbsolutePathOrUrl(
+          path.resolve(cwd, staticChildValue.value),
+        );
         await emitAssetPath(resolved);
       } catch (e) {}
     } else if (
