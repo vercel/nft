@@ -93,6 +93,8 @@ for (const { testName, isRoot } of unitTests) {
   let unitPath = join(__dirname, 'unit', testName);
 
   if (testName === 'fs-relative-emission') {
+    // this test has file reads that traverse to the parent dir
+    // so we need to start from the child dir.
     unitPath += '/main';
   }
 
