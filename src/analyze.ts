@@ -1205,6 +1205,16 @@ export default async function analyze(
         await emitAssetPath(resolved);
       } catch (e) {}
     } else if (
+      'value' in staticChildValue &&
+      typeof staticChildValue.value === 'string'
+    ) {
+      try {
+        const resolved = resolveAbsolutePathOrUrl(
+          path.resolve(cwd, staticChildValue.value),
+        );
+        await emitAssetPath(resolved);
+      } catch (e) {}
+    } else if (
       'ifTrue' in staticChildValue &&
       'else' in staticChildValue &&
       isAbsolutePathOrUrl(staticChildValue.ifTrue) &&
