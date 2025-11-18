@@ -217,8 +217,31 @@ function resolveExportsImports(
       job.conditions,
       cjsResolve,
     );
-    if (typeof target === 'string' && target.startsWith('./'))
+    if (typeof target === 'string' && target.startsWith('./')) {
+      // If module-sync is used, also emit the fallback file (require or default)
+      const exportsForSubpath = matchObj[subpath];
+      if (
+        typeof exportsForSubpath === 'object' &&
+        exportsForSubpath !== null &&
+        !Array.isArray(exportsForSubpath) &&
+        'module-sync' in exportsForSubpath &&
+        getNodeMajorVersion() >= 22
+      ) {
+        // Emit the fallback file (require or default)
+        const fallbackCondition =
+          'require' in exportsForSubpath ? 'require' : 'default';
+        const fallbackTarget = exportsForSubpath[fallbackCondition];
+        if (
+          typeof fallbackTarget === 'string' &&
+          fallbackTarget.startsWith('./')
+        ) {
+          const fallbackPath = pkgPath + fallbackTarget.slice(1);
+          // Emit the fallback file asynchronously (fire and forget)
+          job.emitFile(fallbackPath, 'resolve', pkgPath).catch(() => {});
+        }
+      }
       return pkgPath + target.slice(1);
+    }
   }
   for (const match of Object.keys(matchObj).sort(
     (a, b) => b.length - a.length,
