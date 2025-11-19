@@ -237,7 +237,7 @@ function resolveExportsImports(
         ) {
           const fallbackPath = pkgPath + fallbackTarget.slice(1);
           // Emit the fallback file asynchronously (fire and forget)
-          job.emitFile(fallbackPath, 'resolve', pkgPath).catch(() => {});
+          job.emitFile(fallbackPath, 'resolve', pkgPath);
         }
       }
       return pkgPath + target.slice(1);
