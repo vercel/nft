@@ -192,7 +192,7 @@ function resolveExportsImports(
   job: Job,
   isImports: boolean,
   cjsResolve: boolean,
-): string | undefined {
+): string | string[] | undefined {
   let matchObj: { [key: string]: PackageTarget };
   if (isImports) {
     if (!(typeof obj === 'object' && !Array.isArray(obj) && obj !== null))
@@ -218,7 +218,7 @@ function resolveExportsImports(
       cjsResolve,
     );
     if (typeof target === 'string' && target.startsWith('./')) {
-      // If module-sync is used, also emit the fallback file (require or default)
+      const resolvedPath = pkgPath + target.slice(1);
       const exportsForSubpath = matchObj[subpath];
       if (
         typeof exportsForSubpath === 'object' &&
@@ -235,10 +235,12 @@ function resolveExportsImports(
           fallbackTarget.startsWith('./')
         ) {
           const fallbackPath = pkgPath + fallbackTarget.slice(1);
-          job.emitFile(fallbackPath, 'resolve', pkgPath);
+          if (fallbackPath !== resolvedPath) {
+            return [resolvedPath, fallbackPath];
+          }
         }
       }
-      return pkgPath + target.slice(1);
+      return resolvedPath;
     }
   }
   for (const match of Object.keys(matchObj).sort(
@@ -316,7 +318,7 @@ async function packageImportsResolve(
   parent: string,
   job: Job,
   cjsResolve: boolean,
-): Promise<string> {
+): Promise<string | string[]> {
   if (name !== '#' && !name.startsWith('#/') && job.conditions) {
     const pjsonBoundary = await job.getPjsonBoundary(parent);
     if (pjsonBoundary) {
@@ -332,12 +334,30 @@ async function packageImportsResolve(
           cjsResolve,
         );
         if (importsResolved) {
-          if (cjsResolve)
-            importsResolved =
-              (await resolveFile(importsResolved, parent, job)) ||
-              (await resolveDir(importsResolved, parent, job));
-          else if (!(await job.isFile(importsResolved)))
-            throw new NotFoundError(importsResolved, parent);
+          if (Array.isArray(importsResolved)) {
+            const resolvedPaths: string[] = [];
+            for (const path of importsResolved) {
+              if (cjsResolve) {
+                const resolved =
+                  (await resolveFile(path, parent, job)) ||
+                  (await resolveDir(path, parent, job));
+                if (!resolved) throw new NotFoundError(path, parent);
+                resolvedPaths.push(resolved);
+              } else {
+                if (!(await job.isFile(path)))
+                  throw new NotFoundError(path, parent);
+                resolvedPaths.push(path);
+              }
+            }
+            importsResolved = resolvedPaths;
+          } else {
+            if (cjsResolve)
+              importsResolved =
+                (await resolveFile(importsResolved, parent, job)) ||
+                (await resolveDir(importsResolved, parent, job));
+            else if (!(await job.isFile(importsResolved)))
+              throw new NotFoundError(importsResolved, parent);
+          }
           if (importsResolved) {
             await job.emitFile(
               pjsonBoundary + sep + 'package.json',
@@ -366,7 +386,7 @@ async function resolvePackage(
   const pkgName = getPkgName(name) || '';
 
   // package own name resolution
-  let selfResolved: string | undefined;
+  let selfResolved: string | string[] | undefined;
   if (job.conditions) {
     const pjsonBoundary = await job.getPjsonBoundary(parent);
     if (pjsonBoundary) {
@@ -388,12 +408,30 @@ async function resolvePackage(
           cjsResolve,
         );
         if (selfResolved) {
-          if (cjsResolve)
-            selfResolved =
-              (await resolveFile(selfResolved, parent, job)) ||
-              (await resolveDir(selfResolved, parent, job));
-          else if (!(await job.isFile(selfResolved)))
-            throw new NotFoundError(selfResolved, parent);
+          if (Array.isArray(selfResolved)) {
+            const resolvedPaths: string[] = [];
+            for (const path of selfResolved) {
+              if (cjsResolve) {
+                const resolved =
+                  (await resolveFile(path, parent, job)) ||
+                  (await resolveDir(path, parent, job));
+                if (!resolved) throw new NotFoundError(path, parent);
+                resolvedPaths.push(resolved);
+              } else {
+                if (!(await job.isFile(path)))
+                  throw new NotFoundError(path, parent);
+                resolvedPaths.push(path);
+              }
+            }
+            selfResolved = resolvedPaths;
+          } else {
+            if (cjsResolve)
+              selfResolved =
+                (await resolveFile(selfResolved, parent, job)) ||
+                (await resolveDir(selfResolved, parent, job));
+            else if (!(await job.isFile(selfResolved)))
+              throw new NotFoundError(selfResolved, parent);
+          }
         }
         if (selfResolved)
           await job.emitFile(
@@ -446,12 +484,30 @@ async function resolvePackage(
         cjsResolve,
       );
       if (resolved) {
-        if (cjsResolve)
-          resolved =
-            (await resolveFile(resolved, parent, job)) ||
-            (await resolveDir(resolved, parent, job));
-        else if (!(await job.isFile(resolved)))
-          throw new NotFoundError(resolved, parent);
+        if (Array.isArray(resolved)) {
+          const resolvedPaths: string[] = [];
+          for (const path of resolved) {
+            if (cjsResolve) {
+              const validatedPath =
+                (await resolveFile(path, parent, job)) ||
+                (await resolveDir(path, parent, job));
+              if (!validatedPath) throw new NotFoundError(path, parent);
+              resolvedPaths.push(validatedPath);
+            } else {
+              if (!(await job.isFile(path)))
+                throw new NotFoundError(path, parent);
+              resolvedPaths.push(path);
+            }
+          }
+          resolved = resolvedPaths;
+        } else {
+          if (cjsResolve)
+            resolved =
+              (await resolveFile(resolved, parent, job)) ||
+              (await resolveDir(resolved, parent, job));
+          else if (!(await job.isFile(resolved)))
+            throw new NotFoundError(resolved, parent);
+        }
       }
       if (resolved) {
         await job.emitFile(
@@ -459,6 +515,11 @@ async function resolvePackage(
           'resolve',
           parent,
         );
+        if (Array.isArray(resolved)) {
+          if (legacyResolved && !resolved.includes(legacyResolved))
+            return [...resolved, legacyResolved];
+          return resolved;
+        }
         if (legacyResolved && legacyResolved !== resolved)
           return [resolved, legacyResolved];
         return resolved;
@@ -469,8 +530,15 @@ async function resolvePackage(
         (await resolveFile(nodeModulesDir + sep + name, parent, job)) ||
         (await resolveDir(nodeModulesDir + sep + name, parent, job));
       if (resolved) {
-        if (selfResolved && selfResolved !== resolved)
-          return [resolved, selfResolved];
+        if (selfResolved) {
+          if (Array.isArray(selfResolved)) {
+            if (!selfResolved.includes(resolved))
+              return [resolved, ...selfResolved];
+            return selfResolved;
+          } else if (selfResolved !== resolved) {
+            return [resolved, selfResolved];
+          }
+        }
         return resolved;
       }
     }
