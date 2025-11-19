@@ -1,2 +1,2 @@
-import { test } from 'test-pkg-sync-cjs';
+const { test } = require('test-pkg-sync-cjs');
 console.log(test);

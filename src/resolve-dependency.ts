@@ -227,7 +227,6 @@ function resolveExportsImports(
         'module-sync' in exportsForSubpath &&
         getNodeMajorVersion() >= 22
       ) {
-        // Emit the fallback file (require or default)
         const fallbackCondition =
           'require' in exportsForSubpath ? 'require' : 'default';
         const fallbackTarget = exportsForSubpath[fallbackCondition];
@@ -236,7 +235,6 @@ function resolveExportsImports(
           fallbackTarget.startsWith('./')
         ) {
           const fallbackPath = pkgPath + fallbackTarget.slice(1);
-          // Emit the fallback file asynchronously (fire and forget)
           job.emitFile(fallbackPath, 'resolve', pkgPath);
         }
       }

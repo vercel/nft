@@ -1,2 +1,2 @@
-import { test } from 'test-pkg-sync-cjs-node20';
+const { test } = require('test-pkg-sync-cjs-node20');
 console.log(test);
