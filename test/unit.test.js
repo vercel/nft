@@ -29,6 +29,7 @@ const skipOnNode20AndBelow = [
   'module-sync-condition-es',
   'module-sync-condition-cjs',
   'imports-module-sync',
+  'imports-module-sync-cjs',
   'self-reference-module-sync',
 ];
 const skipOnNode22AndAbove = [
