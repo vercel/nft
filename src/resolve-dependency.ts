@@ -318,7 +318,7 @@ async function packageImportsResolve(
   parent: string,
   job: Job,
   cjsResolve: boolean,
-): Promise<string | string[]> {
+): Promise<string[]> {
   if (name !== '#' && !name.startsWith('#/') && job.conditions) {
     const pjsonBoundary = await job.getPjsonBoundary(parent);
     if (pjsonBoundary) {
@@ -353,8 +353,7 @@ async function packageImportsResolve(
             'resolve',
             parent,
           );
-          if (resolvedPaths.length > 1) return resolvedPaths;
-          return resolvedPaths[0];
+          return resolvedPaths;
         }
       }
     }
