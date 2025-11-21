@@ -185,14 +185,37 @@ function getExportsTarget(
   return undefined;
 }
 
-function resolveExportsImports(
+async function validateAndResolvePaths(
+  paths: string[],
+  parent: string,
+  job: Job,
+  cjsResolve: boolean,
+): Promise<string[]> {
+  const validatedPaths: string[] = [];
+  for (const path of paths) {
+    if (cjsResolve) {
+      const resolved =
+        (await resolveFile(path, parent, job)) ||
+        (await resolveDir(path, parent, job));
+      if (!resolved) throw new NotFoundError(path, parent);
+      validatedPaths.push(resolved);
+    } else {
+      if (!(await job.isFile(path))) throw new NotFoundError(path, parent);
+      validatedPaths.push(path);
+    }
+  }
+  return validatedPaths;
+}
+
+async function resolveExportsImports(
   pkgPath: string,
   obj: PackageTarget,
   subpath: string,
   job: Job,
   isImports: boolean,
   cjsResolve: boolean,
-): string[] | undefined {
+  parent: string,
+): Promise<string[] | undefined> {
   let matchObj: { [key: string]: PackageTarget };
   if (isImports) {
     if (!(typeof obj === 'object' && !Array.isArray(obj) && obj !== null))
@@ -219,6 +242,8 @@ function resolveExportsImports(
     );
     if (typeof target === 'string' && target.startsWith('./')) {
       const resolvedPath = pkgPath + target.slice(1);
+      const paths = [resolvedPath];
+
       const exportsForSubpath = matchObj[subpath];
       if (
         typeof exportsForSubpath === 'object' &&
@@ -236,11 +261,12 @@ function resolveExportsImports(
         ) {
           const fallbackPath = pkgPath + fallbackTarget.slice(1);
           if (fallbackPath !== resolvedPath) {
-            return [resolvedPath, fallbackPath];
+            paths.push(fallbackPath);
           }
         }
       }
-      return [resolvedPath];
+
+      return await validateAndResolvePaths(paths, parent, job, cjsResolve);
     }
   }
   for (const match of Object.keys(matchObj).sort(
@@ -252,11 +278,17 @@ function resolveExportsImports(
         job.conditions,
         cjsResolve,
       );
-      if (typeof target === 'string' && target.startsWith('./'))
-        return [
+      if (typeof target === 'string' && target.startsWith('./')) {
+        const resolvedPath =
           pkgPath +
-            target.slice(1).replace(/\*/g, subpath.slice(match.length - 1)),
-        ];
+          target.slice(1).replace(/\*/g, subpath.slice(match.length - 1));
+        return await validateAndResolvePaths(
+          [resolvedPath],
+          parent,
+          job,
+          cjsResolve,
+        );
+      }
     }
     if (!match.endsWith('/')) continue;
     if (subpath.startsWith(match)) {
@@ -269,8 +301,16 @@ function resolveExportsImports(
         typeof target === 'string' &&
         target.endsWith('/') &&
         target.startsWith('./')
-      )
-        return [pkgPath + target.slice(1) + subpath.slice(match.length)];
+      ) {
+        const resolvedPath =
+          pkgPath + target.slice(1) + subpath.slice(match.length);
+        return await validateAndResolvePaths(
+          [resolvedPath],
+          parent,
+          job,
+          cjsResolve,
+        );
+      }
     }
   }
   return undefined;
@@ -325,35 +365,22 @@ async function packageImportsResolve(
       const pkgCfg = await getPkgCfg(pjsonBoundary, job);
       const { imports: pkgImports } = pkgCfg || {};
       if (pkgCfg && pkgImports !== null && pkgImports !== undefined) {
-        let importsResolved = resolveExportsImports(
+        const importsResolved = await resolveExportsImports(
           pjsonBoundary,
           pkgImports,
           name,
           job,
           true,
           cjsResolve,
+          parent,
         );
         if (importsResolved) {
-          const resolvedPaths: string[] = [];
-          for (const path of importsResolved) {
-            if (cjsResolve) {
-              const resolved =
-                (await resolveFile(path, parent, job)) ||
-                (await resolveDir(path, parent, job));
-              if (!resolved) throw new NotFoundError(path, parent);
-              resolvedPaths.push(resolved);
-            } else {
-              if (!(await job.isFile(path)))
-                throw new NotFoundError(path, parent);
-              resolvedPaths.push(path);
-            }
-          }
           await job.emitFile(
             pjsonBoundary + sep + 'package.json',
             'resolve',
             parent,
           );
-          return resolvedPaths;
+          return importsResolved;
         }
       }
     }
@@ -387,35 +414,15 @@ async function resolvePackage(
         pkgExports !== null &&
         pkgExports !== undefined
       ) {
-        const selfResolvedPaths = resolveExportsImports(
+        selfResolved = await resolveExportsImports(
           pjsonBoundary,
           pkgExports,
           '.' + name.slice(pkgName.length),
           job,
           false,
           cjsResolve,
+          parent,
         );
-        if (selfResolvedPaths) {
-          const resolvedPaths: string[] = [];
-          for (const path of selfResolvedPaths) {
-            if (cjsResolve) {
-              const resolved =
-                (await resolveFile(path, parent, job)) ||
-                (await resolveDir(path, parent, job));
-              if (!resolved) throw new NotFoundError(path, parent);
-              resolvedPaths.push(resolved);
-            } else {
-              if (!(await job.isFile(path)))
-                throw new NotFoundError(path, parent);
-              resolvedPaths.push(path);
-            }
-          }
-          if (resolvedPaths.length > 1) {
-            selfResolved = resolvedPaths;
-          } else {
-            selfResolved = resolvedPaths[0];
-          }
-        }
         if (selfResolved)
           await job.emitFile(
             pjsonBoundary + sep + 'package.json',
@@ -458,38 +465,24 @@ async function resolvePackage(
         legacyResolved =
           (await resolveFile(nodeModulesDir + sep + name, parent, job)) ||
           (await resolveDir(nodeModulesDir + sep + name, parent, job));
-      const resolvedPaths = resolveExportsImports(
+      const resolved = await resolveExportsImports(
         nodeModulesDir + sep + pkgName,
         pkgExports,
         '.' + name.slice(pkgName.length),
         job,
         false,
         cjsResolve,
+        parent,
       );
-      if (resolvedPaths) {
-        const validatedPaths: string[] = [];
-        for (const path of resolvedPaths) {
-          if (cjsResolve) {
-            const validatedPath =
-              (await resolveFile(path, parent, job)) ||
-              (await resolveDir(path, parent, job));
-            if (!validatedPath) throw new NotFoundError(path, parent);
-            validatedPaths.push(validatedPath);
-          } else {
-            if (!(await job.isFile(path)))
-              throw new NotFoundError(path, parent);
-            validatedPaths.push(path);
-          }
-        }
+      if (resolved) {
         await job.emitFile(
           nodeModulesDir + sep + pkgName + sep + 'package.json',
           'resolve',
           parent,
         );
-        if (legacyResolved && !validatedPaths.includes(legacyResolved))
-          return [...validatedPaths, legacyResolved];
-        if (validatedPaths.length > 1) return validatedPaths;
-        return validatedPaths[0];
+        if (legacyResolved && !resolved.includes(legacyResolved))
+          return [...resolved, legacyResolved];
+        return resolved;
       }
       if (legacyResolved) return legacyResolved;
     } else {
