@@ -192,7 +192,7 @@ function resolveExportsImports(
   job: Job,
   isImports: boolean,
   cjsResolve: boolean,
-): string | string[] | undefined {
+): string[] | undefined {
   let matchObj: { [key: string]: PackageTarget };
   if (isImports) {
     if (!(typeof obj === 'object' && !Array.isArray(obj) && obj !== null))
@@ -240,7 +240,7 @@ function resolveExportsImports(
           }
         }
       }
-      return resolvedPath;
+      return [resolvedPath];
     }
   }
   for (const match of Object.keys(matchObj).sort(
@@ -253,10 +253,10 @@ function resolveExportsImports(
         cjsResolve,
       );
       if (typeof target === 'string' && target.startsWith('./'))
-        return (
+        return [
           pkgPath +
-          target.slice(1).replace(/\*/g, subpath.slice(match.length - 1))
-        );
+            target.slice(1).replace(/\*/g, subpath.slice(match.length - 1)),
+        ];
     }
     if (!match.endsWith('/')) continue;
     if (subpath.startsWith(match)) {
@@ -270,7 +270,7 @@ function resolveExportsImports(
         target.endsWith('/') &&
         target.startsWith('./')
       )
-        return pkgPath + target.slice(1) + subpath.slice(match.length);
+        return [pkgPath + target.slice(1) + subpath.slice(match.length)];
     }
   }
   return undefined;
@@ -334,38 +334,27 @@ async function packageImportsResolve(
           cjsResolve,
         );
         if (importsResolved) {
-          if (Array.isArray(importsResolved)) {
-            const resolvedPaths: string[] = [];
-            for (const path of importsResolved) {
-              if (cjsResolve) {
-                const resolved =
-                  (await resolveFile(path, parent, job)) ||
-                  (await resolveDir(path, parent, job));
-                if (!resolved) throw new NotFoundError(path, parent);
-                resolvedPaths.push(resolved);
-              } else {
-                if (!(await job.isFile(path)))
-                  throw new NotFoundError(path, parent);
-                resolvedPaths.push(path);
-              }
+          const resolvedPaths: string[] = [];
+          for (const path of importsResolved) {
+            if (cjsResolve) {
+              const resolved =
+                (await resolveFile(path, parent, job)) ||
+                (await resolveDir(path, parent, job));
+              if (!resolved) throw new NotFoundError(path, parent);
+              resolvedPaths.push(resolved);
+            } else {
+              if (!(await job.isFile(path)))
+                throw new NotFoundError(path, parent);
+              resolvedPaths.push(path);
             }
-            importsResolved = resolvedPaths;
-          } else {
-            if (cjsResolve)
-              importsResolved =
-                (await resolveFile(importsResolved, parent, job)) ||
-                (await resolveDir(importsResolved, parent, job));
-            else if (!(await job.isFile(importsResolved)))
-              throw new NotFoundError(importsResolved, parent);
           }
-          if (importsResolved) {
-            await job.emitFile(
-              pjsonBoundary + sep + 'package.json',
-              'resolve',
-              parent,
-            );
-            return importsResolved;
-          }
+          await job.emitFile(
+            pjsonBoundary + sep + 'package.json',
+            'resolve',
+            parent,
+          );
+          if (resolvedPaths.length > 1) return resolvedPaths;
+          return resolvedPaths[0];
         }
       }
     }
@@ -399,7 +388,7 @@ async function resolvePackage(
         pkgExports !== null &&
         pkgExports !== undefined
       ) {
-        selfResolved = resolveExportsImports(
+        const selfResolvedPaths = resolveExportsImports(
           pjsonBoundary,
           pkgExports,
           '.' + name.slice(pkgName.length),
@@ -407,30 +396,25 @@ async function resolvePackage(
           false,
           cjsResolve,
         );
-        if (selfResolved) {
-          if (Array.isArray(selfResolved)) {
-            const resolvedPaths: string[] = [];
-            for (const path of selfResolved) {
-              if (cjsResolve) {
-                const resolved =
-                  (await resolveFile(path, parent, job)) ||
-                  (await resolveDir(path, parent, job));
-                if (!resolved) throw new NotFoundError(path, parent);
-                resolvedPaths.push(resolved);
-              } else {
-                if (!(await job.isFile(path)))
-                  throw new NotFoundError(path, parent);
-                resolvedPaths.push(path);
-              }
+        if (selfResolvedPaths) {
+          const resolvedPaths: string[] = [];
+          for (const path of selfResolvedPaths) {
+            if (cjsResolve) {
+              const resolved =
+                (await resolveFile(path, parent, job)) ||
+                (await resolveDir(path, parent, job));
+              if (!resolved) throw new NotFoundError(path, parent);
+              resolvedPaths.push(resolved);
+            } else {
+              if (!(await job.isFile(path)))
+                throw new NotFoundError(path, parent);
+              resolvedPaths.push(path);
             }
+          }
+          if (resolvedPaths.length > 1) {
             selfResolved = resolvedPaths;
           } else {
-            if (cjsResolve)
-              selfResolved =
-                (await resolveFile(selfResolved, parent, job)) ||
-                (await resolveDir(selfResolved, parent, job));
-            else if (!(await job.isFile(selfResolved)))
-              throw new NotFoundError(selfResolved, parent);
+            selfResolved = resolvedPaths[0];
           }
         }
         if (selfResolved)
@@ -475,7 +459,7 @@ async function resolvePackage(
         legacyResolved =
           (await resolveFile(nodeModulesDir + sep + name, parent, job)) ||
           (await resolveDir(nodeModulesDir + sep + name, parent, job));
-      let resolved = resolveExportsImports(
+      const resolvedPaths = resolveExportsImports(
         nodeModulesDir + sep + pkgName,
         pkgExports,
         '.' + name.slice(pkgName.length),
@@ -483,46 +467,30 @@ async function resolvePackage(
         false,
         cjsResolve,
       );
-      if (resolved) {
-        if (Array.isArray(resolved)) {
-          const resolvedPaths: string[] = [];
-          for (const path of resolved) {
-            if (cjsResolve) {
-              const validatedPath =
-                (await resolveFile(path, parent, job)) ||
-                (await resolveDir(path, parent, job));
-              if (!validatedPath) throw new NotFoundError(path, parent);
-              resolvedPaths.push(validatedPath);
-            } else {
-              if (!(await job.isFile(path)))
-                throw new NotFoundError(path, parent);
-              resolvedPaths.push(path);
-            }
+      if (resolvedPaths) {
+        const validatedPaths: string[] = [];
+        for (const path of resolvedPaths) {
+          if (cjsResolve) {
+            const validatedPath =
+              (await resolveFile(path, parent, job)) ||
+              (await resolveDir(path, parent, job));
+            if (!validatedPath) throw new NotFoundError(path, parent);
+            validatedPaths.push(validatedPath);
+          } else {
+            if (!(await job.isFile(path)))
+              throw new NotFoundError(path, parent);
+            validatedPaths.push(path);
           }
-          resolved = resolvedPaths;
-        } else {
-          if (cjsResolve)
-            resolved =
-              (await resolveFile(resolved, parent, job)) ||
-              (await resolveDir(resolved, parent, job));
-          else if (!(await job.isFile(resolved)))
-            throw new NotFoundError(resolved, parent);
         }
-      }
-      if (resolved) {
         await job.emitFile(
           nodeModulesDir + sep + pkgName + sep + 'package.json',
           'resolve',
           parent,
         );
-        if (Array.isArray(resolved)) {
-          if (legacyResolved && !resolved.includes(legacyResolved))
-            return [...resolved, legacyResolved];
-          return resolved;
-        }
-        if (legacyResolved && legacyResolved !== resolved)
-          return [resolved, legacyResolved];
-        return resolved;
+        if (legacyResolved && !validatedPaths.includes(legacyResolved))
+          return [...validatedPaths, legacyResolved];
+        if (validatedPaths.length > 1) return validatedPaths;
+        return validatedPaths[0];
       }
       if (legacyResolved) return legacyResolved;
     } else {
