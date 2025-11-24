@@ -25,8 +25,17 @@ const skipOnWindows = [
   'require-symlink',
 ];
 const skipOnMac = [];
-const skipOnNode20AndBelow = ['module-sync-condition-es'];
-const skipOnNode22AndAbove = ['module-sync-condition-es-node20'];
+const skipOnNode20AndBelow = [
+  'module-sync-condition-es',
+  'module-sync-condition-cjs',
+  'imports-module-sync',
+  'imports-module-sync-cjs',
+  'self-reference-module-sync',
+];
+const skipOnNode22AndAbove = [
+  'module-sync-condition-es-node20',
+  'module-sync-condition-cjs-node20',
+];
 if (process.platform === 'darwin' && process.arch === 'arm64') {
   skipOnMac.push('microtime-node-gyp');
 }
