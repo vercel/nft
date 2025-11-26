@@ -254,7 +254,11 @@ async function resolveExportsImports(
       ) {
         const fallbackCondition =
           'require' in exportsForSubpath ? 'require' : 'default';
-        const fallbackTarget = exportsForSubpath[fallbackCondition];
+        const fallbackTarget = getExportsTarget(
+          exportsForSubpath[fallbackCondition],
+          job.conditions,
+          cjsResolve,
+        );
         if (
           typeof fallbackTarget === 'string' &&
           fallbackTarget.startsWith('./')
