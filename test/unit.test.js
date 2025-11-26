@@ -28,6 +28,7 @@ const skipOnMac = [];
 const skipOnNode20AndBelow = [
   'module-sync-condition-es',
   'module-sync-condition-cjs',
+  'module-sync-condition-es-nested',
   'imports-module-sync',
   'imports-module-sync-cjs',
   'self-reference-module-sync',
