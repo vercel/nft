@@ -185,7 +185,7 @@ for (const { testName, isRoot } of unitTests) {
           // disable analysis for basic-analysis unit tests
           analysis: !testName.startsWith('basic-analysis'),
           mixedModules:
-            testOpts.mixedModules !== undefined ? testOpts.mixedModules : true,
+            testOpts?.mixedModules ?? true,
           // Ignore unit test output "actual.js", and ignore GitHub Actions preinstalled packages
           ignore: (str) =>
             str.endsWith('/actual.js') || str.startsWith('usr/local'),
