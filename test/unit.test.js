@@ -141,7 +141,12 @@ for (const { testName, isRoot } of unitTests) {
       if (testName === 'ts-input-esm') {
         inputFileNames = ['input.ts'];
       }
-      if (testName === 'module-create-require-no-mixed') {
+      if (
+        testName === 'module-create-require-no-mixed' ||
+        testName === 'module-create-require-named-require' ||
+        testName === 'module-create-require-named-import' ||
+        testName === 'module-create-require-block-other'
+      ) {
         inputFileNames = ['input.mjs'];
       }
       if (testName === 'processed-dependency' && cached) {
