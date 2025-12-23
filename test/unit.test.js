@@ -141,6 +141,9 @@ for (const { testName, isRoot } of unitTests) {
       if (testName === 'ts-input-esm') {
         inputFileNames = ['input.ts'];
       }
+      if (testName === 'module-create-require-no-mixed') {
+        inputFileNames = ['input.mjs'];
+      }
       if (testName === 'processed-dependency' && cached) {
         inputFileNames = ['input-cached.js'];
         outputFileName = 'output-cached.js';
@@ -176,7 +179,8 @@ for (const { testName, isRoot } of unitTests) {
           log: true,
           // disable analysis for basic-analysis unit tests
           analysis: !testName.startsWith('basic-analysis'),
-          mixedModules: true,
+          mixedModules:
+            testOpts.mixedModules !== undefined ? testOpts.mixedModules : true,
           // Ignore unit test output "actual.js", and ignore GitHub Actions preinstalled packages
           ignore: (str) =>
             str.endsWith('/actual.js') || str.startsWith('usr/local'),
