@@ -399,7 +399,14 @@ export default async function analyze(
   ) {
     // require is somewhat special in that we shadow it but don't
     // statically analyze it ("known unknown" of sorts)
-    if (name === 'require') return;
+    // but we can make an exception for ones created by module.createRequire
+    if (
+      name === 'require' &&
+      'value' in value &&
+      value.value !== BOUND_REQUIRE
+    ) {
+      return;
+    }
     knownBindings[name] = {
       shadowDepth: 0,
       value: value,
