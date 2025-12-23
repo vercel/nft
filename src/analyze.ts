@@ -96,8 +96,10 @@ const fsExtraSymbols = {
   readJSONSync: FS_FN,
 };
 const MODULE_FN = Symbol();
+const CREATE_REQUIRE = Symbol();
 const moduleSymbols = {
   register: MODULE_FN,
+  createRequire: CREATE_REQUIRE,
 };
 const staticModules = Object.assign(Object.create(null), {
   bindings: {
@@ -1092,6 +1094,24 @@ export default async function analyze(
         if (parent.type === 'VariableDeclarator') {
           const requireName = parent.id.name;
           setKnownBinding(requireName, { value: BOUND_REQUIRE });
+        }
+      }
+      // Support createRequire from named import: import { createRequire } from 'node:module'
+      if (
+        node.type === 'CallExpression' &&
+        node.callee.type === 'Identifier' &&
+        node.callee.name === 'createRequire'
+      ) {
+        const createRequireBinding = getKnownBinding('createRequire');
+        if (
+          createRequireBinding &&
+          'value' in createRequireBinding &&
+          createRequireBinding.value === CREATE_REQUIRE
+        ) {
+          if (parent.type === 'VariableDeclarator') {
+            const requireName = parent.id.name;
+            setKnownBinding(requireName, { value: BOUND_REQUIRE });
+          }
         }
       }
     },
