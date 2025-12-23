@@ -666,6 +666,7 @@ export default async function analyze(
         ) {
           if (
             node.callee.name === 'require' &&
+            knownBindings.require &&
             knownBindings.require.shadowDepth === 0
           ) {
             await processRequireArg(node.arguments[0]);
@@ -689,6 +690,7 @@ export default async function analyze(
           node.callee.type === 'MemberExpression' &&
           node.callee.object.type === 'Identifier' &&
           node.callee.object.name === 'require' &&
+          knownBindings.require &&
           knownBindings.require.shadowDepth === 0 &&
           node.callee.property.type === 'Identifier' &&
           !node.callee.computed &&
@@ -731,7 +733,8 @@ export default async function analyze(
                 node.arguments.length === 1 &&
                 node.arguments[0].type === 'Literal' &&
                 node.callee.type === 'Identifier' &&
-                knownBindings.require.shadowDepth === 0
+                (!knownBindings.require ||
+                  knownBindings.require.shadowDepth === 0)
               ) {
                 await processRequireArg(node.arguments[0]);
               }
