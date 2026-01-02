@@ -1,5 +1,5 @@
 [
   "test/unit/module-create-require-named-require/input.mjs",
-  "test/unit/module-create-require-named-require/lib.node"
+  "test/unit/module-create-require-named-require/sub/lib.node"
 ]
 
