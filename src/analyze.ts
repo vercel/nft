@@ -96,8 +96,10 @@ const fsExtraSymbols = {
   readJSONSync: FS_FN,
 };
 const MODULE_FN = Symbol();
+const CREATE_REQUIRE = Symbol();
 const moduleSymbols = {
   register: MODULE_FN,
+  createRequire: CREATE_REQUIRE,
 };
 const staticModules = Object.assign(Object.create(null), {
   bindings: {
@@ -397,7 +399,14 @@ export default async function analyze(
   ) {
     // require is somewhat special in that we shadow it but don't
     // statically analyze it ("known unknown" of sorts)
-    if (name === 'require') return;
+    // but we can make an exception for ones created by module.createRequire
+    if (
+      name === 'require' &&
+      'value' in value &&
+      value.value !== BOUND_REQUIRE
+    ) {
+      return;
+    }
     knownBindings[name] = {
       shadowDepth: 0,
       value: value,
@@ -666,6 +675,7 @@ export default async function analyze(
         ) {
           if (
             node.callee.name === 'require' &&
+            knownBindings.require &&
             knownBindings.require.shadowDepth === 0
           ) {
             await processRequireArg(node.arguments[0]);
@@ -689,6 +699,7 @@ export default async function analyze(
           node.callee.type === 'MemberExpression' &&
           node.callee.object.type === 'Identifier' &&
           node.callee.object.name === 'require' &&
+          knownBindings.require &&
           knownBindings.require.shadowDepth === 0 &&
           node.callee.property.type === 'Identifier' &&
           !node.callee.computed &&
@@ -731,7 +742,8 @@ export default async function analyze(
                 node.arguments.length === 1 &&
                 node.arguments[0].type === 'Literal' &&
                 node.callee.type === 'Identifier' &&
-                knownBindings.require.shadowDepth === 0
+                (!knownBindings.require ||
+                  knownBindings.require.shadowDepth === 0)
               ) {
                 await processRequireArg(node.arguments[0]);
               }
@@ -1086,9 +1098,33 @@ export default async function analyze(
         node.callee.property.type === 'Identifier' &&
         node.callee.property.name === 'createRequire'
       ) {
-        if (parent.type === 'VariableDeclarator') {
+        if (
+          parent.type === 'VariableDeclarator' &&
+          parent.id.type === 'Identifier'
+        ) {
           const requireName = parent.id.name;
           setKnownBinding(requireName, { value: BOUND_REQUIRE });
+        }
+      }
+      // Support createRequire from named import: import { createRequire } from 'node:module'
+      if (
+        node.type === 'CallExpression' &&
+        node.callee.type === 'Identifier' &&
+        node.callee.name === 'createRequire'
+      ) {
+        const createRequireBinding = getKnownBinding('createRequire');
+        if (
+          createRequireBinding &&
+          'value' in createRequireBinding &&
+          createRequireBinding.value === CREATE_REQUIRE
+        ) {
+          if (
+            parent.type === 'VariableDeclarator' &&
+            parent.id.type === 'Identifier'
+          ) {
+            const requireName = parent.id.name;
+            setKnownBinding(requireName, { value: BOUND_REQUIRE });
+          }
         }
       }
     },
