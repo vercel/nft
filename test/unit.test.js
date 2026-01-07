@@ -145,7 +145,8 @@ for (const { testName, isRoot } of unitTests) {
         testName === 'module-create-require-no-mixed' ||
         testName === 'module-create-require-named-require' ||
         testName === 'module-create-require-named-import' ||
-        testName === 'module-create-require-ignore-other'
+        testName === 'module-create-require-ignore-other' ||
+        testName === 'module-create-require-destructure'
       ) {
         inputFileNames = ['input.mjs'];
       }

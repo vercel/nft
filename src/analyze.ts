@@ -1098,7 +1098,10 @@ export default async function analyze(
         node.callee.property.type === 'Identifier' &&
         node.callee.property.name === 'createRequire'
       ) {
-        if (parent.type === 'VariableDeclarator') {
+        if (
+          parent.type === 'VariableDeclarator' &&
+          parent.id.type === 'Identifier'
+        ) {
           const requireName = parent.id.name;
           setKnownBinding(requireName, { value: BOUND_REQUIRE });
         }
@@ -1115,7 +1118,10 @@ export default async function analyze(
           'value' in createRequireBinding &&
           createRequireBinding.value === CREATE_REQUIRE
         ) {
-          if (parent.type === 'VariableDeclarator') {
+          if (
+            parent.type === 'VariableDeclarator' &&
+            parent.id.type === 'Identifier'
+          ) {
             const requireName = parent.id.name;
             setKnownBinding(requireName, { value: BOUND_REQUIRE });
           }
