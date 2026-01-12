@@ -57,6 +57,7 @@ export interface NodeFileTraceOptions {
     cjsResolve: boolean,
   ) => Promise<string | string[]>;
   fileIOConcurrency?: number;
+  depth?: number;
 }
 
 export type NodeFileTraceReasonType =
