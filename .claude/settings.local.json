@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:oxc.rs)",
+      "Bash(npm run build:*)",
+      "Bash(npm test:*)"
+    ]
+  }
+}
