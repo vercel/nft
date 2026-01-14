@@ -37,6 +37,7 @@ const skipOnNode22AndAbove = [
   'module-sync-condition-es-node20',
   'module-sync-condition-cjs-node20',
 ];
+const includeDepthTests = ['depth'];
 if (process.platform === 'darwin' && process.arch === 'arm64') {
   skipOnMac.push('microtime-node-gyp');
 }
@@ -44,6 +45,14 @@ const unitTestDirs = fs.readdirSync(join(__dirname, 'unit'));
 const unitTests = [
   ...unitTestDirs.map((testName) => ({ testName, isRoot: false })),
   ...unitTestDirs.map((testName) => ({ testName, isRoot: true })),
+  ...unitTestDirs
+    .filter((testName) => includeDepthTests.includes(testName))
+    .flatMap((testName) => [
+      { testName, depth: 0 },
+      { testName, depth: 1 },
+      { testName, depth: 2 },
+      { testName, depth: 3 },
+    ]),
 ];
 
 jest.mock('../out/analyze.js', () => {
@@ -78,8 +87,8 @@ function resetFileIOMocks() {
 
 afterEach(resetFileIOMocks);
 
-for (const { testName, isRoot } of unitTests) {
-  const testSuffix = `${testName} from ${isRoot ? 'root' : 'cwd'}`;
+for (const { testName, isRoot, depth } of unitTests) {
+  const testSuffix = `${testName} from ${isRoot ? 'root' : 'cwd'}${typeof depth === 'number' ? ` (depth: ${depth})` : ''}`;
   const nodeVersion = parseInt(process.versions.node.split('.')[0], 10);
   if (
     process.platform === 'win32' &&
@@ -159,6 +168,10 @@ for (const { testName, isRoot } of unitTests) {
         inputFileNames.push('input-2.js', 'input-3.js', 'input-4.js');
       }
 
+      if (typeof depth === 'number') {
+        outputFileName = `output-depth-${depth}.js`;
+      }
+
       // Type: { conditions?: string[] }
       let testOpts = {};
       try {
@@ -193,6 +206,7 @@ for (const { testName, isRoot } of unitTests) {
           resolve: testName.startsWith('resolve-hook')
             ? (id, parent) => `custom-resolution-${id}`
             : undefined,
+          depth,
         },
       );
 
