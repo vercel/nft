@@ -327,7 +327,8 @@ export class Job {
     parent?: string,
     depth: number = this.depth,
   ) {
-    if (depth < 0) throw new Error('invariant - depth option cannot be negative');
+    if (depth < 0)
+      throw new Error('invariant - depth option cannot be negative');
     if (this.processed.has(path)) {
       if (parent) {
         await this.emitFile(path, 'dependency', parent);
