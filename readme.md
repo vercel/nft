@@ -215,7 +215,7 @@ const { fileList } = await nodeFileTrace(files, {
 });
 ```
 
-With `depth: 0`, only the entry point files themselves are included in the trace, with no dependencies followed. With `depth: 1`, the entry points and their direct dependencies are included, and so on.
+With `depth: 0`, only the entry point files themselves are included in the trace, with no additional modules. With `depth: 1`, the entry points and their directly imported modules are traced, and so on.
 
 Note that the `depth` option cannot be less than 0. Setting a negative value will result in an error.
 
