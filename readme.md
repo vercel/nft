@@ -207,7 +207,7 @@ Note that cache invalidations are not supported so the assumption is that the fi
 
 #### Depth
 
-The `depth` option controls how many levels of dependencies to trace from the entry point files. This can be useful for limiting the scope of the trace or for debugging purposes:
+The `depth` option controls how many levels of the module graph to trace from the entry point files. This can be useful for limiting the scope of the trace or for debugging purposes:
 
 ```js
 const { fileList } = await nodeFileTrace(files, {
