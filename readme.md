@@ -205,6 +205,20 @@ const { fileList } = await nodeFileTrace(['index.ts'], { cache });
 
 Note that cache invalidations are not supported so the assumption is that the file system is not changed between runs.
 
+#### Depth
+
+The `depth` option controls how many levels of the module graph to trace from the entry point files. This can be useful for limiting the scope of the trace or for debugging purposes:
+
+```js
+const { fileList } = await nodeFileTrace(files, {
+  depth: 2,
+});
+```
+
+With `depth: 0`, only the entry point files themselves are included in the trace, with no additional modules. With `depth: 1`, the entry points and their directly imported modules are traced, and so on.
+
+Note that the `depth` option cannot be less than 0. Setting a negative value will result in an error.
+
 #### Reasons
 
 To get the underlying reasons for individual files being included, a `reasons` object is also provided by the output:

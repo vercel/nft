@@ -55,6 +55,7 @@ export class Job {
   public paths: Record<string, string>;
   public ignoreFn: (path: string, parent?: string) => boolean;
   public log: boolean;
+  public depth: number;
   public mixedModules: boolean;
   public analysis: {
     emitGlobs?: boolean;
@@ -86,6 +87,7 @@ export class Job {
     // we use a default of 1024 concurrency to balance
     // performance and memory usage for fs operations
     fileIOConcurrency = 1024,
+    depth = Infinity,
   }: NodeFileTraceOptions) {
     this.ts = ts;
     base = resolve(base);
@@ -123,6 +125,7 @@ export class Job {
     }
     this.paths = resolvedPaths;
     this.log = log;
+    this.depth = depth;
     this.mixedModules = mixedModules;
     this.cachedFileSystem = new CachedFileSystem({ cache, fileIOConcurrency });
     this.analysis = {};
@@ -189,6 +192,7 @@ export class Job {
     dep: string,
     path: string,
     cjsResolve: boolean,
+    depth: number,
   ) => {
     let resolved: string | string[] = '';
     let error: Error | undefined;
@@ -221,12 +225,12 @@ export class Job {
       for (const item of resolved) {
         // ignore builtins
         if (item.startsWith('node:')) return;
-        await this.emitDependency(item, path);
+        await this.emitDependency(item, path, depth);
       }
     } else {
       // ignore builtins
       if (resolved.startsWith('node:')) return;
-      await this.emitDependency(resolved, path);
+      await this.emitDependency(resolved, path, depth);
     }
   };
 
@@ -318,7 +322,13 @@ export class Job {
     return undefined;
   }
 
-  async emitDependency(path: string, parent?: string) {
+  async emitDependency(
+    path: string,
+    parent?: string,
+    depth: number = this.depth,
+  ) {
+    if (depth < 0)
+      throw new Error('invariant - depth option cannot be negative');
     if (this.processed.has(path)) {
       if (parent) {
         await this.emitFile(path, 'dependency', parent);
@@ -331,7 +341,9 @@ export class Job {
     const additionalDeps = this.remappings.get(path);
     if (additionalDeps) {
       await Promise.all(
-        [...additionalDeps].map(async (dep) => this.emitDependency(dep, path)),
+        [...additionalDeps].map(async (dep) =>
+          this.emitDependency(dep, path, depth),
+        ),
       );
     }
 
@@ -353,6 +365,7 @@ export class Job {
           path,
         );
     }
+    if (depth === 0) return;
 
     let analyzeResult: AnalyzeResult;
 
@@ -390,11 +403,15 @@ export class Job {
               .slice(this.base.length)
               .indexOf(sep + 'node_modules' + sep) === -1)
         )
-          await this.emitDependency(asset, path);
+          await this.emitDependency(asset, path, depth - 1);
         else await this.emitFile(asset, 'asset', path);
       }),
-      ...[...deps].map(async (dep) => this.maybeEmitDep(dep, path, !isESM)),
-      ...[...imports].map(async (dep) => this.maybeEmitDep(dep, path, false)),
+      ...[...deps].map(async (dep) =>
+        this.maybeEmitDep(dep, path, !isESM, depth - 1),
+      ),
+      ...[...imports].map(async (dep) =>
+        this.maybeEmitDep(dep, path, false, depth - 1),
+      ),
     ]);
   }
 }

@@ -193,6 +193,7 @@ for (const { testName, isRoot } of unitTests) {
           resolve: testName.startsWith('resolve-hook')
             ? (id, parent) => `custom-resolution-${id}`
             : undefined,
+          depth: testOpts.depth,
         },
       );
 
