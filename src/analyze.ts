@@ -8,7 +8,7 @@ import {
   WILDCARD,
   wildcardRegEx,
 } from './utils/static-eval';
-import { Parser } from 'acorn';
+import { parseSync } from 'oxc-parser';
 import bindings from 'bindings';
 import { isIdentifierRead, isLoop, isVarLoop } from './utils/ast-helpers';
 import { glob } from 'glob';
@@ -27,14 +27,6 @@ import nodeGypBuild from 'node-gyp-build';
 import mapboxPregyp from '@mapbox/node-pre-gyp';
 import { Job } from './node-file-trace';
 import { fileURLToPath, pathToFileURL, URL } from 'url';
-
-// Note: these should be deprecated over time as they ship in Acorn core
-const acorn = Parser.extend(
-  //require("acorn-class-fields"),
-  //require("acorn-static-class-features"),
-  //require("acorn-private-class-elements")
-  require('acorn-import-attributes').importAttributesOrAssertions,
-);
 
 import os from 'os';
 import url from 'url';
@@ -310,38 +302,63 @@ export default async function analyze(
 
   let assetEmissionPromises = Promise.resolve();
 
-  // remove shebang
+  // remove shebang (oxc-parser handles hashbang natively, but we still strip it for consistency)
   code = code.replace(/^#![^\n\r]*[\r\n]/, '');
 
   let ast: Node;
   let isESM = false;
 
-  try {
-    ast = acorn.parse(code, {
-      ecmaVersion: 'latest',
-      allowReturnOutsideFunction: true,
-    });
-    isESM = false;
-  } catch (e: any) {
-    const isModule = e && e.message && e.message.includes('sourceType: module');
-    if (!isModule) {
+  // Try parsing as script first (CommonJS)
+  const scriptResult = parseSync(id, code, {
+    sourceType: 'script',
+    preserveParens: false,
+    astType: 'js',
+    lang: 'js',
+  });
+  if (scriptResult.errors.length === 0) {
+    ast = scriptResult.program as Node;
+    // oxc-parser uses file extension to determine dialect, so even with sourceType: 'script',
+    // it may successfully parse ESM code. Check if the AST contains import/export declarations.
+    isESM =
+      isAst(ast) &&
+      ast.body.some(
+        (node: any) =>
+          node.type === 'ImportDeclaration' ||
+          node.type === 'ExportNamedDeclaration' ||
+          node.type === 'ExportDefaultDeclaration' ||
+          node.type === 'ExportAllDeclaration',
+      );
+  } else {
+    const isModuleError = scriptResult.errors.some(
+      (e) =>
+        (e.message && e.message.includes('export')) ||
+        e.message.includes('import'),
+    );
+    if (!isModuleError) {
       job.warnings.add(
-        new Error(`Failed to parse ${id} as script:\n${e && e.message}`),
+        new Error(
+          `Failed to parse ${id} as script:\n${scriptResult.errors.map((e) => e.message).join('\n')}`,
+        ),
       );
     }
   }
   //@ts-ignore
   if (!ast) {
-    try {
-      ast = acorn.parse(code, {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        allowAwaitOutsideFunction: true,
-      });
+    // Try parsing as module (ESM)
+    const moduleResult = parseSync(id, code, {
+      sourceType: 'module',
+      preserveParens: false,
+      astType: 'js',
+      lang: 'js',
+    });
+    if (moduleResult.errors.length === 0) {
+      ast = moduleResult.program as Node;
       isESM = true;
-    } catch (e: any) {
+    } else {
       job.warnings.add(
-        new Error(`Failed to parse ${id} as module:\n${e && e.message}`),
+        new Error(
+          `Failed to parse ${id} as module:\n${moduleResult.errors.map((e) => e.message).join('\n')}`,
+        ),
       );
       // Parser errors just skip analysis
       return { assets, deps, imports, isESM: false };
