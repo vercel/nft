@@ -329,63 +329,69 @@ export class Job {
   ) {
     if (depth < 0)
       throw new Error('invariant - depth option cannot be negative');
-    if (this.processed.has(path)) {
+
+    // Resolve symlinks so that dependencies are resolved relative to the real
+    // file location, not the symlink location
+    const realPath = await this.realpath(path, parent);
+
+    if (this.processed.has(realPath)) {
       if (parent) {
         await this.emitFile(path, 'dependency', parent);
       }
       return;
     }
-    this.processed.add(path);
+    this.processed.add(realPath);
 
     // Additional dependencies.
-    const additionalDeps = this.remappings.get(path);
+    const additionalDeps = this.remappings.get(realPath);
     if (additionalDeps) {
       await Promise.all(
         [...additionalDeps].map(async (dep) =>
-          this.emitDependency(dep, path, depth),
+          this.emitDependency(dep, realPath, depth),
         ),
       );
     }
 
     const emitted = await this.emitFile(path, 'dependency', parent);
     if (!emitted) return;
-    if (path.endsWith('.json')) return;
-    if (path.endsWith('.node')) return await sharedLibEmit(path, this);
+    if (realPath.endsWith('.json')) return;
+    if (realPath.endsWith('.node')) return await sharedLibEmit(realPath, this);
 
     // .js and .ts files can change behavior based on { "type": "module" }
     // in the nearest package.json so we must emit it too. We don't need to
     // emit for .cjs/.mjs/.cts/.mts files since their behavior does not
     // depend on package.json
-    if (path.endsWith('.js') || path.endsWith('.ts')) {
-      const pjsonBoundary = await this.getPjsonBoundary(path);
+    if (realPath.endsWith('.js') || realPath.endsWith('.ts')) {
+      const pjsonBoundary = await this.getPjsonBoundary(realPath);
       if (pjsonBoundary)
         await this.emitFile(
           pjsonBoundary + sep + 'package.json',
           'resolve',
-          path,
+          realPath,
         );
     }
     if (depth === 0) return;
 
     let analyzeResult: AnalyzeResult;
 
-    const cachedAnalysis = this.analysisCache.get(path);
+    const cachedAnalysis = this.analysisCache.get(realPath);
     if (cachedAnalysis) {
       analyzeResult = cachedAnalysis;
     } else {
-      const source = await this.readFile(path);
-      if (source === null) throw new Error('File ' + path + ' does not exist.');
+      const source = await this.readFile(realPath);
+      if (source === null)
+        throw new Error('File ' + realPath + ' does not exist.');
       // analyze should not have any side-effects e.g. calling `job.emitFile`
       // directly as this will not be included in the cachedAnalysis and won't
       // be emit for successive runs that leverage the cache
-      analyzeResult = await analyze(path, source.toString(), this);
-      this.analysisCache.set(path, analyzeResult);
+      analyzeResult = await analyze(realPath, source.toString(), this);
+      this.analysisCache.set(realPath, analyzeResult);
     }
 
     const { deps, imports, assets, isESM } = analyzeResult;
 
     if (isESM) {
-      this.esmFileList.add(relative(this.base, path));
+      this.esmFileList.add(relative(this.base, realPath));
     }
 
     await Promise.all([
@@ -403,14 +409,14 @@ export class Job {
               .slice(this.base.length)
               .indexOf(sep + 'node_modules' + sep) === -1)
         )
-          await this.emitDependency(asset, path, depth - 1);
-        else await this.emitFile(asset, 'asset', path);
+          await this.emitDependency(asset, realPath, depth - 1);
+        else await this.emitFile(asset, 'asset', realPath);
       }),
       ...[...deps].map(async (dep) =>
-        this.maybeEmitDep(dep, path, !isESM, depth - 1),
+        this.maybeEmitDep(dep, realPath, !isESM, depth - 1),
       ),
       ...[...imports].map(async (dep) =>
-        this.maybeEmitDep(dep, path, false, depth - 1),
+        this.maybeEmitDep(dep, realPath, false, depth - 1),
       ),
     ]);
   }
