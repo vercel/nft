@@ -61,6 +61,7 @@ export class Job {
     emitGlobs?: boolean;
     computeFileReferences?: boolean;
     evaluatePureExpressions?: boolean;
+    trackLocations?: boolean;
   };
   private analysisCache: Map<string, AnalyzeResult>;
   public fileList: Set<string>;
@@ -71,56 +72,68 @@ export class Job {
   private cachedFileSystem: CachedFileSystem;
   private remappings: Map<string, Set<string>> = new Map();
 
-  constructor({
-    base = process.cwd(),
-    processCwd,
-    exports,
-    conditions = exports || ['node'],
-    exportsOnly = false,
-    paths = {},
-    ignore,
-    log = false,
-    mixedModules = false,
-    ts = true,
-    analysis = {},
-    cache,
-    // we use a default of 1024 concurrency to balance
-    // performance and memory usage for fs operations
-    fileIOConcurrency = 1024,
-    depth = Infinity,
-  }: NodeFileTraceOptions) {
+  constructor(opts: NodeFileTraceOptions = {}) {
+    const {
+      base = process.cwd(),
+      processCwd,
+      exports: exportsCond,
+      conditions = exportsCond || ['node'],
+      exportsOnly = false,
+      paths = {},
+      ignore,
+      log = false,
+      mixedModules = false,
+      ts = true,
+      analysis = {},
+      cache,
+      // we use a default of 1024 concurrency to balance
+      // performance and memory usage for fs operations
+      fileIOConcurrency = 1024,
+      depth = Infinity,
+      trackLocations,
+    } = opts;
     this.ts = ts;
-    base = resolve(base);
+    const resolvedBase = resolve(base);
     this.ignoreFn = (path: string) => {
       if (path.startsWith('..' + sep)) return true;
       return false;
     };
-    if (typeof ignore === 'string') ignore = [ignore];
+    let ignoreFn = this.ignoreFn;
     if (typeof ignore === 'function') {
-      const ig = ignore;
-      this.ignoreFn = (path: string) => {
+      ignoreFn = (path: string) => {
         if (path.startsWith('..' + sep)) return true;
-        if (ig(path)) return true;
+        if (ignore(path)) return true;
         return false;
       };
     } else if (Array.isArray(ignore)) {
-      const resolvedIgnores = ignore.map((ignore) =>
-        relative(base, resolve(base || process.cwd(), ignore)),
+      const resolvedIgnores = ignore.map((ign) =>
+        relative(resolvedBase, resolve(resolvedBase || process.cwd(), ign)),
       );
-      this.ignoreFn = (path: string) => {
+      ignoreFn = (path: string) => {
+        if (path.startsWith('..' + sep)) return true;
+        if (isMatch(path, resolvedIgnores)) return true;
+        return false;
+      };
+    } else if (typeof ignore === 'string') {
+      const resolvedIgnore = [ignore];
+      const resolvedIgnores = resolvedIgnore.map((ign) =>
+        relative(resolvedBase, resolve(resolvedBase || process.cwd(), ign)),
+      );
+      ignoreFn = (path: string) => {
         if (path.startsWith('..' + sep)) return true;
         if (isMatch(path, resolvedIgnores)) return true;
         return false;
       };
     }
-    this.base = base;
-    this.cwd = resolve(processCwd || base);
+    this.ignoreFn = ignoreFn;
+    this.base = resolvedBase;
+    this.cwd = resolve(processCwd || resolvedBase);
     this.conditions = conditions;
     this.exportsOnly = exportsOnly;
     const resolvedPaths: Record<string, string> = {};
     for (const path of Object.keys(paths)) {
       const trailer = paths[path].endsWith('/');
-      const resolvedPath = resolve(base, paths[path]);
+      const resolvedPath = resolve(resolvedBase, paths[path]);
       resolvedPaths[path] = resolvedPath + (trailer ? '/' : '');
     }
     this.paths = resolvedPaths;
@@ -141,9 +154,17 @@ export class Job {
           computeFileReferences: true,
           // evaluate known bindings to assist with glob and file reference analysis
           evaluatePureExpressions: true,
+          // whether to track character offsets for assets, deps, and imports
+          trackLocations: false,
         },
         analysis === true ? {} : analysis,
       );
+    }
+
+    // Support top-level trackLocations option (also via analysis object)
+    if (trackLocations !== undefined) {
+      this.analysis = this.analysis || {};
+      this.analysis.trackLocations = trackLocations;
     }
 
     this.analysisCache = (cache && cache.analysisCache) || new Map();
