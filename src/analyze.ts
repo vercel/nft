@@ -1169,9 +1169,33 @@ export default async function analyze(
       return;
     }
     if (wildcardIndex !== -1 && stats.isFile()) return;
+    // do not emit assets outside the package boundary if inside node_modules
+    if (pkgBase) {
+      const nodeModulesBase =
+        id.substring(0, id.indexOf(path.sep + 'node_modules')) +
+        path.sep +
+        'node_modules' +
+        path.sep;
+      if (!assetPath.startsWith(nodeModulesBase)) {
+        if (job.log)
+          console.log(
+            'Skipping asset emission of ' +
+              assetPath +
+              ' for ' +
+              id +
+              ' as it is outside the package base ' +
+              pkgBase,
+          );
+        return;
+      }
+    }
     if (stats.isFile()) {
+      // do not emit file assets outside job.base
+      if (job.ignoreFn(path.relative(job.base, assetPath))) return;
       assets.add(assetPath);
     } else if (stats.isDirectory()) {
+      // do not emit directory assets outside job.base
+      if (job.ignoreFn(path.relative(job.base, assetPath))) return;
       if (validWildcard(assetPath)) emitAssetDirectory(assetPath);
     }
   }
