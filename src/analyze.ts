@@ -63,6 +63,7 @@ const EXPRESS_SET = Symbol();
 const EXPRESS_ENGINE = Symbol();
 const NBIND_INIT = Symbol();
 const SET_ROOT_DIR = Symbol();
+const PINO_TRANSPORT = Symbol();
 const PKG_INFO = Symbol();
 const FS_FN = Symbol();
 const FS_DIR_FN = Symbol();
@@ -176,6 +177,13 @@ const staticModules = Object.assign(Object.create(null), {
   },
   pkginfo: {
     default: PKG_INFO,
+  },
+  pino: {
+    default: {
+      [UNKNOWN]: true,
+      transport: PINO_TRANSPORT,
+    },
+    transport: PINO_TRANSPORT,
   },
 });
 const globalBindings: any = {
@@ -852,6 +860,51 @@ export default async function analyze(
             // app.engine('name', ...) causes opt-out of express dynamic require
             case EXPRESS_ENGINE:
               definedExpressEngines = true;
+              break;
+            // pino.transport({ target: '...' }) or
+            // pino.transport({ targets: [{ target: '...' }] }) or
+            // pino.transport({ pipeline: [{ target: '...' }] })
+            case PINO_TRANSPORT:
+              if (
+                node.arguments.length >= 1 &&
+                node.arguments[0].type === 'ObjectExpression'
+              ) {
+                for (const prop of node.arguments[0].properties) {
+                  if (
+                    prop.type === 'Property' &&
+                    !prop.computed &&
+                    prop.key.type === 'Identifier'
+                  ) {
+                    if (
+                      prop.key.name === 'target' &&
+                      prop.value.type === 'Literal'
+                    ) {
+                      await processRequireArg(prop.value);
+                    } else if (
+                      (prop.key.name === 'targets' ||
+                        prop.key.name === 'pipeline') &&
+                      prop.value.type === 'ArrayExpression'
+                    ) {
+                      for (const el of prop.value.elements) {
+                        if (el && el.type === 'ObjectExpression') {
+                          for (const innerProp of el.properties) {
+                            if (
+                              innerProp.type === 'Property' &&
+                              !innerProp.computed &&
+                              innerProp.key.type === 'Identifier' &&
+                              innerProp.key.name === 'target' &&
+                              innerProp.value.type === 'Literal'
+                            ) {
+                              await processRequireArg(innerProp.value);
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                return this.skip();
+              }
               break;
             case FS_FN:
             case FS_DIR_FN:
