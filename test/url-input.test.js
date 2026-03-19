@@ -55,6 +55,9 @@ it('should accept a mix of URL and string inputs', async () => {
 
   expect(fileList.size).toBeGreaterThan(0);
   // Both inputs should be in the file list
-  const relInput1 = relative(join(__dirname, '..'), input1);
+  const base = join(__dirname, '..');
+  const relInput1 = relative(base, input1);
+  const relInput2 = relative(base, join(multiInputPath, 'input-2.js'));
   expect(fileList.has(relInput1)).toBe(true);
+  expect(fileList.has(relInput2)).toBe(true);
 });
