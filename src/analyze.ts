@@ -64,6 +64,7 @@ const EXPRESS_ENGINE = Symbol();
 const NBIND_INIT = Symbol();
 const SET_ROOT_DIR = Symbol();
 const PINO_TRANSPORT = Symbol();
+const FASTIFY_LOGGER = Symbol();
 const PKG_INFO = Symbol();
 const FS_FN = Symbol();
 const FS_DIR_FN = Symbol();
@@ -185,6 +186,9 @@ const staticModules = Object.assign(Object.create(null), {
     },
     transport: PINO_TRANSPORT,
   },
+  fastify: {
+    default: FASTIFY_LOGGER,
+  },
 });
 const globalBindings: any = {
   // Support for require calls generated from `import` statements by babel
@@ -261,6 +265,44 @@ export interface AnalyzeResult {
   deps: Set<string>;
   imports: Set<string>;
   isESM: boolean;
+}
+
+// Helper: process pino transport config object
+// Extracts target strings from { target: '...' }, { targets: [...] }, or { pipeline: [...] }
+async function processPinoTransportObject(
+  objNode: Node,
+  processRequireArg: (node: Node) => Promise<void>,
+) {
+  for (const prop of objNode.properties) {
+    if (
+      prop.type === 'Property' &&
+      !prop.computed &&
+      prop.key.type === 'Identifier'
+    ) {
+      if (prop.key.name === 'target' && prop.value.type === 'Literal') {
+        await processRequireArg(prop.value);
+      } else if (
+        (prop.key.name === 'targets' || prop.key.name === 'pipeline') &&
+        prop.value.type === 'ArrayExpression'
+      ) {
+        for (const el of prop.value.elements) {
+          if (el && el.type === 'ObjectExpression') {
+            for (const innerProp of el.properties) {
+              if (
+                innerProp.type === 'Property' &&
+                !innerProp.computed &&
+                innerProp.key.type === 'Identifier' &&
+                innerProp.key.name === 'target' &&
+                innerProp.value.type === 'Literal'
+              ) {
+                await processRequireArg(innerProp.value);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 export default async function analyze(
@@ -869,41 +911,43 @@ export default async function analyze(
                 node.arguments.length >= 1 &&
                 node.arguments[0].type === 'ObjectExpression'
               ) {
+                await processPinoTransportObject(
+                  node.arguments[0],
+                  processRequireArg,
+                );
+                return this.skip();
+              }
+              break;
+            // Fastify({ logger: { transport: { target: '...' } } })
+            case FASTIFY_LOGGER:
+              if (
+                node.arguments.length >= 1 &&
+                node.arguments[0].type === 'ObjectExpression'
+              ) {
                 for (const prop of node.arguments[0].properties) {
                   if (
                     prop.type === 'Property' &&
                     !prop.computed &&
-                    prop.key.type === 'Identifier'
+                    prop.key.type === 'Identifier' &&
+                    prop.key.name === 'logger' &&
+                    prop.value.type === 'ObjectExpression'
                   ) {
-                    if (
-                      prop.key.name === 'target' &&
-                      prop.value.type === 'Literal'
-                    ) {
-                      await processRequireArg(prop.value);
-                    } else if (
-                      (prop.key.name === 'targets' ||
-                        prop.key.name === 'pipeline') &&
-                      prop.value.type === 'ArrayExpression'
-                    ) {
-                      for (const el of prop.value.elements) {
-                        if (el && el.type === 'ObjectExpression') {
-                          for (const innerProp of el.properties) {
-                            if (
-                              innerProp.type === 'Property' &&
-                              !innerProp.computed &&
-                              innerProp.key.type === 'Identifier' &&
-                              innerProp.key.name === 'target' &&
-                              innerProp.value.type === 'Literal'
-                            ) {
-                              await processRequireArg(innerProp.value);
-                            }
-                          }
-                        }
+                    for (const loggerProp of prop.value.properties) {
+                      if (
+                        loggerProp.type === 'Property' &&
+                        !loggerProp.computed &&
+                        loggerProp.key.type === 'Identifier' &&
+                        loggerProp.key.name === 'transport' &&
+                        loggerProp.value.type === 'ObjectExpression'
+                      ) {
+                        await processPinoTransportObject(
+                          loggerProp.value,
+                          processRequireArg,
+                        );
                       }
                     }
                   }
                 }
-                return this.skip();
               }
               break;
             case FS_FN:
@@ -999,6 +1043,31 @@ export default async function analyze(
                 }
               }
               break;
+          }
+        }
+        // Handle pino({ transport: { target: '...' } }) constructor pattern
+        // The callee (pino default export) evaluates to an object with
+        // transport: PINO_TRANSPORT, not a symbol, so the switch above misses it.
+        else if (
+          calleeValue &&
+          'value' in calleeValue &&
+          typeof calleeValue.value === 'object' &&
+          calleeValue.value !== null &&
+          (calleeValue.value as Record<string, unknown>).transport ===
+            PINO_TRANSPORT &&
+          node.arguments.length >= 1 &&
+          node.arguments[0].type === 'ObjectExpression'
+        ) {
+          for (const prop of node.arguments[0].properties) {
+            if (
+              prop.type === 'Property' &&
+              !prop.computed &&
+              prop.key.type === 'Identifier' &&
+              prop.key.name === 'transport' &&
+              prop.value.type === 'ObjectExpression'
+            ) {
+              await processPinoTransportObject(prop.value, processRequireArg);
+            }
           }
         }
       } else if (
