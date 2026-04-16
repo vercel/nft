@@ -89,7 +89,7 @@
     "jugglingdb": "^2.0.1",
     "koa": "^2.16.1",
     "leveldown": "^5.6.0",
-    "lighthouse": "^12.3.0",
+    "lighthouse": "^13.1.0",
     "loopback": "^3.26.0",
     "mailgun": "^0.5.0",
     "mariadb": "^3.4.1",
