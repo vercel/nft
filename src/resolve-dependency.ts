@@ -271,6 +271,10 @@ async function resolveExportsImports(
       }
 
       return await validateAndResolvePaths(paths, parent, job, cjsResolve);
+    } else if (isImports && typeof target === 'string') {
+      // The imports field additionally allows external dependencies as well
+      const resolved = await resolveDependency(target, parent, job, cjsResolve);
+      return Array.isArray(resolved) ? resolved : [resolved];
     }
   }
   for (const match of Object.keys(matchObj).sort(
