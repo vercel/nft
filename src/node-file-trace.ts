@@ -5,6 +5,7 @@ import {
   NodeFileTraceReasonType,
 } from './types';
 import { basename, dirname, extname, join, relative, resolve, sep } from 'path';
+import { fileURLToPath } from 'url';
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency, { NotFoundError } from './resolve-dependency';
 import { isMatch } from 'picomatch';
@@ -17,7 +18,7 @@ function inPath(path: string, parent: string) {
 }
 
 export async function nodeFileTrace(
-  files: string[],
+  files: (string | URL)[],
   opts: NodeFileTraceOptions = {},
 ): Promise<NodeFileTraceResult> {
   const job = new Job(opts);
@@ -31,7 +32,7 @@ export async function nodeFileTrace(
 
   await Promise.all(
     files.map(async (file) => {
-      const path = resolve(file);
+      const path = resolve(file instanceof URL ? fileURLToPath(file) : file);
       await job.emitFile(path, 'initial');
       return job.emitDependency(path);
     }),
