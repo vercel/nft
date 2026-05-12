@@ -1,3 +1,7 @@
-const { SerialPort} = require('serialport');
+const { SerialPort } = require('serialport');
 
-SerialPort.list();
+SerialPort.list().catch((err) => {
+  if (err?.code !== 'ENOENT') {
+    throw err;
+  }
+});

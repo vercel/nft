@@ -12,6 +12,7 @@ jest.setTimeout(200_000);
 const integrationDir = `${__dirname}${path.sep}integration`;
 
 const integrationTests = readdirSync(integrationDir);
+const nodeVersion = parseInt(process.versions.node.split('.')[0], 10);
 const filteredTestsToRun = integrationTests.filter((testName) => {
   const isWin = process.platform === 'win32';
   // Filter the integration tests that will never work in Windows
@@ -21,6 +22,10 @@ const filteredTestsToRun = integrationTests.filter((testName) => {
       testName,
     )
   ) {
+    return false;
+  }
+  // Latest @datadog/pprof does not ship a native Node 26 ABI build yet.
+  if (nodeVersion >= 26 && testName === 'datadog-pprof.js') {
     return false;
   }
   return true;

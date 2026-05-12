@@ -25,14 +25,9 @@
   "node_modules/@datadog/pprof/out/src/time-profiler-bindings.js",
   "node_modules/@datadog/pprof/out/src/time-profiler.js",
   "node_modules/@datadog/pprof/package.json",
-  "node_modules/delay/index.js",
-  "node_modules/delay/package.json",
-  "node_modules/p-limit/index.js",
-  "node_modules/p-limit/package.json",
-  "node_modules/pprof-format/dist/index.js",
+  "node_modules/pprof-format/dist/commonjs/index.js",
+  "node_modules/pprof-format/dist/commonjs/package.json",
   "node_modules/pprof-format/package.json",
-  "node_modules/yocto-queue/index.js",
-  "node_modules/yocto-queue/package.json",
   "package.json",
   "test/unit/datadog-pprof-node-gyp/input.js"
 ]
