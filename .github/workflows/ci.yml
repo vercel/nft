@@ -60,21 +60,28 @@ jobs:
         shell: pwsh
         run: |
           $dir = Join-Path $env:RUNNER_TEMP 'phantomjs-bin'
+          $project = Join-Path $env:RUNNER_TEMP 'phantomjs-stub'
           New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          New-Item -ItemType Directory -Force -Path $project | Out-Null
 
-          $source = @'
-          using System;
-
-          public static class Program
-          {
-              public static void Main()
-              {
-                  Console.WriteLine("2.1.1");
-              }
-          }
+          Set-Content -Path (Join-Path $project 'phantomjs-stub.csproj') -Value @'
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <OutputType>Exe</OutputType>
+              <TargetFramework>net8.0</TargetFramework>
+              <ImplicitUsings>disable</ImplicitUsings>
+              <Nullable>disable</Nullable>
+              <AssemblyName>phantomjs</AssemblyName>
+            </PropertyGroup>
+          </Project>
           '@
 
-          Add-Type -TypeDefinition $source -Language CSharp -OutputAssembly (Join-Path $dir 'phantomjs.exe') -OutputType ConsoleApplication
+          Set-Content -Path (Join-Path $project 'Program.cs') -Value @'
+          using System;
+          Console.WriteLine("2.1.1");
+          '@
+
+          dotnet publish $project --configuration Release --output $dir --nologo
           $dir | Out-File -FilePath $env:GITHUB_PATH -Append
       - name: Install Dependencies
         run: npm install
