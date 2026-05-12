@@ -106,6 +106,7 @@
     "pdf2json": "^3.1.5",
     "pdfkit": "^0.16.0",
     "pg": "^8.13.3",
+    "phantomjs-prebuilt": "^2.1.16",
     "pixelmatch": "^5.2.1",
     "playwright-core": "^1.17.1",
     "polyfill-library": "3.93.0",
@@ -137,9 +138,6 @@
     "vue": "^3.5.13",
     "when": "^3.7.8",
     "zeromq": "^6.0.0-beta.19"
-  },
-  "optionalDependencies": {
-    "phantomjs-prebuilt": "^2.1.16"
   },
   "packageManager": "npm@11.14.1",
   "engines": {

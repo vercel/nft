@@ -47,6 +47,29 @@ jobs:
           python-version: '3.11'
       - name: Enable Corepack
         run: corepack enable npm
+      - name: Add PhantomJS install stub
+        if: matrix.node == 26 && matrix.os != 'ubuntu-latest'
+        shell: bash
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const os = require('os');
+          const path = require('path');
+
+          const dir = path.join(process.env.RUNNER_TEMP, 'phantomjs-bin');
+          fs.mkdirSync(dir, { recursive: true });
+
+          const executable = process.platform === 'win32' ? 'phantomjs.cmd' : 'phantomjs';
+          const file = path.join(dir, executable);
+          if (process.platform === 'win32') {
+            fs.writeFileSync(file, '@echo off\r\necho 2.1.1\r\n');
+          } else {
+            fs.writeFileSync(file, '#!/bin/sh\necho 2.1.1\n');
+            fs.chmodSync(file, 0o755);
+          }
+
+          fs.appendFileSync(process.env.GITHUB_PATH, dir + os.EOL);
+          EOF
       - name: Install Dependencies
         run: npm install
       - name: Prettier
