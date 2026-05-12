@@ -1,10 +1,10 @@
 [
+  "node_modules/es6-promise/dist/es6-promise.js",
+  "node_modules/es6-promise/package.json",
+  "node_modules/phantomjs-prebuilt/bin/phantomjs",
+  "node_modules/phantomjs-prebuilt/lib/location.js",
+  "node_modules/phantomjs-prebuilt/lib/phantomjs.js",
+  "node_modules/phantomjs-prebuilt/package.json",
   "package.json",
-  "test/unit/phantomjs-prebuilt/input.js",
-  "test/unit/phantomjs-prebuilt/node_modules/es6-promise/dist/es6-promise.js",
-  "test/unit/phantomjs-prebuilt/node_modules/es6-promise/package.json",
-  "test/unit/phantomjs-prebuilt/node_modules/phantomjs-prebuilt/bin/phantomjs",
-  "test/unit/phantomjs-prebuilt/node_modules/phantomjs-prebuilt/lib/location.js",
-  "test/unit/phantomjs-prebuilt/node_modules/phantomjs-prebuilt/lib/phantomjs.js",
-  "test/unit/phantomjs-prebuilt/node_modules/phantomjs-prebuilt/package.json"
+  "test/unit/phantomjs-prebuilt/input.js"
 ]

@@ -37,8 +37,8 @@ const skipOnNode22AndAbove = [
   'module-sync-condition-es-node20',
   'module-sync-condition-cjs-node20',
 ];
-// Latest @datadog/pprof does not ship a native Node 26 ABI build yet.
-const skipOnNode26AndAbove = ['datadog-pprof-node-gyp'];
+// These fixtures rely on native or install-time binaries that do not support Node 26 yet.
+const skipOnNode26AndAbove = ['datadog-pprof-node-gyp', 'phantomjs-prebuilt'];
 if (process.platform === 'darwin' && process.arch === 'arm64') {
   skipOnMac.push('microtime-node-gyp');
 }
