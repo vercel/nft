@@ -48,28 +48,34 @@ jobs:
       - name: Enable Corepack
         run: corepack enable npm
       - name: Add PhantomJS install stub
-        if: matrix.node == 26 && matrix.os != 'ubuntu-latest'
+        if: matrix.node == 26 && matrix.os == 'macos-latest'
         shell: bash
         run: |
-          node <<'EOF'
-          const fs = require('fs');
-          const os = require('os');
-          const path = require('path');
+          mkdir -p "$RUNNER_TEMP/phantomjs-bin"
+          printf '#!/bin/sh\necho 2.1.1\n' > "$RUNNER_TEMP/phantomjs-bin/phantomjs"
+          chmod +x "$RUNNER_TEMP/phantomjs-bin/phantomjs"
+          echo "$RUNNER_TEMP/phantomjs-bin" >> "$GITHUB_PATH"
+      - name: Add PhantomJS install stub
+        if: matrix.node == 26 && matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'phantomjs-bin'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
 
-          const dir = path.join(process.env.RUNNER_TEMP, 'phantomjs-bin');
-          fs.mkdirSync(dir, { recursive: true });
+          $source = @'
+          using System;
 
-          const executable = process.platform === 'win32' ? 'phantomjs.cmd' : 'phantomjs';
-          const file = path.join(dir, executable);
-          if (process.platform === 'win32') {
-            fs.writeFileSync(file, '@echo off\r\necho 2.1.1\r\n');
-          } else {
-            fs.writeFileSync(file, '#!/bin/sh\necho 2.1.1\n');
-            fs.chmodSync(file, 0o755);
+          public static class Program
+          {
+              public static void Main()
+              {
+                  Console.WriteLine("2.1.1");
+              }
           }
+          '@
 
-          fs.appendFileSync(process.env.GITHUB_PATH, dir + os.EOL);
-          EOF
+          Add-Type -TypeDefinition $source -Language CSharp -OutputAssembly (Join-Path $dir 'phantomjs.exe') -OutputType ConsoleApplication
+          $dir | Out-File -FilePath $env:GITHUB_PATH -Append
       - name: Install Dependencies
         run: npm install
       - name: Prettier
