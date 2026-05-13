@@ -37,6 +37,8 @@ const skipOnNode22AndAbove = [
   'module-sync-condition-es-node20',
   'module-sync-condition-cjs-node20',
 ];
+// These fixtures rely on native or install-time binaries that do not support Node 26 yet.
+const skipOnNode26AndAbove = ['datadog-pprof-node-gyp', 'phantomjs-prebuilt'];
 if (process.platform === 'darwin' && process.arch === 'arm64') {
   skipOnMac.push('microtime-node-gyp');
 }
@@ -98,6 +100,10 @@ for (const { testName, isRoot } of unitTests) {
   }
   if (nodeVersion >= 22 && skipOnNode22AndAbove.includes(testName)) {
     console.log(`Skipping unit test on Node.js 22 or above: ${testSuffix}`);
+    continue;
+  }
+  if (nodeVersion >= 26 && skipOnNode26AndAbove.includes(testName)) {
+    console.log(`Skipping unit test on Node.js 26 or above: ${testSuffix}`);
     continue;
   }
   const unitPath = join(__dirname, 'unit', testName);

@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [20, 22, 24]
+        node: [20, 22, 24, 26]
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write # to be able to publish a GitHub release
@@ -47,6 +47,21 @@ jobs:
           python-version: '3.11'
       - name: Enable Corepack
         run: corepack enable npm
+      - name: Remove PhantomJS on Node.js 26
+        if: matrix.node == 26
+        shell: bash
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+
+          const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          delete packageJson.devDependencies['phantomjs-prebuilt'];
+          fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\n');
+
+          const packageLock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          delete packageLock.packages[''].devDependencies['phantomjs-prebuilt'];
+          fs.writeFileSync('package-lock.json', JSON.stringify(packageLock, null, 2) + '\n');
+          EOF
       - name: Install Dependencies
         run: npm install
       - name: Prettier

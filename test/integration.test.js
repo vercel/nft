@@ -12,6 +12,9 @@ jest.setTimeout(200_000);
 const integrationDir = `${__dirname}${path.sep}integration`;
 
 const integrationTests = readdirSync(integrationDir);
+const nodeVersion = parseInt(process.versions.node.split('.')[0], 10);
+// These fixtures rely on native or install-time binaries that do not support Node 26 yet.
+const skipOnNode26AndAbove = ['datadog-pprof.js'];
 const filteredTestsToRun = integrationTests.filter((testName) => {
   const isWin = process.platform === 'win32';
   // Filter the integration tests that will never work in Windows
@@ -21,6 +24,9 @@ const filteredTestsToRun = integrationTests.filter((testName) => {
       testName,
     )
   ) {
+    return false;
+  }
+  if (nodeVersion >= 26 && skipOnNode26AndAbove.includes(testName)) {
     return false;
   }
   return true;
