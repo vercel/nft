@@ -16,7 +16,7 @@ allowBuilds:
   msgpackr-extract: false
   nice-napi: false
   oracledb: false
-  phantomjs-prebuilt: false
+  phantomjs-prebuilt: true
   protobufjs: false
   sharp: false
   unix-dgram: false
