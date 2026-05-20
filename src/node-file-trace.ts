@@ -52,6 +52,7 @@ export class Job {
   public cwd: string;
   public conditions: string[];
   public exportsOnly: boolean;
+  public moduleSyncCatchall: boolean;
   public paths: Record<string, string>;
   public ignoreFn: (path: string, parent?: string) => boolean;
   public log: boolean;
@@ -77,6 +78,7 @@ export class Job {
     exports,
     conditions = exports || ['node'],
     exportsOnly = false,
+    moduleSyncCatchall = false,
     paths = {},
     ignore,
     log = false,
@@ -117,6 +119,7 @@ export class Job {
     this.cwd = resolve(processCwd || base);
     this.conditions = conditions;
     this.exportsOnly = exportsOnly;
+    this.moduleSyncCatchall = moduleSyncCatchall;
     const resolvedPaths: Record<string, string> = {};
     for (const path of Object.keys(paths)) {
       const trailer = paths[path].endsWith('/');

@@ -34,6 +34,7 @@ export interface NodeFileTraceOptions {
   exports?: string[];
   conditions?: string[];
   exportsOnly?: boolean;
+  moduleSyncCatchall?: boolean;
   ignore?: string | string[] | ((path: string) => boolean);
   analysis?:
     | boolean
