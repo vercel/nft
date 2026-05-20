@@ -1,1 +1,24 @@
+allowBuilds:
+  '@apollo/protobufjs': true
+  '@datadog/pprof': true
+  '@ffmpeg-installer/linux-x64': true
+  '@firebase/util': true
+  '@serialport/bindings-cpp': true
+  '@vercel/git-hooks': true
+  argon2: true
+  bcrypt: true
+  ejs: true
+  es5-ext: true
+  esbuild: true
+  ffmpeg-static: true
+  leveldown: true
+  microtime: true
+  msgpackr-extract: true
+  nice-napi: true
+  oracledb: true
+  phantomjs-prebuilt: true
+  protobufjs: true
+  sharp: true
+  unix-dgram: true
+  zeromq: true
 minimumReleaseAge: 2880
