@@ -110,6 +110,7 @@ export class NotFoundError extends Error {
 }
 
 const nodeBuiltins = new Set<string>(builtinModules);
+const nodeSupportsModuleSync = getNodeMajorVersion() >= 22;
 
 function getPkgName(name: string) {
   const segments = name.split('/');
@@ -149,7 +150,7 @@ function getExportsTarget(
   exports: PackageTarget,
   conditions: string[],
   cjsResolve: boolean,
-  moduleSyncSelectable: boolean,
+  moduleSyncAutoSelectable: boolean,
 ): string | null | undefined {
   if (typeof exports === 'string') {
     return exports;
@@ -161,7 +162,7 @@ function getExportsTarget(
         item,
         conditions,
         cjsResolve,
-        moduleSyncSelectable,
+        moduleSyncAutoSelectable,
       );
       if (
         target === null ||
@@ -175,14 +176,14 @@ function getExportsTarget(
         condition === 'default' ||
         (condition === 'require' && cjsResolve) ||
         (condition === 'import' && !cjsResolve) ||
-        (condition === 'module-sync' && moduleSyncSelectable) ||
-        (condition !== 'module-sync' && conditions.includes(condition))
+        (condition === 'module-sync' && moduleSyncAutoSelectable) ||
+        conditions.includes(condition)
       ) {
         const target = getExportsTarget(
           exports[condition],
           conditions,
           cjsResolve,
-          moduleSyncSelectable,
+          moduleSyncAutoSelectable,
         );
         if (target !== undefined) return target;
       }
@@ -190,6 +191,23 @@ function getExportsTarget(
   }
 
   return undefined;
+}
+
+function addExportsTargetPath(
+  paths: string[],
+  pkgPath: string,
+  target: string | null | undefined,
+  wildcardReplacement?: string,
+): void {
+  if (typeof target !== 'string' || !target.startsWith('./')) return;
+
+  const targetPath = wildcardReplacement
+    ? target.slice(1).replace(/\*/g, wildcardReplacement)
+    : target.slice(1);
+  const path = pkgPath + targetPath;
+  if (!paths.includes(path)) {
+    paths.push(path);
+  }
 }
 
 async function validateAndResolvePaths(
@@ -246,7 +264,7 @@ async function resolveExportsImports(
       matchObj[subpath],
       job.conditions,
       cjsResolve,
-      getNodeMajorVersion() >= 22,
+      nodeSupportsModuleSync,
     );
     if (typeof target === 'string' && target.startsWith('./')) {
       const resolvedPath = pkgPath + target.slice(1);
@@ -258,24 +276,15 @@ async function resolveExportsImports(
         exportsForSubpath !== null &&
         !Array.isArray(exportsForSubpath) &&
         'module-sync' in exportsForSubpath &&
-        (getNodeMajorVersion() >= 22 || job.moduleSyncCatchall)
+        (nodeSupportsModuleSync || job.moduleSyncCatchall)
       ) {
-        const addTargetPath = (target: string | null | undefined) => {
-          if (typeof target !== 'string' || !target.startsWith('./')) return;
-
-          const path = pkgPath + target.slice(1);
-          if (!paths.includes(path)) {
-            paths.push(path);
-          }
-        };
-
         const moduleSyncTarget = getExportsTarget(
           exportsForSubpath['module-sync'],
           job.conditions,
           cjsResolve,
           true,
         );
-        addTargetPath(moduleSyncTarget);
+        addExportsTargetPath(paths, pkgPath, moduleSyncTarget);
 
         const fallbackCondition =
           'require' in exportsForSubpath ? 'require' : 'default';
@@ -285,7 +294,7 @@ async function resolveExportsImports(
           cjsResolve,
           false,
         );
-        addTargetPath(fallbackTarget);
+        addExportsTargetPath(paths, pkgPath, fallbackTarget);
       }
 
       return await validateAndResolvePaths(paths, parent, job, cjsResolve);
@@ -303,13 +312,14 @@ async function resolveExportsImports(
         matchObj[match],
         job.conditions,
         cjsResolve,
-        getNodeMajorVersion() >= 22,
+        nodeSupportsModuleSync,
       );
       if (typeof target === 'string' && target.startsWith('./')) {
         const resolvedPath =
           pkgPath +
           target.slice(1).replace(/\*/g, subpath.slice(match.length - 1));
         const paths = [resolvedPath];
+        const wildcardReplacement = subpath.slice(match.length - 1);
 
         const exportsForSubpath = matchObj[match];
         if (
@@ -319,24 +329,18 @@ async function resolveExportsImports(
           !Array.isArray(exportsForSubpath) &&
           'module-sync' in exportsForSubpath
         ) {
-          const addTargetPath = (target: string | null | undefined) => {
-            if (typeof target !== 'string' || !target.startsWith('./')) return;
-
-            const path =
-              pkgPath +
-              target.slice(1).replace(/\*/g, subpath.slice(match.length - 1));
-            if (!paths.includes(path)) {
-              paths.push(path);
-            }
-          };
-
           const moduleSyncTarget = getExportsTarget(
             exportsForSubpath['module-sync'],
             job.conditions,
             cjsResolve,
             true,
           );
-          addTargetPath(moduleSyncTarget);
+          addExportsTargetPath(
+            paths,
+            pkgPath,
+            moduleSyncTarget,
+            wildcardReplacement,
+          );
 
           const fallbackCondition =
             cjsResolve && 'require' in exportsForSubpath
@@ -350,7 +354,12 @@ async function resolveExportsImports(
             cjsResolve,
             false,
           );
-          addTargetPath(fallbackTarget);
+          addExportsTargetPath(
+            paths,
+            pkgPath,
+            fallbackTarget,
+            wildcardReplacement,
+          );
         }
 
         return await validateAndResolvePaths(paths, parent, job, cjsResolve);
@@ -362,7 +371,7 @@ async function resolveExportsImports(
         matchObj[match],
         job.conditions,
         cjsResolve,
-        getNodeMajorVersion() >= 22,
+        nodeSupportsModuleSync,
       );
       if (
         typeof target === 'string' &&
