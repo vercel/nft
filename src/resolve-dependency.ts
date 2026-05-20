@@ -253,7 +253,11 @@ async function resolveExportsImports(
         getNodeMajorVersion() >= 22
       ) {
         const fallbackCondition =
-          'require' in exportsForSubpath ? 'require' : 'default';
+          cjsResolve && 'require' in exportsForSubpath
+            ? 'require'
+            : !cjsResolve && 'import' in exportsForSubpath
+              ? 'import'
+              : 'default';
         const fallbackTarget = getExportsTarget(
           exportsForSubpath[fallbackCondition],
           job.conditions,
