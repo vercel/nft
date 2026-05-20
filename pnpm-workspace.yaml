@@ -11,7 +11,7 @@ allowBuilds:
   es5-ext: false
   esbuild: false
   ffmpeg-static: true
-  leveldown: false
+  leveldown: true
   microtime: false
   msgpackr-extract: false
   nice-napi: false
