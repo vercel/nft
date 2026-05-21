@@ -46,7 +46,7 @@ jobs:
           # we lock to 3.11 for a distutils requirement for node-gyp
           python-version: '3.11'
       - name: Enable Corepack
-        run: corepack enable npm
+        run: corepack enable pnpm
       - name: Remove PhantomJS on Node.js 26
         if: matrix.node == 26
         shell: bash
@@ -57,26 +57,28 @@ jobs:
           const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
           delete packageJson.devDependencies['phantomjs-prebuilt'];
           fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\n');
-
-          const packageLock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
-          delete packageLock.packages[''].devDependencies['phantomjs-prebuilt'];
-          fs.writeFileSync('package-lock.json', JSON.stringify(packageLock, null, 2) + '\n');
           EOF
       - name: Install Dependencies
-        run: npm install
+        shell: bash
+        run: |
+          if [ "${{ matrix.node }}" = "26" ]; then
+            pnpm install --frozen-lockfile=false
+          else
+            pnpm install --frozen-lockfile
+          fi
       - name: Prettier
         if: matrix.os == 'ubuntu-latest'
-        run: npm run prettier-check
+        run: pnpm prettier-check
       - name: Build
-        run: npm run build
+        run: pnpm build
       - name: Run Tests
         env:
           BULL_REDIS_CONNECTION: ${{ (matrix.os == 'ubuntu-latest') && 'redis://127.0.0.1:6379/0' || '' }}
-        run: npm run ${{ (matrix.os == 'ubuntu-latest') && 'test-verbose' || 'test' }}
+        run: pnpm ${{ (matrix.os == 'ubuntu-latest') && 'test-verbose' || 'test' }}
       - name: Maybe Release
         if: matrix.os == 'ubuntu-latest' && matrix.node == 20 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
           NPM_CONFIG_PROVENANCE: 'true'
-        run: npx semantic-release@24.2.3
+        run: pnpm dlx semantic-release@24.2.3

@@ -323,6 +323,18 @@ for (const { testName, isRoot } of unitTests) {
         console.warn(e);
         expected = [];
       }
+      if (testName === 'webpack-wrapper-strs-namespaces-large') {
+        // pnpm may place prop-types' react-is dependency either nested under
+        // prop-types or hoisted at the root depending on the install graph.
+        const normalizeReactIsLayout = (file) =>
+          file.replace(
+            /(^|[\\/])node_modules([\\/])prop-types[\\/]node_modules[\\/]react-is(?=[\\/])/,
+            (_match, prefix, separator) =>
+              `${prefix}node_modules${separator}react-is`,
+          );
+        sortedFileList = sortedFileList.map(normalizeReactIsLayout).sort();
+        expected = expected.map(normalizeReactIsLayout).sort();
+      }
       try {
         expect(sortedFileList).toEqual(expected);
       } catch (e) {
