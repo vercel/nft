@@ -1,7 +1,10 @@
 {
   "name": "@vercel/nft",
   "version": "0.0.0-development",
-  "repository": "vercel/nft",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vercel/nft.git"
+  },
   "license": "MIT",
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
