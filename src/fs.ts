@@ -112,7 +112,7 @@ export class CachedFileSystem {
     await this.fileIOQueue.acquire();
 
     try {
-      return fileIO.call(this, path);
+      return await fileIO.call(this, path);
     } finally {
       this.fileIOQueue.release();
     }

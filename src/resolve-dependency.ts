@@ -253,7 +253,11 @@ async function resolveExportsImports(
         getNodeMajorVersion() >= 22
       ) {
         const fallbackCondition =
-          'require' in exportsForSubpath ? 'require' : 'default';
+          cjsResolve && 'require' in exportsForSubpath
+            ? 'require'
+            : !cjsResolve && 'import' in exportsForSubpath
+              ? 'import'
+              : 'default';
         const fallbackTarget = getExportsTarget(
           exportsForSubpath[fallbackCondition],
           job.conditions,
@@ -271,6 +275,10 @@ async function resolveExportsImports(
       }
 
       return await validateAndResolvePaths(paths, parent, job, cjsResolve);
+    } else if (isImports && typeof target === 'string') {
+      // The imports field additionally allows external dependencies as well
+      const resolved = await resolveDependency(target, parent, job, cjsResolve);
+      return Array.isArray(resolved) ? resolved : [resolved];
     }
   }
   for (const match of Object.keys(matchObj).sort(
