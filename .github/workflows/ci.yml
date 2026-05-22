@@ -28,7 +28,7 @@ jobs:
       contents: write # to be able to publish a GitHub release
       issues: write # to be able to comment on released issues
       pull-requests: write # to be able to comment on released pull requests
-      id-token: write # to enable use of OIDC for npm provenance
+      id-token: write # required for npm trusted publishing (OIDC)
     services:
       redis:
         # See workaround https://github.com/actions/runner/issues/822#issuecomment-1524826092
@@ -76,9 +76,7 @@ jobs:
           BULL_REDIS_CONNECTION: ${{ (matrix.os == 'ubuntu-latest') && 'redis://127.0.0.1:6379/0' || '' }}
         run: pnpm ${{ (matrix.os == 'ubuntu-latest') && 'test-verbose' || 'test' }}
       - name: Maybe Release
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 20 && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 22 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
-          NPM_CONFIG_PROVENANCE: 'true'
         run: pnpm dlx semantic-release@24.2.3
