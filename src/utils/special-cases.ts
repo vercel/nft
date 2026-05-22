@@ -51,8 +51,8 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
       const dir = dirname(id);
       const ext = process.platform === 'win32' ? '.exe' : '';
       const binaryPath = [
-        /*1.0.0 - 3.0.0*/ `${dir}/ffmpeg${ext}`,
-        /*4.0.0 - 5.3.0*/ `${dir}/bin/${process.platform}/${process.arch}/ffmpeg${ext}`,
+        resolve(dir, `ffmpeg${ext}`),
+        resolve(dir, 'bin', process.platform, process.arch, `ffmpeg${ext}`),
       ].find((file) => existsSync(file));
       if (binaryPath) {
         emitAsset(binaryPath);
