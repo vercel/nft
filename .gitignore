@@ -6,3 +6,4 @@ test/**/dist
 test/**/actual.js
 yarn.lock
 package-lock.json
+ffmpeg-version-diff
