@@ -28,6 +28,12 @@ export interface Stats {
   birthtime: Date;
 }
 
+export interface AssetLocation {
+  start: { line: number; column: number; character: number };
+  end: { line: number; column: number; character: number };
+  type: string;
+}
+
 export interface NodeFileTraceOptions {
   base?: string;
   processCwd?: string;
@@ -41,6 +47,7 @@ export interface NodeFileTraceOptions {
         emitGlobs?: boolean;
         computeFileReferences?: boolean;
         evaluatePureExpressions?: boolean;
+        trackLocations?: boolean;
       };
   cache?: any;
   paths?: Record<string, string>;
@@ -58,6 +65,15 @@ export interface NodeFileTraceOptions {
   ) => Promise<string | string[]>;
   fileIOConcurrency?: number;
   depth?: number;
+  trackLocations?: boolean;
+}
+
+export interface AnalyzeResult {
+  assets: Set<string>;
+  deps: Set<string>;
+  imports: Set<string>;
+  isESM: boolean;
+  assetsLocation?: Map<string, AssetLocation[]>;
 }
 
 export type NodeFileTraceReasonType =

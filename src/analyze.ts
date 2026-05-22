@@ -27,6 +27,7 @@ import nodeGypBuild from 'node-gyp-build';
 import mapboxPregyp from '@mapbox/node-pre-gyp';
 import { Job } from './node-file-trace';
 import { fileURLToPath, pathToFileURL, URL } from 'url';
+import { AssetLocation } from './types';
 
 // Note: these should be deprecated over time as they ship in Acorn core
 const acorn = Parser.extend(
@@ -265,6 +266,7 @@ export interface AnalyzeResult {
   deps: Set<string>;
   imports: Set<string>;
   isESM: boolean;
+  assetsLocation?: Map<string, AssetLocation[]>;
 }
 
 // Helper: process pino transport config object
@@ -313,6 +315,47 @@ export default async function analyze(
   const assets = new Set<string>();
   const deps = new Set<string>();
   const imports = new Set<string>();
+
+  // Location tracking (optional, enabled via job.analysis.trackLocations)
+  const assetsLocation = job.analysis.trackLocations
+    ? new Map<string, AssetLocation[]>()
+    : undefined;
+
+  // Helper function to convert AST position to line/column/character
+  function getLocationFromPosition(
+    pos: { line: number; column: number },
+    code: string,
+  ): { line: number; column: number; character: number } {
+    // Calculate character offset from line and column
+    const lines = code.split('\n');
+    let character = 0;
+    for (let i = 0; i < pos.line - 1 && i < lines.length; i++) {
+      character += lines[i].length + 1; // +1 for newline
+    }
+    character += pos.column;
+    return {
+      line: pos.line,
+      column: pos.column,
+      character,
+    };
+  }
+
+  // Helper function to track location of an asset/dep/import
+  function trackLocation(
+    type: string,
+    value: string,
+    start: { line: number; column: number },
+    end: { line: number; column: number },
+  ) {
+    if (!assetsLocation) return;
+    const existing = assetsLocation.get(value) || [];
+    existing.push({
+      start: getLocationFromPosition(start, code),
+      end: getLocationFromPosition(end, code),
+      type,
+    });
+    assetsLocation.set(value, existing);
+  }
 
   const dir = path.dirname(id);
   // if (typeof options.production === 'boolean' && staticProcess.env.NODE_ENV === UNKNOWN)
@@ -370,6 +413,7 @@ export default async function analyze(
     ast = acorn.parse(code, {
       ecmaVersion: 'latest',
       allowReturnOutsideFunction: true,
+      locations: true,
     });
     isESM = false;
   } catch (e: any) {
@@ -387,6 +431,7 @@ export default async function analyze(
         ecmaVersion: 'latest',
         sourceType: 'module',
         allowAwaitOutsideFunction: true,
+        locations: true,
       });
       isESM = true;
     } catch (e: any) {
@@ -481,6 +526,15 @@ export default async function analyze(
       if (decl.type === 'ImportDeclaration') {
         const source = String(decl.source.value);
         deps.add(source);
+        // Track location
+        if (decl.source.loc) {
+          trackLocation(
+            'import',
+            source,
+            decl.source.loc.start,
+            decl.source.loc.end,
+          );
+        }
         const staticModule =
           staticModules[source.startsWith('node:') ? source.slice(5) : source];
         if (staticModule) {
@@ -505,7 +559,19 @@ export default async function analyze(
         decl.type === 'ExportNamedDeclaration' ||
         decl.type === 'ExportAllDeclaration'
       ) {
-        if (decl.source) deps.add(String(decl.source.value));
+        if (decl.source) {
+          const source = String(decl.source.value);
+          deps.add(source);
+          // Track location
+          if (decl.source.loc) {
+            trackLocation(
+              'import',
+              source,
+              decl.source.loc.start,
+              decl.source.loc.end,
+            );
+          }
+        }
       }
     }
   }
@@ -582,34 +648,59 @@ export default async function analyze(
     });
   }
 
-  async function processRequireArg(expression: Node, isImport = false) {
+  async function processRequireArg(
+    expression: Node,
+    isImport = false,
+    callNode?: Node,
+  ) {
     if (expression.type === 'ConditionalExpression') {
-      await processRequireArg(expression.consequent, isImport);
-      await processRequireArg(expression.alternate, isImport);
+      await processRequireArg(expression.consequent, isImport, callNode);
+      await processRequireArg(expression.alternate, isImport, callNode);
       return;
     }
     if (expression.type === 'LogicalExpression') {
-      await processRequireArg(expression.left, isImport);
-      await processRequireArg(expression.right, isImport);
+      await processRequireArg(expression.left, isImport, callNode);
+      await processRequireArg(expression.right, isImport, callNode);
       return;
     }
 
     let computed = await computePureStaticValue(expression, true);
     if (!computed) return;
 
-    function add(value: string) {
+    function add(
+      value: string,
+      loc?: {
+        start: { line: number; column: number };
+        end: { line: number; column: number };
+      },
+    ) {
       (isImport ? imports : deps).add(value);
+      // Track location if available
+      if (loc && callNode && callNode.callee) {
+        const callee = callNode.callee;
+        const type =
+          callee.type === 'Identifier'
+            ? `require.${callee.name}`
+            : callee.type === 'MemberExpression' &&
+                callee.object.type === 'Identifier'
+              ? `${callee.object.name}.${(callee.property as any).name}`
+              : isImport
+                ? 'import'
+                : 'require';
+        trackLocation(type, value, loc.start, loc.end);
+      }
     }
 
+    const argLoc = expression.loc;
     if ('value' in computed && typeof computed.value === 'string') {
-      if (!computed.wildcards) add(computed.value);
+      if (!computed.wildcards) add(computed.value, argLoc);
       else if (computed.wildcards.length >= 1)
         emitWildcardRequire(computed.value);
     } else {
       if ('ifTrue' in computed && typeof computed.ifTrue === 'string')
-        add(computed.ifTrue);
+        add(computed.ifTrue, argLoc);
       if ('else' in computed && typeof computed.else === 'string')
-        add(computed.else);
+        add(computed.else, argLoc);
     }
   }
 
@@ -708,7 +799,7 @@ export default async function analyze(
         staticChildNode = node;
         await backtrack(parent, this);
       } else if (node.type === 'ImportExpression') {
-        await processRequireArg(node.source, true);
+        await processRequireArg(node.source, true, node);
         return;
       }
       // Call expression cases and asset triggers
@@ -728,7 +819,7 @@ export default async function analyze(
             knownBindings.require &&
             knownBindings.require.shadowDepth === 0
           ) {
-            await processRequireArg(node.arguments[0]);
+            await processRequireArg(node.arguments[0], false, node);
             return;
           }
         } else if (
@@ -742,7 +833,7 @@ export default async function analyze(
           node.callee.property.name === 'require' &&
           node.arguments.length
         ) {
-          await processRequireArg(node.arguments[0]);
+          await processRequireArg(node.arguments[0], false, node);
           return;
         } else if (
           (!isESM || job.mixedModules) &&
@@ -756,7 +847,7 @@ export default async function analyze(
           node.callee.property.name === 'resolve' &&
           node.arguments.length
         ) {
-          await processRequireArg(node.arguments[0]);
+          await processRequireArg(node.arguments[0], false, node);
           return;
         }
 
@@ -795,7 +886,7 @@ export default async function analyze(
                 (!knownBindings.require ||
                   knownBindings.require.shadowDepth === 0)
               ) {
-                await processRequireArg(node.arguments[0]);
+                await processRequireArg(node.arguments[0], false, node);
               }
               break;
             // require('bindings')(...)
@@ -878,9 +969,19 @@ export default async function analyze(
                 ) {
                   const bindingInfo = nbind(arg.value);
                   if (bindingInfo && bindingInfo.path) {
-                    deps.add(
-                      path.relative(dir, bindingInfo.path).replace(/\\/g, '/'),
-                    );
+                    const depPath = path
+                      .relative(dir, bindingInfo.path)
+                      .replace(/\\/g, '/');
+                    deps.add(depPath);
+                    // Track location
+                    if (node.loc) {
+                      trackLocation(
+                        'nbind.init',
+                        depPath,
+                        node.loc.start,
+                        node.loc.end,
+                      );
+                    }
                     return this.skip();
                   }
                 }
@@ -895,7 +996,7 @@ export default async function analyze(
                 node.arguments[0].value === 'view engine' &&
                 !definedExpressEngines
               ) {
-                await processRequireArg(node.arguments[1]);
+                await processRequireArg(node.arguments[1], false, node);
                 return this.skip();
               }
               break;
@@ -1036,10 +1137,28 @@ export default async function analyze(
                       : './' + srcPath;
 
                     imports.add(relativeSrcPath);
+                    // Track location
+                    if (node.arguments[0].loc) {
+                      trackLocation(
+                        'module.createRequire',
+                        relativeSrcPath,
+                        node.arguments[0].loc.start,
+                        node.arguments[0].loc.end,
+                      );
+                    }
                   }
                 } else {
                   // It's a bare specifier, so just add into the imports
                   imports.add(pathOrSpecifier);
+                  // Track location
+                  if (node.arguments[0].loc) {
+                    trackLocation(
+                      'module.createRequire',
+                      pathOrSpecifier,
+                      node.arguments[0].loc.start,
+                      node.arguments[0].loc.end,
+                    );
+                  }
                 }
               }
               break;
@@ -1272,7 +1391,7 @@ export default async function analyze(
   });
 
   await assetEmissionPromises;
-  return { assets, deps, imports, isESM };
+  return { assets, deps, imports, isESM, assetsLocation };
 
   async function emitAssetPath(assetPath: string) {
     // verify the asset file / directory exists
