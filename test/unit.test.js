@@ -188,6 +188,7 @@ for (const { testName, isRoot } of unitTests) {
           },
           cache: nftCache,
           exportsOnly: testName.startsWith('exports-only'),
+          moduleSyncCatchall: testOpts.moduleSyncCatchall,
           ts: true,
           log: true,
           // disable analysis for basic-analysis unit tests
