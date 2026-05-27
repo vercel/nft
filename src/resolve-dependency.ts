@@ -287,7 +287,11 @@ async function resolveExportsImports(
         addExportsTargetPath(paths, pkgPath, moduleSyncTarget);
 
         const fallbackCondition =
-          'require' in exportsForSubpath ? 'require' : 'default';
+          cjsResolve && 'require' in exportsForSubpath
+            ? 'require'
+            : !cjsResolve && 'import' in exportsForSubpath
+              ? 'import'
+              : 'default';
         const fallbackTarget = getExportsTarget(
           exportsForSubpath[fallbackCondition],
           job.conditions,

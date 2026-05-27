@@ -1,4 +1,5 @@
 import { resolve, dirname, relative } from 'path';
+import { existsSync } from 'fs';
 import resolveDependency from '../resolve-dependency';
 import { getPackageName } from './get-package-base';
 import { readFileSync } from 'graceful-fs';
@@ -47,8 +48,15 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
   },
   'ffmpeg-static'({ id, emitAsset }) {
     if (id.endsWith('ffmpeg-static/index.js')) {
-      const bin = require(id);
-      emitAsset(bin);
+      const dir = dirname(id);
+      const ext = process.platform === 'win32' ? '.exe' : '';
+      const binaryPath = [
+        resolve(dir, `ffmpeg${ext}`),
+        resolve(dir, 'bin', process.platform, process.arch, `ffmpeg${ext}`),
+      ].find((file) => existsSync(file));
+      if (binaryPath) {
+        emitAsset(binaryPath);
+      }
     }
   },
   'google-gax'({ id, ast, emitAssetDirectory }) {
