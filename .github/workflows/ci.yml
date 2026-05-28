@@ -79,4 +79,5 @@ jobs:
         if: matrix.os == 'ubuntu-latest' && matrix.node == 24 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COREPACK_ENABLE_STRICT: '0'
         run: pnpm --dir publish install --ignore-workspace --frozen-lockfile && ./publish/node_modules/.bin/semantic-release
