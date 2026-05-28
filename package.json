@@ -9,7 +9,7 @@
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
   "bin": {
-    "nft": "./out/cli.js"
+    "nft": "out/cli.js"
   },
   "files": [
     "out"
