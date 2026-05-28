@@ -22,7 +22,7 @@ export function isIdentifierRead(node: Node, parent: Node) {
       return parent.id !== node;
     // disregard the `bar` in `export { foo as bar }`
     case 'ExportSpecifier':
-      return false;
+      return node.name === parent.exported.name;
     // disregard the `bar` in `function (bar) {}`
     case 'FunctionExpression':
     case 'FunctionDeclaration':
