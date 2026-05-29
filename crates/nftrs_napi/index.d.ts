@@ -10,10 +10,14 @@ export declare function nodeFileTrace(files: Array<string>, options?: NodeFileTr
 export interface NodeFileTraceOptions {
   /** Base path for the returned file list. Defaults to `process.cwd()`. */
   base?: string
+  /** Working directory for `process.cwd()` resolution. Defaults to `base`. */
+  processCwd?: string
   /** Max dependency depth to follow (`undefined` = unlimited). */
   depth?: number
   /** Whether to resolve `.ts`/`.tsx` files. Defaults to `true`. */
   ts?: boolean
+  /** Whether to compute asset/file references. Defaults to `true`. */
+  analysis?: boolean
 }
 
 /**

@@ -17,10 +17,14 @@ use nftrs_core::{node_file_trace as trace, TraceOptions};
 pub struct NodeFileTraceOptions {
     /// Base path for the returned file list. Defaults to `process.cwd()`.
     pub base: Option<String>,
+    /// Working directory for `process.cwd()` resolution. Defaults to `base`.
+    pub process_cwd: Option<String>,
     /// Max dependency depth to follow (`undefined` = unlimited).
     pub depth: Option<u32>,
     /// Whether to resolve `.ts`/`.tsx` files. Defaults to `true`.
     pub ts: Option<bool>,
+    /// Whether to compute asset/file references. Defaults to `true`.
+    pub analysis: Option<bool>,
 }
 
 /// Result of [`node_file_trace`], matching `@vercel/nft`'s
@@ -42,13 +46,18 @@ pub fn node_file_trace(
     options: Option<NodeFileTraceOptions>,
 ) -> NodeFileTraceResult {
     let options = options.unwrap_or_default();
-    let base =
-        options.base.map_or_else(|| std::env::current_dir().unwrap_or_default(), PathBuf::from);
+    let base = options
+        .base
+        .clone()
+        .map_or_else(|| std::env::current_dir().unwrap_or_default(), PathBuf::from);
+    let process_cwd = options.process_cwd.map_or_else(|| base.clone(), PathBuf::from);
 
     let opts = TraceOptions {
         base,
+        process_cwd,
         depth: options.depth.map(|d| d as usize),
         ts: options.ts.unwrap_or(true),
+        analysis: options.analysis.unwrap_or(true),
     };
 
     let entries: Vec<PathBuf> = files.into_iter().map(PathBuf::from).collect();

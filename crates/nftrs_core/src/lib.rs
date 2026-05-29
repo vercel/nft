@@ -12,7 +12,7 @@
 use std::collections::HashSet;
 use std::path::{Component, Path, PathBuf};
 
-use nftrs_analyzer::analyze;
+use nftrs_analyzer::{analyze, AnalyzeContext, Asset};
 use nftrs_fs::{realpath, CachedFs};
 use nftrs_resolver::DepResolver;
 
@@ -21,11 +21,21 @@ use nftrs_resolver::DepResolver;
 pub struct TraceOptions {
     /// Base path; emitted files are relative to this.
     pub base: PathBuf,
+    /// Working directory for `process.cwd()` resolution. Defaults to `base`.
+    pub process_cwd: PathBuf,
     /// Max dependency depth to follow (`None` = unlimited).
     pub depth: Option<usize>,
     /// Whether to treat `.ts`/`.tsx` as resolvable (currently always on).
     pub ts: bool,
+    /// Whether to compute asset/file references (`analysis`). Defaults to true.
+    pub analysis: bool,
 }
+
+/// File extensions excluded from directory asset globbing (native build
+/// intermediates), matching nft's `excludeAssetExtensions`.
+const EXCLUDE_ASSET_EXTENSIONS: &[&str] = &["h", "cmake", "c", "cpp"];
+/// File names excluded from directory asset globbing.
+const EXCLUDE_ASSET_FILES: &[&str] = &["CHANGELOG.md", "README.md", "readme.md", "changelog.md"];
 
 /// Result of a trace run.
 pub struct TraceResult {
@@ -36,7 +46,9 @@ pub struct TraceResult {
 
 struct Job {
     base: PathBuf,
+    cwd: PathBuf,
     depth: Option<usize>,
+    analysis: bool,
     fs: CachedFs,
     resolver: DepResolver,
     file_list: Vec<String>,
@@ -50,7 +62,9 @@ impl Job {
     fn new(opts: &TraceOptions) -> Self {
         Self {
             base: normalize_abs(&opts.base),
+            cwd: normalize_abs(&opts.process_cwd),
             depth: opts.depth,
+            analysis: opts.analysis,
             fs: CachedFs::new(),
             resolver: DepResolver::new(),
             file_list: Vec::new(),
@@ -109,7 +123,14 @@ impl Job {
             return;
         };
 
-        let analysis = analyze(&real, &source);
+        let dirname = real.parent().map_or_else(String::new, |p| p.to_string_lossy().into_owned());
+        let ctx = AnalyzeContext {
+            dirname,
+            filename: real.to_string_lossy().into_owned(),
+            cwd: self.cwd.to_string_lossy().into_owned(),
+            compute_file_references: self.analysis,
+        };
+        let analysis = analyze(&real, &source, &ctx);
         if analysis.is_esm {
             let rel = relative(&self.base, &real);
             self.esm_set.insert(rel);
@@ -123,6 +144,42 @@ impl Job {
                 Ok(None) => {} // builtin — intentionally not emitted
                 Err(msg) => self.warnings.push(msg),
             }
+        }
+
+        for asset in analysis.assets {
+            self.emit_asset(asset, next_depth);
+        }
+    }
+
+    /// Emit a referenced asset. Files are followed as dependencies when they
+    /// look like modules (`.js`/`.mjs`/`.node`/extensionless, or in-base
+    /// `.ts`/`.tsx`), otherwise emitted as plain files. Directories are
+    /// globbed recursively (skipping `node_modules` and excluded names).
+    fn emit_asset(&mut self, asset: Asset, depth: Option<usize>) {
+        match asset {
+            Asset::File(p) => self.emit_asset_path(&PathBuf::from(p), depth),
+            Asset::Dir(dir) => {
+                let mut files = Vec::new();
+                collect_dir_files(Path::new(&dir), &mut files);
+                for f in files {
+                    self.emit_asset_path(&f, depth);
+                }
+            }
+        }
+    }
+
+    fn emit_asset_path(&mut self, path: &Path, depth: Option<usize>) {
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        let is_module_like = matches!(ext, "js" | "mjs" | "cjs" | "node" | "")
+            || (matches!(ext, "ts" | "tsx") && {
+                let real = realpath(path);
+                !relative(&self.base, &real).starts_with("..")
+                    && !real.to_string_lossy().contains("/node_modules/")
+            });
+        if is_module_like {
+            self.emit_dependency(path, depth);
+        } else {
+            self.emit_file(&realpath(path));
         }
     }
 
@@ -143,6 +200,33 @@ pub fn node_file_trace(files: &[PathBuf], opts: &TraceOptions) -> TraceResult {
         job.emit_dependency(&abs, job.depth);
     }
     job.finish()
+}
+
+/// Recursively collect files under `dir`, skipping `node_modules` and names/
+/// extensions excluded from asset globbing. Mirrors nft's `emitAssetDirectory`
+/// glob (`/**/*`, `nodir`, exclude lists).
+fn collect_dir_files(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        let Ok(file_type) = entry.file_type() else { continue };
+        if file_type.is_dir() {
+            if name == "node_modules" {
+                continue;
+            }
+            collect_dir_files(&path, out);
+        } else {
+            let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+            if EXCLUDE_ASSET_EXTENSIONS.contains(&ext)
+                || EXCLUDE_ASSET_FILES.contains(&name.as_ref())
+            {
+                continue;
+            }
+            out.push(path);
+        }
+    }
 }
 
 /// Make `path` absolute (resolving against the current working directory when
