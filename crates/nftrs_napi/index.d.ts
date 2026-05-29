@@ -18,6 +18,14 @@ export interface NodeFileTraceOptions {
   ts?: boolean
   /** Whether to compute asset/file references. Defaults to `true`. */
   analysis?: boolean
+  /** Active resolution conditions (default `["node"]`). */
+  conditions?: Array<string>
+  /** Only resolve via `exports` (no legacy `main` fallback). */
+  exportsOnly?: boolean
+  /** Treat `module-sync` as auto-selectable for wildcard subpaths. */
+  moduleSyncCatchall?: boolean
+  /** `paths` option: specifier (or `prefix/`) → target path. */
+  paths?: Record<string, string>
 }
 
 /**

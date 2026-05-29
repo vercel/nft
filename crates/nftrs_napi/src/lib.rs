@@ -5,6 +5,7 @@
 //! `warnings`). `reasons` and the JS callback overrides are still being wired
 //! — see <https://github.com/ubugeeei-prod/nftrs/issues/22>.
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use napi_derive::napi;
@@ -25,6 +26,14 @@ pub struct NodeFileTraceOptions {
     pub ts: Option<bool>,
     /// Whether to compute asset/file references. Defaults to `true`.
     pub analysis: Option<bool>,
+    /// Active resolution conditions (default `["node"]`).
+    pub conditions: Option<Vec<String>>,
+    /// Only resolve via `exports` (no legacy `main` fallback).
+    pub exports_only: Option<bool>,
+    /// Treat `module-sync` as auto-selectable for wildcard subpaths.
+    pub module_sync_catchall: Option<bool>,
+    /// `paths` option: specifier (or `prefix/`) → target path.
+    pub paths: Option<HashMap<String, String>>,
 }
 
 /// Result of [`node_file_trace`], matching `@vercel/nft`'s
@@ -58,6 +67,10 @@ pub fn node_file_trace(
         depth: options.depth.map(|d| d as usize),
         ts: options.ts.unwrap_or(true),
         analysis: options.analysis.unwrap_or(true),
+        conditions: options.conditions.unwrap_or_default(),
+        exports_only: options.exports_only.unwrap_or(false),
+        module_sync_catchall: options.module_sync_catchall.unwrap_or(false),
+        paths: options.paths.map(|m| m.into_iter().collect()).unwrap_or_default(),
     };
 
     let entries: Vec<PathBuf> = files.into_iter().map(PathBuf::from).collect();

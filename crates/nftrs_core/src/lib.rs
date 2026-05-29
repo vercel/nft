@@ -14,7 +14,7 @@ use std::path::{Component, Path, PathBuf};
 
 use nftrs_analyzer::{analyze, AnalyzeContext, Asset};
 use nftrs_fs::{realpath, CachedFs};
-use nftrs_resolver::DepResolver;
+use nftrs_resolver::{DepResolver, ResolveOpts};
 
 /// Options for a trace run. Mirrors the subset of `NodeFileTraceOptions`
 /// wired so far.
@@ -25,10 +25,18 @@ pub struct TraceOptions {
     pub process_cwd: PathBuf,
     /// Max dependency depth to follow (`None` = unlimited).
     pub depth: Option<usize>,
-    /// Whether to treat `.ts`/`.tsx` as resolvable (currently always on).
+    /// Whether to treat `.ts`/`.tsx` as resolvable.
     pub ts: bool,
     /// Whether to compute asset/file references (`analysis`). Defaults to true.
     pub analysis: bool,
+    /// Active resolution conditions (default `["node"]`).
+    pub conditions: Vec<String>,
+    /// Only resolve via `exports` (no legacy `main`/file fallback).
+    pub exports_only: bool,
+    /// Treat `module-sync` as auto-selectable for wildcard subpaths.
+    pub module_sync_catchall: bool,
+    /// `paths` option entries (`name`/`prefix/` → target).
+    pub paths: Vec<(String, String)>,
 }
 
 /// File extensions excluded from directory asset globbing (native build
@@ -49,29 +57,83 @@ struct Job {
     cwd: PathBuf,
     depth: Option<usize>,
     analysis: bool,
+    ts: bool,
+    conditions: Vec<String>,
+    exports_only: bool,
+    module_sync_catchall: bool,
+    paths: Vec<(String, String)>,
     fs: CachedFs,
     resolver: DepResolver,
     file_list: Vec<String>,
     file_set: HashSet<String>,
     esm_set: HashSet<String>,
     processed: HashSet<PathBuf>,
+    remappings: std::collections::HashMap<PathBuf, Vec<PathBuf>>,
     warnings: Vec<String>,
 }
 
 impl Job {
     fn new(opts: &TraceOptions) -> Self {
+        let conditions = if opts.conditions.is_empty() {
+            vec!["node".to_string()]
+        } else {
+            opts.conditions.clone()
+        };
         Self {
             base: normalize_abs(&opts.base),
             cwd: normalize_abs(&opts.process_cwd),
             depth: opts.depth,
             analysis: opts.analysis,
+            ts: opts.ts,
+            conditions,
+            exports_only: opts.exports_only,
+            module_sync_catchall: opts.module_sync_catchall,
+            paths: opts.paths.clone(),
             fs: CachedFs::new(),
             resolver: DepResolver::new(),
             file_list: Vec::new(),
             file_set: HashSet::new(),
             esm_set: HashSet::new(),
             processed: HashSet::new(),
+            remappings: std::collections::HashMap::new(),
             warnings: Vec::new(),
+        }
+    }
+
+    fn resolve_opts(&self) -> ResolveOpts<'_> {
+        ResolveOpts {
+            base: &self.base,
+            ts: self.ts,
+            conditions: &self.conditions,
+            exports_only: self.exports_only,
+            module_sync_catchall: self.module_sync_catchall,
+            paths: &self.paths,
+        }
+    }
+
+    /// Resolve `specifier` and emit all resulting targets, package.json files,
+    /// and record any browser remappings.
+    fn resolve_and_emit(
+        &mut self,
+        specifier: &str,
+        parent: &Path,
+        cjs: bool,
+        depth: Option<usize>,
+    ) {
+        let opts = self.resolve_opts();
+        match self.resolver.resolve(specifier, parent, cjs, &opts) {
+            Ok(resolution) => {
+                for pkg_json in resolution.emit_files {
+                    self.emit_file(&realpath(&pkg_json));
+                }
+                for (from, to) in resolution.remappings {
+                    self.remappings.entry(realpath(&from)).or_default().push(to);
+                }
+                for target in resolution.paths {
+                    self.emit_dependency(&target, depth);
+                }
+            }
+            Err(msg) => self.warnings.push(msg),
         }
     }
 
@@ -96,6 +158,14 @@ impl Job {
             return;
         }
         self.processed.insert(real.clone());
+
+        // Browser-field remappings discovered during resolution: when this file
+        // is emitted, also emit the files it remaps to.
+        if let Some(extra) = self.remappings.get(&real).cloned() {
+            for dep in extra {
+                self.emit_dependency(&dep, depth);
+            }
+        }
 
         if !self.emit_file(&real) {
             return;
@@ -137,13 +207,16 @@ impl Job {
         }
 
         let next_depth = depth.map(|d| d.saturating_sub(1));
-        let specifiers = analysis.deps.iter().chain(analysis.imports.iter());
-        for specifier in specifiers {
-            match self.resolver.resolve(specifier, &real) {
-                Ok(Some(resolved)) => self.emit_dependency(&resolved, next_depth),
-                Ok(None) => {} // builtin — intentionally not emitted
-                Err(msg) => self.warnings.push(msg),
-            }
+        // CJS `require` deps resolve with the `require` condition unless this
+        // module is ESM; static/dynamic `import` deps always use `import`.
+        let cjs = !analysis.is_esm;
+        let deps: Vec<String> = analysis.deps.clone();
+        let imports: Vec<String> = analysis.imports.clone();
+        for specifier in deps {
+            self.resolve_and_emit(&specifier, &real, cjs, next_depth);
+        }
+        for specifier in imports {
+            self.resolve_and_emit(&specifier, &real, false, next_depth);
         }
 
         for asset in analysis.assets {

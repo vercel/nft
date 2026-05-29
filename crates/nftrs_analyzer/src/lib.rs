@@ -342,8 +342,9 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
     }
 
     fn visit_import_expression(&mut self, expr: &oxc_ast::ast::ImportExpression<'a>) {
+        // Dynamic `import()` resolves with the ESM (`import`) condition.
         if let Some(Value::Str(s)) = eval(&expr.source, self.eval_ctx) {
-            self.deps.push(s);
+            self.imports.push(s);
         }
         walk::walk_import_expression(self, expr);
     }
