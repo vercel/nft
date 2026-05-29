@@ -1,4 +1,4 @@
 {
-  "passed": 63,
+  "passed": 70,
   "note": "Number of test/unit fixtures whose fileList matches @vercel/nft. Bump as fixtures turn green; CI (compat --check) fails if the count regresses below this."
 }

@@ -169,6 +169,11 @@ impl Job {
     }
 
     fn emit_asset_path(&mut self, path: &Path, depth: Option<usize>) {
+        // Directories are only emitted via explicit `readdirSync` (Asset::Dir);
+        // a bare `__dirname` surfaced by the general scanner is skipped here.
+        if path.is_dir() {
+            return;
+        }
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
         let is_module_like = matches!(ext, "js" | "mjs" | "cjs" | "node" | "")
             || (matches!(ext, "ts" | "tsx") && {

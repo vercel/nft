@@ -26,7 +26,7 @@ use oxc_ast_visit::{walk, Visit};
 use oxc_parser::Parser;
 use oxc_span::SourceType;
 
-use static_eval::{eval, is_absolute_path, Binding, EvalCtx, Value};
+use static_eval::{contains_trigger, eval, is_absolute_path, unwrap_expr, Binding, EvalCtx, Value};
 
 /// A referenced asset, as an absolute path.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -112,6 +112,16 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
     result.imports = collector.imports;
     result.assets = collector.assets;
     result.is_esm = collector.is_esm;
+
+    // Pass 3: general asset scan — emit maximal static absolute-path
+    // expressions that trace back to a path trigger (e.g.
+    // `path.join(__dirname, 'x')` anywhere, not just in an `fs.*` call).
+    if ctx.compute_file_references {
+        let mut scanner = AssetScanner { eval_ctx: &eval_ctx, assets: Vec::new() };
+        scanner.visit_program(&ret.program);
+        result.assets.extend(scanner.assets);
+    }
+
     result
 }
 
@@ -154,6 +164,7 @@ fn path_member_binding(name: &str) -> Option<Binding> {
         "join" => Some(Binding::PathJoin),
         "resolve" => Some(Binding::PathResolve),
         "dirname" => Some(Binding::PathDirname),
+        "sep" => Some(Binding::PathSep),
         _ => None,
     }
 }
@@ -254,6 +265,17 @@ struct DepCollector<'a, 'b> {
 }
 
 impl<'a> DepCollector<'a, '_> {
+    /// Push the first argument of a `require(...)` / `require.resolve(...)`
+    /// call as a dependency, statically evaluating it (string literal,
+    /// `__dirname + '/x'`, template, `path.join(...)`, …).
+    fn push_dep_arg(&mut self, call: &oxc_ast::ast::CallExpression<'a>) {
+        if let Some(arg0) = call.arguments.first().and_then(Argument::as_expression) {
+            if let Some(Value::Str(s)) = eval(arg0, self.eval_ctx) {
+                self.deps.push(s);
+            }
+        }
+    }
+
     /// Handle a recognized `fs.*`/destructured-fs call: emit the computed
     /// first argument as a file or directory asset.
     fn handle_fs_call(&mut self, kind: FsKind, call: &oxc_ast::ast::CallExpression<'a>) {
@@ -290,12 +312,10 @@ impl<'a> DepCollector<'a, '_> {
 
 impl<'a> Visit<'a> for DepCollector<'a, '_> {
     fn visit_call_expression(&mut self, call: &oxc_ast::ast::CallExpression<'a>) {
-        match &call.callee {
-            // require('literal')
+        match unwrap_expr(&call.callee) {
+            // require(<statically-evaluable>)
             Expression::Identifier(id) if id.name == "require" => {
-                if let Some(Argument::StringLiteral(s)) = call.arguments.first() {
-                    self.deps.push(s.value.to_string());
-                }
+                self.push_dep_arg(call);
             }
             // destructured fs fn, e.g. readFileSync(...)
             Expression::Identifier(id) => {
@@ -306,11 +326,9 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
             Expression::StaticMemberExpression(member) => {
                 if let Expression::Identifier(obj) = &member.object {
                     let prop = member.property.name.as_str();
-                    // require.resolve('literal')
+                    // require.resolve(<statically-evaluable>)
                     if obj.name == "require" && prop == "resolve" {
-                        if let Some(Argument::StringLiteral(s)) = call.arguments.first() {
-                            self.deps.push(s.value.to_string());
-                        }
+                        self.push_dep_arg(call);
                     } else if self.fs_objects.contains(obj.name.as_str()) {
                         if let Some(kind) = fs_method_kind(prop) {
                             self.handle_fs_call(kind, call);
@@ -324,8 +342,8 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
     }
 
     fn visit_import_expression(&mut self, expr: &oxc_ast::ast::ImportExpression<'a>) {
-        if let Expression::StringLiteral(s) = &expr.source {
-            self.deps.push(s.value.to_string());
+        if let Some(Value::Str(s)) = eval(&expr.source, self.eval_ctx) {
+            self.deps.push(s);
         }
         walk::walk_import_expression(self, expr);
     }
@@ -356,5 +374,25 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
     ) {
         self.is_esm = true;
         walk::walk_export_default_declaration(self, decl);
+    }
+}
+
+/// Pass 3: emits the maximal static absolute-path expression at each position
+/// (skipping its children once emitted), provided it traces back to a path
+/// trigger. Mirrors nft's leaf-trigger + backtrack asset emission.
+struct AssetScanner<'b> {
+    eval_ctx: &'b EvalCtx<'b>,
+    assets: Vec<Asset>,
+}
+
+impl<'a> Visit<'a> for AssetScanner<'_> {
+    fn visit_expression(&mut self, expr: &Expression<'a>) {
+        if let Some(Value::Str(s)) = eval(expr, self.eval_ctx) {
+            if is_absolute_path(&s) && contains_trigger(expr, self.eval_ctx) {
+                self.assets.push(Asset::File(s));
+                return; // maximal expression — don't descend into children
+            }
+        }
+        walk::walk_expression(self, expr);
     }
 }

@@ -25,6 +25,19 @@ pub enum Binding {
     PathResolve,
     /// A destructured `path.dirname`.
     PathDirname,
+    /// A destructured `path.sep`.
+    PathSep,
+}
+
+/// Unwrap parentheses and `(0, expr)` sequence wrappers (TS/Babel interop)
+/// down to the effective expression.
+#[must_use]
+pub fn unwrap_expr<'a, 'b>(expr: &'b Expression<'a>) -> &'b Expression<'a> {
+    match expr {
+        Expression::ParenthesizedExpression(p) => unwrap_expr(&p.expression),
+        Expression::SequenceExpression(s) => s.expressions.last().map_or(expr, |e| unwrap_expr(e)),
+        _ => expr,
+    }
 }
 
 /// Evaluation context: the intrinsic `__dirname`/`__filename`/`process.cwd()`
@@ -69,8 +82,22 @@ pub fn eval(expr: &Expression, ctx: &EvalCtx) -> Option<Value> {
         Expression::Identifier(id) => match id.name.as_str() {
             "__dirname" => Some(Value::Str(ctx.dirname.clone())),
             "__filename" => Some(Value::Str(ctx.filename.clone())),
-            _ => None,
+            name => match ctx.bindings.get(name) {
+                Some(Binding::PathSep) => Some(Value::Str("/".to_string())),
+                _ => None,
+            },
         },
+        Expression::StaticMemberExpression(member) => {
+            // `path.sep`
+            if member.property.name == "sep" {
+                if let Expression::Identifier(obj) = &member.object {
+                    if matches!(ctx.bindings.get(obj.name.as_str()), Some(Binding::PathModule)) {
+                        return Some(Value::Str("/".to_string()));
+                    }
+                }
+            }
+            None
+        }
         Expression::BinaryExpression(bin) => {
             use oxc_ast::ast::BinaryOperator;
             if bin.operator != BinaryOperator::Addition {
@@ -102,7 +129,7 @@ fn eval_template(t: &TemplateLiteral, ctx: &EvalCtx) -> Option<Value> {
 }
 
 fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Value> {
-    match &call.callee {
+    match unwrap_expr(&call.callee) {
         // join(...), resolve(...), dirname(...) via destructured bindings
         Expression::Identifier(id) => match ctx.bindings.get(id.name.as_str()) {
             Some(Binding::PathJoin) => Some(Value::Str(path_join(&str_args(call, ctx)?))),
@@ -143,6 +170,11 @@ fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Value
                         }
                     }
                 }
+            } else if prop == "concat" {
+                // `'str'.concat(a, b, ...)` on a statically-known string
+                let base = eval(&member.object, ctx)?.as_concat_str();
+                let args = str_args(call, ctx)?;
+                Some(Value::Str(format!("{base}{}", args.concat())))
             } else {
                 None
             }
@@ -231,4 +263,53 @@ pub fn normalize_posix(p: &str) -> String {
 #[must_use]
 pub fn is_absolute_path(s: &str) -> bool {
     s.starts_with('/')
+}
+
+/// Whether evaluating `expr` depends on a path "trigger".
+///
+/// Triggers are `__dirname`, `__filename`, `process.cwd()`, or
+/// `path.resolve(...)`. nft only emits a computed absolute path as an asset
+/// when it traces back to such a trigger (so bare string literals like
+/// `'/etc/passwd'` are not emitted).
+#[must_use]
+pub fn contains_trigger(expr: &Expression, ctx: &EvalCtx) -> bool {
+    match expr {
+        Expression::Identifier(id) => matches!(id.name.as_str(), "__dirname" | "__filename"),
+        Expression::TemplateLiteral(t) => t.expressions.iter().any(|e| contains_trigger(e, ctx)),
+        Expression::BinaryExpression(b) => {
+            contains_trigger(&b.left, ctx) || contains_trigger(&b.right, ctx)
+        }
+        Expression::ParenthesizedExpression(p) => contains_trigger(&p.expression, ctx),
+        Expression::CallExpression(call) => {
+            if is_cwd_or_resolve(call, ctx) {
+                return true;
+            }
+            call.arguments
+                .iter()
+                .filter_map(oxc_ast::ast::Argument::as_expression)
+                .any(|e| contains_trigger(e, ctx))
+        }
+        _ => false,
+    }
+}
+
+fn is_cwd_or_resolve(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> bool {
+    match &call.callee {
+        Expression::Identifier(id) => {
+            matches!(ctx.bindings.get(id.name.as_str()), Some(Binding::PathResolve))
+        }
+        Expression::StaticMemberExpression(member) => {
+            let prop = member.property.name.as_str();
+            if let Expression::Identifier(obj) = &member.object {
+                (obj.name == "process" && prop == "cwd")
+                    || (matches!(ctx.bindings.get(obj.name.as_str()), Some(Binding::PathModule))
+                        && prop == "resolve")
+                    || (matches!(ctx.bindings.get(obj.name.as_str()), Some(Binding::ProcessModule))
+                        && prop == "cwd")
+            } else {
+                false
+            }
+        }
+        _ => false,
+    }
 }
