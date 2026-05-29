@@ -13,7 +13,7 @@ use std::collections::HashSet;
 use std::path::{Component, Path, PathBuf};
 
 use nftrs_analyzer::{analyze, AnalyzeContext, Asset};
-use nftrs_fs::{realpath, CachedFs};
+use nftrs_fs::{normalize, CachedFs};
 use nftrs_resolver::{DepResolver, ResolveOpts};
 
 /// Options for a trace run. Mirrors the subset of `NodeFileTraceOptions`
@@ -124,16 +124,48 @@ impl Job {
         match self.resolver.resolve(specifier, parent, cjs, &opts) {
             Ok(resolution) => {
                 for pkg_json in resolution.emit_files {
-                    self.emit_file(&realpath(&pkg_json));
+                    let real = self.realpath(&pkg_json);
+                    self.emit_file(&real);
                 }
                 for (from, to) in resolution.remappings {
-                    self.remappings.entry(realpath(&from)).or_default().push(to);
+                    let key = self.realpath(&from);
+                    self.remappings.entry(key).or_default().push(to);
                 }
                 for target in resolution.paths {
                     self.emit_dependency(&target, depth);
                 }
             }
             Err(msg) => self.warnings.push(msg),
+        }
+    }
+
+    /// Resolve symlinks in `path`, emitting any in-base symlink files along the
+    /// way (ports `Job.realpath`). Returns the fully resolved real path.
+    fn realpath(&mut self, path: &Path) -> PathBuf {
+        let mut seen = HashSet::new();
+        self.realpath_inner(path, &mut seen)
+    }
+
+    fn realpath_inner(&mut self, path: &Path, seen: &mut HashSet<PathBuf>) -> PathBuf {
+        if !seen.insert(path.to_path_buf()) {
+            return path.to_path_buf(); // cyclic symlink — stop
+        }
+        if let Ok(target) = std::fs::read_link(path) {
+            let parent = path.parent().unwrap_or(path);
+            let resolved = normalize(&parent.join(&target));
+            let real_parent = self.realpath_inner(parent, seen);
+            // Emit the symlink itself when it lives inside the resolved parent.
+            if in_path(path, &real_parent) {
+                self.emit_file(path);
+            }
+            return self.realpath_inner(&resolved, seen);
+        }
+        if !in_path(path, &self.base) {
+            return path.to_path_buf();
+        }
+        match (path.parent(), path.file_name()) {
+            (Some(parent), Some(name)) => self.realpath_inner(parent, seen).join(name),
+            _ => path.to_path_buf(),
         }
     }
 
@@ -151,7 +183,7 @@ impl Job {
     }
 
     fn emit_dependency(&mut self, path: &Path, depth: Option<usize>) {
-        let real = realpath(path);
+        let real = self.realpath(path);
 
         if self.processed.contains(&real) {
             self.emit_file(&real);
@@ -250,14 +282,15 @@ impl Job {
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
         let is_module_like = matches!(ext, "js" | "mjs" | "cjs" | "node" | "")
             || (matches!(ext, "ts" | "tsx") && {
-                let real = realpath(path);
+                let real = self.realpath(path);
                 !relative(&self.base, &real).starts_with("..")
                     && !real.to_string_lossy().contains("/node_modules/")
             });
         if is_module_like {
             self.emit_dependency(path, depth);
         } else {
-            self.emit_file(&realpath(path));
+            let r = self.realpath(path);
+            self.emit_file(&r);
         }
     }
 
@@ -278,6 +311,11 @@ pub fn node_file_trace(files: &[PathBuf], opts: &TraceOptions) -> TraceResult {
         job.emit_dependency(&abs, job.depth);
     }
     job.finish()
+}
+
+/// Whether `path` is strictly inside directory `parent`.
+fn in_path(path: &Path, parent: &Path) -> bool {
+    path != parent && path.starts_with(parent)
 }
 
 /// Recursively collect files under `dir`, skipping `node_modules` and names/
