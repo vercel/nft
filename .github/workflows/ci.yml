@@ -102,6 +102,29 @@ jobs:
           console.log(`@nftrs/core ${nftrs.version()} loaded on ${process.platform}-${process.arch}`);
           NODE
 
+  compat:
+    name: Compatibility (test/unit)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .node-version
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Build NAPI binding
+        working-directory: crates/nftrs_napi
+        run: npx --yes -p @napi-rs/cli@3 napi build --release --platform
+      - name: Run compatibility harness
+        run: node compat/run.mjs
+      - name: Check for compatibility regression
+        run: node compat/run.mjs --check
+
   dependency-policy:
     name: Dependency policy
     runs-on: ubuntu-24.04
