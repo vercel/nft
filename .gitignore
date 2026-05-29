@@ -11,3 +11,6 @@ ffmpeg-version-diff
 # Rust
 /target
 Cargo.lock.bak
+
+# napi build artifacts
+*.node

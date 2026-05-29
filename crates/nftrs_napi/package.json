@@ -1,0 +1,49 @@
+{
+  "name": "@nftrs/core",
+  "version": "0.0.0",
+  "description": "Node.js dependency tracing (a Rust + OXC rewrite of @vercel/nft). Drop-in nodeFileTrace.",
+  "keywords": [
+    "node",
+    "dependency",
+    "trace",
+    "nft",
+    "napi",
+    "oxc",
+    "rust"
+  ],
+  "license": "MIT",
+  "author": "ubugeeei",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ubugeeei-prod/nftrs.git",
+    "directory": "crates/nftrs_napi"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "main": "index.js",
+  "types": "index.d.ts",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "napi build --release",
+    "build:debug": "napi build"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.7.0"
+  },
+  "napi": {
+    "binaryName": "nftrs",
+    "packageName": "@nftrs/binding",
+    "targets": [
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-pc-windows-msvc"
+    ]
+  }
+}
