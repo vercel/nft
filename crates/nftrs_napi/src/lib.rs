@@ -1,27 +1,30 @@
 //! Node.js bindings for nftrs, published to npm as `@nftrs/core`.
 //!
-//! The goal is a drop-in replacement for `@vercel/nft`'s `nodeFileTrace`:
-//! same signature and the same return shape (`fileList` / `esmFileList` /
-//! `reasons` / `warnings`). This is currently a skeleton that wires the
-//! binding end-to-end (loadable and callable from Node); the real trace
-//! engine lands with the M1 work — see
-//! <https://github.com/ubugeeei-prod/nftrs/issues/23>.
+//! Aims to be a drop-in replacement for `@vercel/nft`'s `nodeFileTrace`:
+//! same signature and return shape (`fileList` / `esmFileList` / `reasons` /
+//! `warnings`). `reasons` and the JS callback overrides are still being wired
+//! — see <https://github.com/ubugeeei-prod/nftrs/issues/22>.
+
+use std::path::PathBuf;
 
 use napi_derive::napi;
+use nftrs_core::{node_file_trace as trace, TraceOptions};
 
-/// Options for [`node_file_trace`].
-///
-/// Mirrors a subset of `@vercel/nft`'s `NodeFileTraceOptions`; fields are
-/// filled in as the trace engine is ported.
+/// Options for [`node_file_trace`]. Mirrors a subset of `@vercel/nft`'s
+/// `NodeFileTraceOptions`; unrecognized fields are ignored.
 #[napi(object)]
 #[derive(Default)]
 pub struct NodeFileTraceOptions {
     /// Base path for the returned file list. Defaults to `process.cwd()`.
     pub base: Option<String>,
+    /// Max dependency depth to follow (`undefined` = unlimited).
+    pub depth: Option<u32>,
+    /// Whether to resolve `.ts`/`.tsx` files. Defaults to `true`.
+    pub ts: Option<bool>,
 }
 
 /// Result of [`node_file_trace`], matching `@vercel/nft`'s
-/// `NodeFileTraceResult` shape (`reasons` is added with the M1 work).
+/// `NodeFileTraceResult` shape (`reasons` is added with #22).
 #[napi(object)]
 pub struct NodeFileTraceResult {
     /// All files (relative to `base`) needed at runtime.
@@ -33,15 +36,29 @@ pub struct NodeFileTraceResult {
 }
 
 /// Trace the runtime file dependencies of the given entry `files`.
-///
-/// Skeleton: currently echoes the inputs back as the file list so the binding
-/// can be exercised from Node. Real tracing lands in M1.
 #[napi]
 pub fn node_file_trace(
     files: Vec<String>,
-    _options: Option<NodeFileTraceOptions>,
+    options: Option<NodeFileTraceOptions>,
 ) -> NodeFileTraceResult {
-    NodeFileTraceResult { file_list: files, esm_file_list: Vec::new(), warnings: Vec::new() }
+    let options = options.unwrap_or_default();
+    let base =
+        options.base.map_or_else(|| std::env::current_dir().unwrap_or_default(), PathBuf::from);
+
+    let opts = TraceOptions {
+        base,
+        depth: options.depth.map(|d| d as usize),
+        ts: options.ts.unwrap_or(true),
+    };
+
+    let entries: Vec<PathBuf> = files.into_iter().map(PathBuf::from).collect();
+    let result = trace(&entries, &opts);
+
+    NodeFileTraceResult {
+        file_list: result.file_list,
+        esm_file_list: result.esm_file_list,
+        warnings: result.warnings,
+    }
 }
 
 /// The `@nftrs/core` package version.

@@ -94,9 +94,13 @@ jobs:
         shell: bash
         run: |
           node - <<'NODE'
+          const path = require("path");
           const nftrs = require("./crates/nftrs_napi");
-          const result = nftrs.nodeFileTrace(["./a.js", "./b.js"]);
-          if (result.fileList.length !== 2) {
+          // Trace a real file (the binding's own loader) so the engine has
+          // something to emit.
+          const entry = path.join("crates", "nftrs_napi", "index.js");
+          const result = nftrs.nodeFileTrace([entry], { base: process.cwd() });
+          if (!result.fileList.some((f) => f.replace(/\\/g, "/").endsWith("nftrs_napi/index.js"))) {
             throw new Error("Unexpected fileList: " + JSON.stringify(result.fileList));
           }
           console.log(`@nftrs/core ${nftrs.version()} loaded on ${process.platform}-${process.arch}`);
