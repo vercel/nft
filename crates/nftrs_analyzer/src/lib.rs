@@ -84,8 +84,8 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
         return result;
     }
 
-    // Pass 1: collect module bindings (path/fs/process aliases).
-    let mut bindings = BindingCollector::default();
+    // Pass 1: collect module bindings (path/fs/process aliases, createRequire).
+    let mut bindings = BindingCollector::new(&ctx.dirname);
     bindings.visit_program(&ret.program);
 
     // Pass 2: collect deps/imports/assets.
@@ -100,6 +100,8 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
         eval_ctx: &eval_ctx,
         fs_objects: &bindings.fs_objects,
         fs_fns: &bindings.fs_fns,
+        require_fns: &bindings.require_fns,
+        module_ns: &bindings.module_ns,
         deps: Vec::new(),
         imports: Vec::new(),
         assets: Vec::new(),
@@ -123,6 +125,15 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
     }
 
     result
+}
+
+/// The base a require-like function resolves relative to.
+#[derive(Clone)]
+enum ReqBase {
+    /// Resolve relative to the current module file (the default `require`).
+    CurrentFile,
+    /// Resolve relative to an absolute directory (`createRequire(new URL(...))`).
+    Dir(String),
 }
 
 /// fs method classification (matching `fsSymbols`/`fsExtraSymbols`).
@@ -170,12 +181,64 @@ fn path_member_binding(name: &str) -> Option<Binding> {
 }
 
 /// Pass 1 collector: which local identifiers refer to `path`/`fs`/`process`
-/// modules or their destructured members.
-#[derive(Default)]
+/// modules or their destructured members, plus `createRequire` results.
 struct BindingCollector {
+    dirname: String,
     eval_bindings: HashMap<String, Binding>,
     fs_objects: HashSet<String>,
     fs_fns: HashMap<String, FsKind>,
+    /// Local names that ARE `createRequire` (from `module`).
+    create_require_names: HashSet<String>,
+    /// Local names bound to the `module` namespace (`import * as m from 'module'`).
+    module_ns: HashSet<String>,
+    /// require-like functions (the global `require` plus `createRequire` results).
+    require_fns: HashMap<String, ReqBase>,
+}
+
+impl BindingCollector {
+    fn new(dirname: &str) -> Self {
+        let mut require_fns = HashMap::new();
+        require_fns.insert("require".to_string(), ReqBase::CurrentFile);
+        Self {
+            dirname: dirname.to_string(),
+            eval_bindings: HashMap::new(),
+            fs_objects: HashSet::new(),
+            fs_fns: HashMap::new(),
+            create_require_names: HashSet::new(),
+            module_ns: HashSet::new(),
+            require_fns,
+        }
+    }
+
+    /// If `init` is a `createRequire(...)` / `module.createRequire(...)` call,
+    /// return the base its resulting require resolves against.
+    fn create_require_base(&self, init: &Expression) -> Option<ReqBase> {
+        let Expression::CallExpression(call) = init else { return None };
+        let is_create_require = match unwrap_expr(&call.callee) {
+            Expression::Identifier(id) => self.create_require_names.contains(id.name.as_str()),
+            Expression::StaticMemberExpression(m) => {
+                m.property.name == "createRequire"
+                    && matches!(&m.object, Expression::Identifier(o) if self.module_ns.contains(o.name.as_str()))
+            }
+            _ => false,
+        };
+        if !is_create_require {
+            return None;
+        }
+        // Base from the argument: `import.meta.url` -> current file dir;
+        // `new URL(rel, import.meta.url)` -> that directory.
+        match call.arguments.first().and_then(Argument::as_expression) {
+            Some(Expression::NewExpression(new_expr)) => {
+                if let Some(Argument::StringLiteral(rel)) = new_expr.arguments.first() {
+                    let dir =
+                        static_eval::normalize_posix(&format!("{}/{}", self.dirname, rel.value));
+                    return Some(ReqBase::Dir(dir));
+                }
+                Some(ReqBase::CurrentFile)
+            }
+            _ => Some(ReqBase::CurrentFile),
+        }
+    }
 }
 
 impl BindingCollector {
@@ -187,6 +250,8 @@ impl BindingCollector {
             self.eval_bindings.insert(local.to_string(), Binding::ProcessModule);
         } else if is_fs_module(module) {
             self.fs_objects.insert(local.to_string());
+        } else if strip_node_prefix(module) == "module" {
+            self.module_ns.insert(local.to_string());
         }
     }
 
@@ -200,6 +265,8 @@ impl BindingCollector {
             if let Some(kind) = fs_method_kind(imported) {
                 self.fs_fns.insert(local.to_string(), kind);
             }
+        } else if strip_node_prefix(module) == "module" && imported == "createRequire" {
+            self.create_require_names.insert(local.to_string());
         }
     }
 
@@ -232,6 +299,16 @@ impl<'a> Visit<'a> for BindingCollector {
                 }
             }
         }
+        // `const req = createRequire(...)` — req becomes a require-like fn.
+        if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&decl.id, &decl.init) {
+            if let Some(base) = self.create_require_base(init) {
+                self.require_fns.insert(id.name.to_string(), base);
+            } else if id.name == "require" {
+                // `require` rebound to something that is NOT createRequire — it
+                // shadows the global require and must be ignored (#ignore-other).
+                self.require_fns.remove("require");
+            }
+        }
         walk::walk_variable_declarator(self, decl);
     }
 
@@ -257,6 +334,8 @@ struct DepCollector<'a, 'b> {
     eval_ctx: &'b EvalCtx<'b>,
     fs_objects: &'b HashSet<String>,
     fs_fns: &'b HashMap<String, FsKind>,
+    require_fns: &'b HashMap<String, ReqBase>,
+    module_ns: &'b HashSet<String>,
     deps: Vec<String>,
     imports: Vec<String>,
     assets: Vec<Asset>,
@@ -265,13 +344,18 @@ struct DepCollector<'a, 'b> {
 }
 
 impl<'a> DepCollector<'a, '_> {
-    /// Push the first argument of a `require(...)` / `require.resolve(...)`
-    /// call as a dependency, statically evaluating it (string literal,
-    /// `__dirname + '/x'`, template, `path.join(...)`, …).
-    fn push_dep_arg(&mut self, call: &oxc_ast::ast::CallExpression<'a>) {
+    /// Push the first argument of a require-like call as a dependency, statically
+    /// evaluating it. `base` rebases relative specifiers for `createRequire`.
+    fn push_dep_arg(&mut self, call: &oxc_ast::ast::CallExpression<'a>, base: &ReqBase) {
         if let Some(arg0) = call.arguments.first().and_then(Argument::as_expression) {
             if let Some(Value::Str(s)) = eval(arg0, self.eval_ctx) {
-                self.deps.push(s);
+                match base {
+                    ReqBase::CurrentFile => self.deps.push(s),
+                    ReqBase::Dir(dir) if s.starts_with('.') => {
+                        self.deps.push(static_eval::normalize_posix(&format!("{dir}/{s}")));
+                    }
+                    ReqBase::Dir(_) => self.deps.push(s),
+                }
             }
         }
     }
@@ -313,9 +397,10 @@ impl<'a> DepCollector<'a, '_> {
 impl<'a> Visit<'a> for DepCollector<'a, '_> {
     fn visit_call_expression(&mut self, call: &oxc_ast::ast::CallExpression<'a>) {
         match unwrap_expr(&call.callee) {
-            // require(<statically-evaluable>)
-            Expression::Identifier(id) if id.name == "require" => {
-                self.push_dep_arg(call);
+            // require(...) / createRequire-result(...) — require-like calls
+            Expression::Identifier(id) if self.require_fns.contains_key(id.name.as_str()) => {
+                let base = self.require_fns[id.name.as_str()].clone();
+                self.push_dep_arg(call, &base);
             }
             // destructured fs fn, e.g. readFileSync(...)
             Expression::Identifier(id) => {
@@ -326,9 +411,18 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
             Expression::StaticMemberExpression(member) => {
                 if let Expression::Identifier(obj) = &member.object {
                     let prop = member.property.name.as_str();
-                    // require.resolve(<statically-evaluable>)
-                    if obj.name == "require" && prop == "resolve" {
-                        self.push_dep_arg(call);
+                    if let Some(base) = self.require_fns.get(obj.name.as_str()) {
+                        // <require-like>.resolve(...)
+                        if prop == "resolve" {
+                            let base = base.clone();
+                            self.push_dep_arg(call, &base);
+                        }
+                    } else if obj.name == "module" && prop == "require" {
+                        // module.require(...)
+                        self.push_dep_arg(call, &ReqBase::CurrentFile);
+                    } else if self.module_ns.contains(obj.name.as_str()) && prop == "register" {
+                        // module.register('./hook', ...) — ESM loader hook dep
+                        self.push_dep_arg(call, &ReqBase::CurrentFile);
                     } else if self.fs_objects.contains(obj.name.as_str()) {
                         if let Some(kind) = fs_method_kind(prop) {
                             self.handle_fs_call(kind, call);
