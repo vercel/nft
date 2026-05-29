@@ -41,11 +41,7 @@ pub fn node_file_trace(
     files: Vec<String>,
     _options: Option<NodeFileTraceOptions>,
 ) -> NodeFileTraceResult {
-    NodeFileTraceResult {
-        file_list: files,
-        esm_file_list: Vec::new(),
-        warnings: Vec::new(),
-    }
+    NodeFileTraceResult { file_list: files, esm_file_list: Vec::new(), warnings: Vec::new() }
 }
 
 /// The `@nftrs/core` package version.
