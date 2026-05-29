@@ -2,82 +2,120 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - '!*'
+    branches: [main]
   pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
+  rustfmt:
+    name: Rustfmt
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          components: rustfmt
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          components: clippy
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
   test:
-    name: Test on node ${{ matrix.node }} and ${{ matrix.os }}
-    timeout-minutes: 20
-    env:
-      COREPACK_DEFAULT_TO_LATEST: '0'
+    name: Test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Run tests
+        run: cargo test --workspace
+
+  napi-smoke:
+    name: NAPI smoke - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [20, 22, 24, 26]
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write # to be able to publish a GitHub release
-      issues: write # to be able to comment on released issues
-      pull-requests: write # to be able to comment on released pull requests
-      id-token: write # required for npm trusted publishing (OIDC)
-    services:
-      redis:
-        # See workaround https://github.com/actions/runner/issues/822#issuecomment-1524826092
-        image: ${{ (matrix.os == 'ubuntu-latest') && 'redis:6.0.20' || '' }}
-        ports:
-          - 6379:6379
+        os:
+          - ubuntu-24.04
+          - macos-latest
+          - windows-2025
     steps:
-      - uses: actions/checkout@v6
-      - name: Use Node.js ${{ matrix.node }}
-        uses: actions/setup-node@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          node-version: ${{ matrix.node }}
-      - uses: actions/setup-python@v6
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          # we lock to 3.11 for a distutils requirement for node-gyp
-          python-version: '3.11'
-      - name: Enable Corepack
-        run: corepack enable pnpm
-      - name: Remove PhantomJS on Node.js 26
-        if: matrix.node == 26
+          node-version-file: .node-version
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - name: Cache cargo
+        if: runner.os != 'Windows'
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Build NAPI binding
+        working-directory: crates/nftrs_napi
+        run: npx --yes -p @napi-rs/cli@3 napi build --release --platform
+      - name: Ensure generated NAPI declarations are fresh
+        if: runner.os == 'Linux'
+        run: git diff --exit-code -- crates/nftrs_napi/index.d.ts crates/nftrs_napi/index.js
+      - name: Load and trace smoke test
         shell: bash
         run: |
-          node <<'EOF'
-          const fs = require('fs');
+          node - <<'NODE'
+          const nftrs = require("./crates/nftrs_napi");
+          const result = nftrs.nodeFileTrace(["./a.js", "./b.js"]);
+          if (result.fileList.length !== 2) {
+            throw new Error("Unexpected fileList: " + JSON.stringify(result.fileList));
+          }
+          console.log(`@nftrs/core ${nftrs.version()} loaded on ${process.platform}-${process.arch}`);
+          NODE
 
-          const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          delete packageJson.devDependencies['phantomjs-prebuilt'];
-          fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\n');
-          EOF
-      - name: Install Dependencies
-        shell: bash
-        run: |
-          if [ "${{ matrix.node }}" = "26" ]; then
-            pnpm install --frozen-lockfile=false
-          else
-            pnpm install --frozen-lockfile
-          fi
-      - name: Prettier
-        if: matrix.os == 'ubuntu-latest'
-        run: pnpm prettier-check
-      - name: Build
-        run: pnpm build
-      - name: Run Tests
-        env:
-          BULL_REDIS_CONNECTION: ${{ (matrix.os == 'ubuntu-latest') && 'redis://127.0.0.1:6379/0' || '' }}
-        run: pnpm ${{ (matrix.os == 'ubuntu-latest') && 'test-verbose' || 'test' }}
-      - name: Maybe Release
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 24 && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COREPACK_ENABLE_STRICT: '0'
-        run: pnpm --dir publish install --ignore-workspace --frozen-lockfile && ./publish/node_modules/.bin/semantic-release
+  dependency-policy:
+    name: Dependency policy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Install audit tools
+        run: cargo install cargo-audit cargo-deny --locked
+      - name: Check Cargo advisories
+        run: cargo audit --deny warnings
+      - name: Check Cargo licenses
+        run: cargo deny check licenses
