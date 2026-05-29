@@ -1,0 +1,106 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.0.0"
+authors = ["ubugeeei"]
+categories = ["development-tools"]
+edition = "2021"
+homepage = "https://github.com/ubugeeei-prod/nftrs"
+keywords = ["node", "dependency", "trace", "bundler", "oxc"]
+license = "MIT"
+repository = "https://github.com/ubugeeei-prod/nftrs"
+rust-version = "1.83.0"
+
+[workspace.lints.rust]
+unsafe_code = "warn"
+absolute_paths_not_starting_with_crate = "warn"
+non_local_definitions = "warn"
+redundant_lifetimes = "warn"
+unit_bindings = "warn"
+unnameable_types = "warn"
+
+[workspace.lints.clippy]
+# Lint groups with lower priority
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+
+# Restrictions
+dbg_macro = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+
+# Allow
+match_same_arms = "allow"
+option_if_let_else = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+must_use_candidate = "allow"
+module_name_repetitions = "allow"
+too_many_lines = "allow"
+doc_markdown = "allow"
+similar_names = "allow"
+needless_pass_by_value = "allow"
+multiple_crate_versions = "allow"
+cargo_common_metadata = "allow"
+missing_const_for_fn = "allow"
+cast_possible_truncation = "allow"
+struct_excessive_bools = "allow"
+unnecessary_wraps = "allow"
+wildcard_imports = "allow"
+if_not_else = "allow"
+unnested_or_patterns = "allow"
+derive_partial_eq_without_eq = "allow"
+use_self = "allow"
+
+[workspace.dependencies]
+# Internal crates
+nftrs_fs = { version = "0.0.0", path = "crates/nftrs_fs" }
+nftrs_resolver = { version = "0.0.0", path = "crates/nftrs_resolver" }
+nftrs_analyzer = { version = "0.0.0", path = "crates/nftrs_analyzer" }
+nftrs_core = { version = "0.0.0", path = "crates/nftrs_core" }
+nftrs_profiler = { version = "0.0.0", path = "crates/nftrs_profiler" }
+
+# OXC
+oxc_allocator = "0.132"
+oxc_parser = "0.132"
+oxc_ast = "0.132"
+oxc_ast_visit = "0.132"
+oxc_span = "0.132"
+oxc_resolver = "4.2.0"
+
+# NAPI bindings
+napi = { version = "3", features = ["serde-json"] }
+napi-derive = "3"
+napi-build = "2.3.1"
+
+# Utilities
+rustc-hash = "2"
+globset = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Testing / benchmarking
+criterion = "0.8"
+insta = "1"
+
+[profile.dev]
+debug = 2
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+debug = false
+debug-assertions = false
+overflow-checks = false
+incremental = false
+panic = "abort"

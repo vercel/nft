@@ -7,3 +7,7 @@ test/**/actual.js
 yarn.lock
 package-lock.json
 ffmpeg-version-diff
+
+# Rust
+/target
+Cargo.lock.bak

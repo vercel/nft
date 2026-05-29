@@ -1,0 +1,24 @@
+[package]
+name = "nftrs_analyzer"
+version.workspace = true
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Source analysis (deps/imports/assets/isESM extraction) for nftrs, powered by OXC"
+
+[lints]
+workspace = true
+
+[dependencies]
+oxc_allocator = { workspace = true }
+oxc_parser = { workspace = true }
+oxc_ast = { workspace = true }
+oxc_ast_visit = { workspace = true }
+oxc_span = { workspace = true }
+rustc-hash = { workspace = true }
+globset = { workspace = true }

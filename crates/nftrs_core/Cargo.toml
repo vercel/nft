@@ -1,0 +1,21 @@
+[package]
+name = "nftrs_core"
+version.workspace = true
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Trace orchestration (Job, emitFile/emitDependency, reasons graph) for nftrs"
+
+[lints]
+workspace = true
+
+[dependencies]
+nftrs_fs = { workspace = true }
+nftrs_resolver = { workspace = true }
+nftrs_analyzer = { workspace = true }
+rustc-hash = { workspace = true }
