@@ -16,7 +16,7 @@
 
 use std::collections::HashMap;
 
-use oxc_ast::ast::{Expression, TemplateLiteral};
+use oxc_ast::ast::{Argument, Expression, TemplateLiteral};
 
 /// The wildcard sentinel char (`\x1a`), matching nft's `WILDCARD`.
 pub const WILDCARD: char = '\u{1a}';
@@ -36,6 +36,8 @@ pub enum Binding {
     PathDirname,
     /// A destructured `path.sep`.
     PathSep,
+    /// `url.fileURLToPath` — converts a `file:` URL to a path.
+    FileUrlToPath,
 }
 
 /// Unwrap parentheses and `(0, expr)` sequence wrappers (TS/Babel interop)
@@ -150,16 +152,59 @@ pub fn eval_flow(expr: &Expression, ctx: &EvalCtx) -> Option<Flow> {
                     }
                 }
             }
+            // `import.meta.url` -> the module's `file:` URL.
+            if member.property.name == "url" {
+                if let Expression::MetaProperty(meta) = &member.object {
+                    if meta.meta.name == "import" && meta.property.name == "meta" {
+                        return Some(Flow::known(Value::Str(import_meta_url(ctx))));
+                    }
+                }
+            }
             None
         }
         Expression::BinaryExpression(bin) => eval_binary(bin, ctx),
         Expression::LogicalExpression(log) => eval_logical(log, ctx),
         Expression::ConditionalExpression(cond) => eval_conditional(cond, ctx),
         Expression::CallExpression(call) => eval_call(call, ctx),
+        Expression::NewExpression(new) => eval_new_url(new, ctx),
         Expression::ParenthesizedExpression(p) => eval_flow(&p.expression, ctx),
         Expression::SequenceExpression(_) => eval_flow(unwrap_expr(expr), ctx),
         _ => None,
     }
+}
+
+/// The module's `file:` URL (`import.meta.url` / `pathToFileURL(__filename)`).
+fn import_meta_url(ctx: &EvalCtx) -> String {
+    format!("file://{}", ctx.filename)
+}
+
+/// `fileURLToPath`: strip a `file://` scheme to a plain path.
+pub fn file_url_to_path(s: &str) -> String {
+    s.strip_prefix("file://").map_or_else(|| s.to_string(), str::to_string)
+}
+
+/// Evaluate `new URL(rel, parent)` where `parent` is a `file:` URL or path.
+/// Only the `./`/`../`-relative forms the fixtures use are modeled.
+fn eval_new_url(new: &oxc_ast::ast::NewExpression, ctx: &EvalCtx) -> Option<Flow> {
+    let Expression::Identifier(callee) = &new.callee else { return None };
+    if callee.name != "URL" {
+        return None;
+    }
+    let Value::Str(rel) = eval(new.arguments.first()?.as_expression()?, ctx)? else {
+        return None;
+    };
+    let parent_expr = new.arguments.get(1).and_then(Argument::as_expression)?;
+    let Value::Str(parent) = eval(parent_expr, ctx)? else {
+        return None;
+    };
+    // Resolve `rel` against the parent URL's directory.
+    let parent_path = file_url_to_path(&parent);
+    let base_dir = match parent_path.rfind('/') {
+        Some(i) => &parent_path[..i],
+        None => return None,
+    };
+    let resolved = normalize_posix(&format!("{base_dir}/{rel}"));
+    Some(Flow::known(Value::Str(format!("file://{resolved}"))))
 }
 
 fn eval_binary(bin: &oxc_ast::ast::BinaryExpression, ctx: &EvalCtx) -> Option<Flow> {
@@ -393,6 +438,7 @@ fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Flow>
             CallKind::PathResolve => path_resolve(&ctx.cwd, args),
             CallKind::PathDirname => dirname(args.first()?),
             CallKind::ProcessCwd => ctx.cwd.clone(),
+            CallKind::FileUrlToPath => file_url_to_path(args.first()?),
             CallKind::Concat(base) => format!("{base}{}", args.concat()),
         })
     };
@@ -417,6 +463,8 @@ enum CallKind {
     PathResolve,
     PathDirname,
     ProcessCwd,
+    /// `fileURLToPath(url)`.
+    FileUrlToPath,
     /// `'base'.concat(...)` — carries the base string.
     Concat(String),
 }
@@ -427,6 +475,7 @@ fn call_kind(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<CallK
             Some(Binding::PathJoin) => Some(CallKind::PathJoin),
             Some(Binding::PathResolve) => Some(CallKind::PathResolve),
             Some(Binding::PathDirname) => Some(CallKind::PathDirname),
+            Some(Binding::FileUrlToPath) => Some(CallKind::FileUrlToPath),
             _ => None,
         },
         Expression::StaticMemberExpression(member) => {

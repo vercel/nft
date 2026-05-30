@@ -334,6 +334,8 @@ impl BindingCollector {
             if let Some(kind) = fs_method_kind(imported) {
                 self.fs_fns.insert(local.to_string(), kind);
             }
+        } else if strip_node_prefix(module) == "url" && imported == "fileURLToPath" {
+            self.eval_bindings.insert(local.to_string(), Binding::FileUrlToPath);
         } else if strip_node_prefix(module) == "module" && imported == "createRequire" {
             self.create_require_names.insert(local.to_string());
         }
@@ -385,6 +387,18 @@ impl<'a> Visit<'a> for BindingCollector {
                                 }
                             }
                         }
+                    }
+                }
+            }
+        }
+        // `const join = path.join` — alias a path-module member to its binding.
+        if let (BindingPattern::BindingIdentifier(id), Some(Expression::StaticMemberExpression(m))) =
+            (&decl.id, &decl.init)
+        {
+            if let Expression::Identifier(o) = &m.object {
+                if matches!(self.eval_bindings.get(o.name.as_str()), Some(Binding::PathModule)) {
+                    if let Some(b) = path_member_binding(m.property.name.as_str()) {
+                        self.eval_bindings.insert(id.name.to_string(), b);
                     }
                 }
             }
@@ -523,15 +537,15 @@ impl<'a> DepCollector<'a, '_> {
                     }
                 }
                 for s in eval_asset_strs(arg0, self.eval_ctx) {
-                    if is_absolute_path(&s) {
-                        self.assets.push(Asset::Dir(normalize_posix(&s)));
+                    if let Some(p) = asset_path_str(&s) {
+                        self.assets.push(Asset::Dir(p));
                     }
                 }
             }
             FsKind::File => {
                 for s in eval_asset_strs(arg0, self.eval_ctx) {
-                    if is_absolute_path(&s) {
-                        self.assets.push(Asset::File(normalize_posix(&s)));
+                    if let Some(p) = asset_path_str(&s) {
+                        self.assets.push(Asset::File(p));
                     }
                 }
             }
@@ -638,18 +652,30 @@ impl<'a> Visit<'a> for AssetScanner<'_> {
     fn visit_expression(&mut self, expr: &Expression<'a>) {
         // A conditional (`a ? x : y`) emits both branches as assets.
         if let Some(flow) = eval_flow(expr, self.eval_ctx) {
-            let strs = flow_asset_strs(&flow);
-            if !strs.is_empty()
-                && strs.iter().all(|s| is_absolute_path(s))
+            let paths: Vec<String> =
+                flow_asset_strs(&flow).iter().filter_map(|s| asset_path_str(s)).collect();
+            if !paths.is_empty()
+                && paths.len() == flow_asset_strs(&flow).len()
                 && contains_trigger(expr, self.eval_ctx)
             {
-                for s in strs {
-                    self.assets.push(Asset::File(normalize_posix(&s)));
+                for p in paths {
+                    self.assets.push(Asset::File(p));
                 }
                 return; // maximal expression — don't descend into children
             }
         }
         walk::walk_expression(self, expr);
+    }
+}
+
+/// Convert an evaluated asset string into an emittable absolute path: strip a
+/// `file://` scheme and normalize. Returns `None` if not absolute.
+fn asset_path_str(s: &str) -> Option<String> {
+    let p = static_eval::file_url_to_path(s);
+    if is_absolute_path(&p) {
+        Some(normalize_posix(&p))
+    } else {
+        None
     }
 }
 
