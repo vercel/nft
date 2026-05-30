@@ -1,0 +1,6 @@
+# Misskey checkout cloned by setup.mjs — never commit it (multi-GB monorepo).
+.checkout/
+
+# Harness-local install of @vercel/nft (also covered by the root .gitignore).
+node_modules/
+package-lock.json

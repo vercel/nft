@@ -1,0 +1,9 @@
+{
+  "name": "nftrs-compat-misskey",
+  "private": true,
+  "type": "module",
+  "description": "Misskey validation harness for nftrs (see README.md)",
+  "devDependencies": {
+    "@vercel/nft": "^1.10.2"
+  }
+}
