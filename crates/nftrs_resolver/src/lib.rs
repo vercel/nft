@@ -125,7 +125,14 @@ impl DepResolver {
         {
             let parent_dir = parent.parent().unwrap_or(parent);
             let target = nftrs_fs::normalize(&parent_dir.join(specifier));
-            match ctx.resolve_path(&target) {
+            // A trailing slash forces directory (index) resolution, never the
+            // sibling `<name>.js` file.
+            let resolved = if specifier.ends_with('/') {
+                ctx.resolve_dir(&target)
+            } else {
+                ctx.resolve_path(&target)
+            };
+            match resolved {
                 Some(p) => vec![p],
                 None => return Err(not_found(specifier, parent)),
             }
@@ -167,6 +174,23 @@ impl Ctx<'_> {
                 let cand = PathBuf::from(format!("{s}{ext}"));
                 if cand.is_file() {
                     return Some(cand);
+                }
+            }
+            // TS allows importing the emitted `.js`/`.mjs`/`.cjs`/`.jsx` name;
+            // map it back to the matching TS source.
+            for (js, ts_exts) in [
+                (".js", &[".ts", ".tsx"][..]),
+                (".jsx", &[".tsx"][..]),
+                (".mjs", &[".mts"][..]),
+                (".cjs", &[".cts"][..]),
+            ] {
+                if let Some(stem) = s.strip_suffix(js) {
+                    for ext in ts_exts {
+                        let cand = PathBuf::from(format!("{stem}{ext}"));
+                        if cand.is_file() {
+                            return Some(cand);
+                        }
+                    }
                 }
             }
         }
