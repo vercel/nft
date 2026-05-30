@@ -1,0 +1,151 @@
+name: Baseline
+
+# Continuous compat-baseline tracking (issue #32).
+#
+# On every push to main, build the native binding, run the compat harness in
+# JSON mode, and append one data point (date, commit, passing/considered/total)
+# to compat/history.ndjson. The file is committed back by github-actions[bot]
+# so the passing count over time is recorded in-repo — no external service.
+#
+# The same JSON also drives a shields.io endpoint badge written to a job
+# artifact and a job-summary line, so the latest count is visible without
+# cloning. This job is observational: it never fails the build on a regression
+# (CI's `compat --check` gate already guards regressions on PRs).
+
+on:
+  push:
+    branches: [main]
+    # Skip churn-only pushes that can't change the count.
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: baseline-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  track:
+    name: Track compat baseline
+    runs-on: ubuntu-24.04
+    permissions:
+      # Needed to push the history.ndjson update back to main.
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        # Default GITHUB_TOKEN credentials are kept so the bot commit can push.
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .node-version
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+
+      - name: Build NAPI binding
+        working-directory: crates/nftrs_napi
+        run: npx --yes -p @napi-rs/cli@3 napi build --release --platform
+
+      - name: Run compat harness (JSON)
+        run: node compat/run.mjs --json > compat-result.json
+
+      # Distill the harness JSON into one ndjson record + a shields endpoint
+      # badge. Appends to compat/history.ndjson only if the count actually moved
+      # (or it's the first run), so we don't spam identical rows.
+      - name: Record data point
+        id: record
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, subprocess, datetime, pathlib
+
+          result = json.load(open("compat-result.json"))
+          s = result["summary"]
+          passed = s["passed"]
+          considered = s["considered"]
+          total = s["total"]
+
+          sha = os.environ["GITHUB_SHA"]
+          date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+          record = {
+              "date": date,
+              "commit": sha,
+              "passed": passed,
+              "considered": considered,
+              "total": total,
+          }
+
+          hist = pathlib.Path("compat/history.ndjson")
+          last = None
+          if hist.exists():
+              lines = [l for l in hist.read_text().splitlines() if l.strip()]
+              if lines:
+                  last = json.loads(lines[-1])
+
+          changed = last is None or last.get("passed") != passed or last.get("considered") != considered
+          if changed:
+              with hist.open("a") as f:
+                  f.write(json.dumps(record) + "\n")
+              print(f"appended: {record}")
+          else:
+              print(f"unchanged ({passed}/{considered}); not appending")
+
+          # shields.io endpoint badge JSON (consumable via
+          # https://img.shields.io/endpoint?url=<raw compat-badge.json>).
+          color = "brightgreen" if passed == considered else ("yellow" if passed >= 0.9 * considered else "orange")
+          badge = {
+              "schemaVersion": 1,
+              "label": "compat",
+              "message": f"{passed}/{considered}",
+              "color": color,
+          }
+          pathlib.Path("compat-badge.json").write_text(json.dumps(badge) + "\n")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"passed={passed}\n")
+              out.write(f"considered={considered}\n")
+              out.write(f"changed={'true' if changed else 'false'}\n")
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as sm:
+              sm.write("### Compat baseline\n\n")
+              sm.write(f"- Passing: **{passed}/{considered}** (of {total} fixtures)\n")
+              sm.write(f"- Commit: `{sha[:12]}`\n")
+              sm.write(f"- history.ndjson updated: {'yes' if changed else 'no (unchanged)'}\n")
+          PY
+
+      - name: Upload badge artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: compat-badge
+          path: compat-badge.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Commit history update
+        if: ${{ steps.record.outputs.changed == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add compat/history.ndjson
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore(compat): record baseline ${{ steps.record.outputs.passed }}/${{ steps.record.outputs.considered }} [skip ci]"
+          # Re-push onto the current main tip; rebase to avoid racing another push.
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

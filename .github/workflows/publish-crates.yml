@@ -1,0 +1,125 @@
+name: Publish crates
+
+# OPTIONAL / BEST-EFFORT crates.io publishing for the nftrs_* library crates.
+#
+# Status: SCAFFOLD. The library crates are currently versioned `0.0.0`
+# (see [workspace.package] in Cargo.toml), which crates.io will reject — a real
+# release requires bumping to a publishable version first. This workflow is
+# therefore *dispatch-only* and guarded so it cannot run by accident; it exists
+# to document and exercise the intended path. See docs/PUBLISHING.md
+# ("Publishing the Rust crates to crates.io") for the full prerequisites.
+#
+# What is publishable:
+#   - nftrs_fs, nftrs_profiler, nftrs_analyzer, nftrs_resolver, nftrs_core
+#     are plain library crates and *can* go to crates.io once versioned.
+#   - nftrs_napi is `publish = false` (a cdylib Node addon) and is NEVER
+#     published to crates.io — it ships to npm via publish.yml instead.
+#
+# Dependency order (must publish leaves first so path+version deps resolve):
+#   nftrs_fs, nftrs_profiler, nftrs_analyzer  ->  nftrs_resolver  ->  nftrs_core
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: >-
+          Type "publish" to actually publish to crates.io. Anything else runs a
+          dry run only. Real publishing also requires versions above 0.0.0.
+        type: string
+        default: "dry-run"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-crates
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish-crates:
+    name: cargo publish (crates.io)
+    runs-on: ubuntu-24.04
+    # The "crates-publish" environment can carry required reviewers and holds
+    # the CARGO_REGISTRY_TOKEN secret (see docs/PUBLISHING.md). For trusted
+    # publishing instead, swap the token for `rust-lang/crates-io-auth-action`
+    # and drop the secret.
+    environment: crates-publish
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+
+      # Guard: refuse to publish while the workspace is still at the placeholder
+      # version. crates.io would reject 0.0.0 anyway; failing here gives a clear
+      # message instead of an opaque registry error.
+      - name: Guard against placeholder version
+        id: guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(cargo metadata --no-deps --format-version 1 \
+            | python3 -c 'import json,sys; m=json.load(sys.stdin); print(next(p["version"] for p in m["packages"] if p["name"]=="nftrs_core"))')"
+          echo "Detected nftrs_core version: ${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          if [ "${{ inputs.confirm }}" = "publish" ] && [ "${version}" = "0.0.0" ]; then
+            echo "::error::Refusing to publish placeholder version 0.0.0. Bump the workspace version in Cargo.toml first (see docs/PUBLISHING.md)."
+            exit 1
+          fi
+
+      # Dry run always: `cargo publish --dry-run` packages and verifies each
+      # crate against the live registry index without uploading. This is the
+      # part that actually runs today and proves the manifests are publishable.
+      - name: Verify publishability (cargo publish --dry-run)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for crate in nftrs_fs nftrs_profiler nftrs_analyzer nftrs_resolver nftrs_core; do
+            echo "::group::dry-run ${crate}"
+            cargo publish --dry-run -p "${crate}" --allow-dirty
+            echo "::endgroup::"
+          done
+
+      # Real publish: only when explicitly confirmed AND past the version guard.
+      # Order matters — leaves first so dependents' version requirements resolve
+      # on the index. `--no-verify` is intentionally NOT used; let cargo build
+      # each crate from the packaged sources before upload.
+      - name: Publish to crates.io
+        if: ${{ inputs.confirm == 'publish' }}
+        shell: bash
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          for crate in nftrs_fs nftrs_profiler nftrs_analyzer nftrs_resolver nftrs_core; do
+            echo "::group::publish ${crate}"
+            cargo publish -p "${crate}"
+            # Give the index a moment to surface the new version before the next
+            # dependent crate tries to resolve it.
+            sleep 20
+            echo "::endgroup::"
+          done
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Publish crates"
+            echo ""
+            echo "- nftrs_core version: \`${{ steps.guard.outputs.version }}\`"
+            if [ "${{ inputs.confirm }}" = "publish" ]; then
+              echo "- Mode: **real publish requested**"
+            else
+              echo "- Mode: dry-run only (set \`confirm: publish\` to upload)"
+            fi
+            echo "- nftrs_napi is \`publish = false\` and is published to npm via \`publish.yml\`, not here."
+          } >> "$GITHUB_STEP_SUMMARY"

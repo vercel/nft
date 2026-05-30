@@ -129,3 +129,104 @@ No `NPM_TOKEN` secret is configured or required for steady-state releases.
 Run **Publish** via `workflow_dispatch` with the **dry-run** input checked. It
 builds all targets and runs `npm publish --dry-run --provenance` for every
 package without touching the registry.
+
+---
+
+## Publishing the Rust crates to crates.io (optional / not yet active)
+
+> **TL;DR:** crates.io publishing is **optional and best-effort**. The library
+> crates are currently `version = "0.0.0"`, which crates.io rejects, so the
+> [`publish-crates.yml`](../.github/workflows/publish-crates.yml) workflow is a
+> **dispatch-only scaffold**. It runs `cargo publish --dry-run` today; the real
+> upload is gated behind a typed confirmation **and** a version above `0.0.0`.
+> npm is the supported distribution channel; the crates are internal.
+
+### What is (and isn't) publishable
+
+`nftrs_napi` sets `publish = false` — it's a `cdylib` Node addon and goes to
+**npm** (above), never to crates.io. The five plain library crates can go to
+crates.io once they carry a real version:
+
+| crate            | crates.io? | nftrs deps                                  |
+| ---------------- | ---------- | ------------------------------------------- |
+| `nftrs_fs`       | yes        | —                                           |
+| `nftrs_profiler` | yes        | —                                           |
+| `nftrs_analyzer` | yes        | —                                           |
+| `nftrs_resolver` | yes        | `nftrs_fs`                                  |
+| `nftrs_core`     | yes        | `nftrs_fs`, `nftrs_resolver`, `nftrs_analyzer` |
+| `nftrs_napi`     | **no**     | `nftrs_core` (npm only)                     |
+
+Publish order (leaves first, so each dependent's `version` requirement resolves
+on the index): `nftrs_fs`, `nftrs_profiler`, `nftrs_analyzer` →
+`nftrs_resolver` → `nftrs_core`. The workflow encodes exactly this order.
+
+### Prerequisites before a real crates.io release
+
+1. **Bump the version.** The workspace pins one version for all crates
+   (`[workspace.package] version` in `Cargo.toml`); the path deps reference it
+   too. crates.io will not accept `0.0.0`. Set a real pre-release/release
+   version (e.g. `0.1.0`) — either by editing `Cargo.toml` directly or with
+   [`cargo-release`](https://github.com/crate-ci/cargo-release)
+   (`cargo release 0.1.0 --workspace`), which can also tag and publish in
+   dependency order. The `publish-crates.yml` version guard fails fast while the
+   version is still `0.0.0`.
+2. **Fill in crate metadata** if missing (each crate already has `description`,
+   `license`, `repository`, `homepage`, `keywords`, `categories` inherited from
+   the workspace — confirm they're acceptable for a public release).
+3. **Authentication.** Two options:
+   - **Token:** create a crates.io API token scoped to publish, store it as the
+     `CARGO_REGISTRY_TOKEN` secret in the `crates-publish` GitHub Environment.
+     The workflow already reads it.
+   - **Trusted publishing (preferred, no long-lived secret):** configure a
+     crates.io trusted publisher for this repo + `publish-crates.yml`, then
+     replace the `CARGO_REGISTRY_TOKEN` env with the
+     `rust-lang/crates-io-auth-action` step. (Mirror of the npm OIDC flow above.)
+4. **Create the `crates-publish` GitHub Environment** (Settings → Environments)
+   to hold the token / required reviewers, matching the `environment:` in the
+   workflow job.
+
+### Running it
+
+- **Dry run (safe, runs today):** trigger **Publish crates** via
+  `workflow_dispatch` and leave `confirm` at its default. It runs
+  `cargo publish --dry-run -p <crate>` for all five library crates against the
+  live index to prove the manifests pack and build — no upload, no token needed.
+- **Real publish:** set the `confirm` input to exactly `publish`. The job still
+  refuses to proceed if the version is `0.0.0`. On success it uploads each crate
+  in dependency order with a short `sleep` between uploads so the index catches
+  up before the next dependent resolves.
+
+You can also dry-run locally:
+
+```bash
+for c in nftrs_fs nftrs_profiler nftrs_analyzer nftrs_resolver nftrs_core; do
+  cargo publish --dry-run -p "$c"
+done
+```
+
+---
+
+## Continuous compat-baseline tracking
+
+[`baseline.yml`](../.github/workflows/baseline.yml) records the compat passing
+count over time (issue #32). It is **observational** — it never fails the build;
+regressions are still gated on PRs by CI's `node compat/run.mjs --check`.
+
+On every push to `main` (ignoring docs/markdown-only pushes) it:
+
+1. Builds the native binding and runs `node compat/run.mjs --json`.
+2. Distills the summary into one record
+   (`{date, commit, passed, considered, total}`) and **appends it to
+   `compat/history.ndjson`** — but only when the count actually moved, so the
+   file stays a clean changelog of the number rather than one row per commit.
+   The file is created on the first run and committed back by
+   `github-actions[bot]` (`[skip ci]`, rebased before push to avoid races).
+3. Writes a [shields.io endpoint](https://shields.io/endpoint) badge JSON
+   (`compat-badge.json`) as a build artifact and prints the current `N/M` to the
+   job summary.
+
+`compat/history.ndjson` is **not seeded in the repo**; the workflow creates it
+on its first run on `main`. To surface a live badge in the README, publish the
+endpoint JSON somewhere stable (e.g. commit `compat-badge.json` or push it to a
+gist) and point
+`https://img.shields.io/endpoint?url=<raw-url>` at it.
