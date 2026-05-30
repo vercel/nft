@@ -60,44 +60,53 @@ GitHub Environment so you can attach required reviewers or restrict it to tags.
 - The npm account/org that owns `@nftrs` must be able to publish to the
   `@nftrs` scope.
 
-### 1. Configure the trusted publisher (npm v11 CLI, no token)
+### 1. Bootstrap the first publish (token), then switch to OIDC
 
-npm **v11** can register a GitHub Actions trusted publisher straight from the
-CLI — including for a package that **does not exist yet** (the first OIDC
-publish then creates it). A helper runs it for all six packages:
+`npm trust github <pkg>` **404s for a package that does not exist yet**
+(`POST /-/package/@nftrs%2fcore/trust` → 404) — a trusted publisher can only be
+attached to an existing package. So the very first release is a one-time
+token-authed publish that **creates** the packages; trusted publishing (OIDC)
+takes over for every release after.
+
+**a. Create the npm org + a token.** Ensure the `@nftrs` org exists
+(<https://www.npmjs.com/org/create>). Create a **granular access token** with
+read-write publish rights to the `@nftrs` scope
+(<https://www.npmjs.com/settings/~/tokens>), then add it as a repo secret:
 
 ```bash
-npm login                              # interactive, one-time
-npm run setup-trusted-publishing       # or: bash scripts/setup-trusted-publishing.sh
+gh secret set NPM_TOKEN          # paste the token when prompted
 ```
 
-That runs, for `@nftrs/core` and each `@nftrs/binding-*`:
+The publish job picks up `NPM_TOKEN` automatically (`NODE_AUTH_TOKEN`); when the
+secret is absent it publishes via OIDC instead.
+
+**b. Cut the first release.** This builds every platform and publishes
+`@nftrs/core` + the five `@nftrs/binding-*` with the token, creating them:
 
 ```bash
-npm trust github <package> \
-  --file publish.yml \
-  --repo ubugeeei-prod/nftrs \
-  --env  npm-publish \
-  --yes
+vp run release minor -y          # tag v0.1.0 -> publish.yml
 ```
 
-Verify with `npm trust list @nftrs/core`. The `--file` / `--repo` / `--env`
-must match the workflow exactly (`publish.yml`, this repo, the `npm-publish`
-environment) — they form the OIDC subject npm checks at publish time.
+**c. Configure trusted publishing** (now the packages exist):
 
-> **If your npm rejects an unpublished name** (older server behavior), do one
-> bootstrap publish of each package with classic auth first, then re-run the
-> helper:
->
-> ```bash
-> cd crates/nftrs_napi
-> npx @napi-rs/cli@3 napi create-npm-dirs
-> npx @napi-rs/cli@3 napi artifacts --output-dir ./artifacts
-> npx @napi-rs/cli@3 napi pre-publish
-> npm login
-> for dir in npm/*/; do npm publish "$dir" --provenance --access public; done
-> npm publish --provenance --access public
-> ```
+```bash
+npm login
+npm run setup-trusted-publishing   # runs `npm trust github` for all six packages
+npm trust list @nftrs/core         # verify
+```
+
+`setup-trusted-publishing.sh` runs, for each package:
+
+```bash
+npm trust github <package> --file publish.yml \
+  --repo ubugeeei-prod/nftrs --env npm-publish --yes
+```
+
+The `--file` / `--repo` / `--env` must match the workflow exactly — they form
+the OIDC subject npm checks at publish time.
+
+**d. Remove the token.** `gh secret delete NPM_TOKEN`. Every subsequent
+`vp run release` now publishes via OIDC trusted publishing — no token.
 
 ### 2. Create the GitHub Environment
 

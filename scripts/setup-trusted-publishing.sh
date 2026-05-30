@@ -13,10 +13,10 @@
 #
 # Notes:
 # - The npm `@nftrs` org/scope must exist and your account must own it.
-# - npm v11 lets you configure trust for a package that does not exist yet;
-#   the first OIDC publish then creates it. If your npm rejects an unpublished
-#   name, do one bootstrap `npm publish` with classic auth first (see
-#   docs/PUBLISHING.md), then re-run this.
+# - Each package must ALREADY EXIST on npm: `npm trust github` returns 404 for a
+#   package that has never been published. So publish the first version with a
+#   token first (`gh secret set NPM_TOKEN` + `vp run release minor -y`), THEN run
+#   this to switch to OIDC. See docs/PUBLISHING.md "Bootstrap the first publish".
 set -euo pipefail
 
 REPO="ubugeeei-prod/nftrs"

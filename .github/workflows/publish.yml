@@ -168,11 +168,20 @@ jobs:
         working-directory: ${{ env.APP_DIR }}
         run: ls -R ./npm
 
+      # Auth: if the `NPM_TOKEN` secret is set, npm uses it (classic/granular
+      # token) — needed for the FIRST publish of a brand-new package, since a
+      # trusted publisher can only be attached to a package that already exists.
+      # Once the packages exist and `npm trust` is configured, remove the secret
+      # and these steps publish via OIDC (empty token → npm 11 trusted publish).
+      # Provenance attestations use `id-token: write` either way.
+      #
       # Publish the per-platform @nftrs/binding-* packages first so that
       # @nftrs/core's optionalDependencies resolve once it goes out.
       - name: Publish @nftrs/binding-* packages
         if: ${{ !inputs.dry-run }}
         working-directory: ${{ env.APP_DIR }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
           for dir in npm/*/; do
@@ -185,6 +194,8 @@ jobs:
       - name: Publish @nftrs/core
         if: ${{ !inputs.dry-run }}
         working-directory: ${{ env.APP_DIR }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --provenance --access public
 
       - name: Dry run (no publish)
