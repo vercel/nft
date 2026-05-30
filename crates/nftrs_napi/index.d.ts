@@ -29,8 +29,20 @@ export interface NodeFileTraceOptions {
 }
 
 /**
+ * Why a file is included: its reason `type`s and parent files. Mirrors a
+ * `@vercel/nft` `NodeFileTraceReasons` entry.
+ */
+export interface NodeFileTraceReason {
+  /** Reason types: `initial` / `dependency` / `asset` / `resolve` / `sharedlib`. */
+  type: Array<string>
+  /** The files (relative to `base`) that referenced this one. */
+  parents: Array<string>
+}
+
+/**
  * Result of [`node_file_trace`], matching `@vercel/nft`'s
- * `NodeFileTraceResult` shape (`reasons` is added with #22).
+ * `NodeFileTraceResult` shape (`fileList` / `esmFileList` / `reasons` /
+ * `warnings`).
  */
 export interface NodeFileTraceResult {
   /** All files (relative to `base`) needed at runtime. */
@@ -39,6 +51,8 @@ export interface NodeFileTraceResult {
   esmFileList: Array<string>
   /** Non-fatal warnings encountered during tracing. */
   warnings: Array<string>
+  /** The reasons graph: file (relative to `base`) → why it's included. */
+  reasons: Record<string, NodeFileTraceReason>
 }
 
 /** The `@nftrs/core` package version. */

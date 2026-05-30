@@ -49,11 +49,23 @@ const EXCLUDE_ASSET_FILES: &[&str] = &["CHANGELOG.md", "README.md", "readme.md",
 /// The wildcard sentinel (`\x1a`) embedded by the analyzer in glob paths.
 const WILDCARD: char = '\u{1a}';
 
+/// Why a file was included (mirrors a nft `NodeFileTraceReasons` entry).
+///
+/// The reason `type`s (`initial`/`dependency`/`asset`/`resolve`/`sharedlib`)
+/// and the set of parent files that referenced it.
+#[derive(Default, Clone)]
+pub struct Reason {
+    pub types: Vec<String>,
+    pub parents: Vec<String>,
+}
+
 /// Result of a trace run.
 pub struct TraceResult {
     pub file_list: Vec<String>,
     pub esm_file_list: Vec<String>,
     pub warnings: Vec<String>,
+    /// The reasons graph: emitted file (relative to `base`) → why it's included.
+    pub reasons: Vec<(String, Reason)>,
 }
 
 struct Job {
@@ -74,6 +86,9 @@ struct Job {
     processed: HashSet<PathBuf>,
     remappings: FxHashMap<PathBuf, Vec<PathBuf>>,
     warnings: Vec<String>,
+    /// Reasons graph: rel path → why included. Insertion order preserved.
+    reasons: FxHashMap<String, Reason>,
+    reason_order: Vec<String>,
 }
 
 impl Job {
@@ -101,6 +116,8 @@ impl Job {
             processed: HashSet::default(),
             remappings: FxHashMap::default(),
             warnings: Vec::new(),
+            reasons: FxHashMap::default(),
+            reason_order: Vec::new(),
         }
     }
 
@@ -129,14 +146,14 @@ impl Job {
             Ok(resolution) => {
                 for pkg_json in resolution.emit_files {
                     let real = self.realpath(&pkg_json);
-                    self.emit_file(&real);
+                    self.emit_file(&real, Some(parent), "resolve");
                 }
                 for (from, to) in resolution.remappings {
                     let key = self.realpath(&from);
                     self.remappings.entry(key).or_default().push(to);
                 }
                 for target in resolution.paths {
-                    self.emit_dependency(&target, depth);
+                    self.emit_dependency(&target, Some(parent), "dependency", depth);
                 }
             }
             Err(msg) => self.warnings.push(msg),
@@ -160,7 +177,7 @@ impl Job {
             let real_parent = self.realpath_inner(parent, seen);
             // Emit the symlink itself when it lives inside the resolved parent.
             if in_path(path, &real_parent) {
-                self.emit_file(path);
+                self.emit_file(path, None, "resolve");
             }
             return self.realpath_inner(&resolved, seen);
         }
@@ -173,24 +190,50 @@ impl Job {
         }
     }
 
-    /// Add a file (relative to `base`) to the output. Returns `false` if it
-    /// escapes the base (the nft default `ignoreFn`).
-    fn emit_file(&mut self, real: &Path) -> bool {
+    /// Add a file (relative to `base`) to the output and record why it was
+    /// included. Returns `false` if it escapes the base (the nft default
+    /// `ignoreFn`). `parent` is the file that referenced it (`None` for an
+    /// entry); `reason` is the inclusion type.
+    fn emit_file(&mut self, real: &Path, parent: Option<&Path>, reason: &str) -> bool {
         let rel = relative(&self.base, real);
         if rel.starts_with("..") {
             return false;
         }
+        let parent_rel = parent.map(|p| relative(&self.base, p));
+        self.record_reason(&rel, parent_rel.as_deref(), reason);
         if self.file_set.insert(rel.clone()) {
             self.file_list.push(rel);
         }
         true
     }
 
-    fn emit_dependency(&mut self, path: &Path, depth: Option<usize>) {
+    /// Record (or extend) the reason entry for `rel`.
+    fn record_reason(&mut self, rel: &str, parent_rel: Option<&str>, reason: &str) {
+        let entry = self.reasons.entry(rel.to_string()).or_insert_with(|| {
+            self.reason_order.push(rel.to_string());
+            Reason::default()
+        });
+        if !entry.types.iter().any(|t| t == reason) {
+            entry.types.push(reason.to_string());
+        }
+        if let Some(p) = parent_rel {
+            if !p.starts_with("..") && !entry.parents.iter().any(|x| x == p) {
+                entry.parents.push(p.to_string());
+            }
+        }
+    }
+
+    fn emit_dependency(
+        &mut self,
+        path: &Path,
+        parent: Option<&Path>,
+        reason: &str,
+        depth: Option<usize>,
+    ) {
         let real = self.realpath(path);
 
         if self.processed.contains(&real) {
-            self.emit_file(&real);
+            self.emit_file(&real, parent, reason);
             return;
         }
         self.processed.insert(real.clone());
@@ -199,11 +242,11 @@ impl Job {
         // is emitted, also emit the files it remaps to.
         if let Some(extra) = self.remappings.get(&real).cloned() {
             for dep in extra {
-                self.emit_dependency(&dep, depth);
+                self.emit_dependency(&dep, Some(&real), "dependency", depth);
             }
         }
 
-        if !self.emit_file(&real) {
+        if !self.emit_file(&real, parent, reason) {
             return;
         }
 
@@ -222,7 +265,7 @@ impl Job {
         // that boundary file too.
         if real_str.ends_with(".js") || real_str.ends_with(".ts") {
             if let Some(boundary) = self.fs.pjson_boundary(&real) {
-                self.emit_file(&boundary.join("package.json"));
+                self.emit_file(&boundary.join("package.json"), Some(&real), "resolve");
             }
         }
 
@@ -276,13 +319,13 @@ impl Job {
         // dependency (`emitWildcardRequire`).
         for pattern in analysis.require_globs {
             for file in glob_require(&pattern, self.ts) {
-                self.emit_dependency(&file, next_depth);
+                self.emit_dependency(&file, Some(&real), "dependency", next_depth);
             }
         }
 
         // Special-case dependencies (absolute paths): follow each directly.
         for dep in analysis.extra_deps {
-            self.emit_dependency(Path::new(&dep), next_depth);
+            self.emit_dependency(Path::new(&dep), Some(&real), "dependency", next_depth);
         }
     }
 
@@ -306,16 +349,20 @@ impl Job {
                 if !valid_wildcard(&p, module_dir, &cwd, module_path) {
                     return;
                 }
+                let parent = PathBuf::from(module_path);
                 for f in glob_asset(&p) {
-                    self.emit_asset_path(&f, depth);
+                    self.emit_asset_path(&f, &parent, depth);
                 }
             }
-            Asset::File(p) => self.emit_asset_path(&PathBuf::from(p), depth),
+            Asset::File(p) => {
+                self.emit_asset_path(&PathBuf::from(p), &PathBuf::from(module_path), depth);
+            }
             Asset::Dir(dir) => {
+                let parent = PathBuf::from(module_path);
                 let mut files = Vec::new();
                 collect_dir_files(Path::new(&dir), &mut files);
                 for f in files {
-                    self.emit_asset_path(&f, depth);
+                    self.emit_asset_path(&f, &parent, depth);
                 }
             }
         }
@@ -331,11 +378,11 @@ impl Job {
         let mut libs = Vec::new();
         collect_shared_libs(Path::new(&base), &mut libs);
         for f in libs {
-            self.emit_file(&f);
+            self.emit_file(&f, Some(node_path), "sharedlib");
         }
     }
 
-    fn emit_asset_path(&mut self, path: &Path, depth: Option<usize>) {
+    fn emit_asset_path(&mut self, path: &Path, parent: &Path, depth: Option<usize>) {
         // nft only emits assets that exist on disk (`emitAssetPath` stats first),
         // so a computed-but-absent path (e.g. a platform-specific binary that is
         // not present) is skipped rather than emitted.
@@ -355,10 +402,10 @@ impl Job {
                     && !real.to_string_lossy().contains("/node_modules/")
             });
         if is_module_like {
-            self.emit_dependency(path, depth);
+            self.emit_dependency(path, Some(parent), "asset", depth);
         } else {
             let r = self.realpath(path);
-            self.emit_file(&r);
+            self.emit_file(&r, Some(parent), "asset");
         }
     }
 
@@ -366,7 +413,12 @@ impl Job {
         self.file_list.sort();
         let mut esm_file_list: Vec<String> = self.esm_set.into_iter().collect();
         esm_file_list.sort();
-        TraceResult { file_list: self.file_list, esm_file_list, warnings: self.warnings }
+        let reasons = self
+            .reason_order
+            .into_iter()
+            .filter_map(|k| self.reasons.remove(&k).map(|r| (k, r)))
+            .collect();
+        TraceResult { file_list: self.file_list, esm_file_list, warnings: self.warnings, reasons }
     }
 }
 
@@ -376,7 +428,7 @@ pub fn node_file_trace(files: &[PathBuf], opts: &TraceOptions) -> TraceResult {
     let mut job = Job::new(opts);
     for file in files {
         let abs = absolutize(file);
-        job.emit_dependency(&abs, job.depth);
+        job.emit_dependency(&abs, None, "initial", job.depth);
     }
     job.finish()
 }
@@ -807,11 +859,47 @@ mod trace_tests {
             list.sort();
             list
         }
+        fn trace_result(&self, entry: &str) -> TraceResult {
+            let opts = TraceOptions {
+                base: self.root.clone(),
+                process_cwd: self.root.clone(),
+                depth: None,
+                ts: true,
+                analysis: true,
+                conditions: vec!["node".to_string()],
+                exports_only: false,
+                module_sync_catchall: false,
+                paths: vec![],
+            };
+            node_file_trace(&[self.root.join(entry)], &opts)
+        }
     }
     impl Drop for Fx {
         fn drop(&mut self) {
             let _ = std::fs::remove_dir_all(&self.root);
         }
+    }
+
+    #[test]
+    fn reasons_graph_records_parents_and_types() {
+        let f = Fx::new();
+        f.file(
+            "input.js",
+            "const fs=require('fs'); require('./a'); fs.readFileSync(__dirname + '/d.txt');",
+        )
+        .file("a.js", "module.exports = 1;")
+        .file("d.txt", "x");
+        let r = f.trace_result("input.js");
+        let by: std::collections::HashMap<_, _> = r.reasons.into_iter().collect();
+        // entry
+        assert_eq!(by["input.js"].types, vec!["initial".to_string()]);
+        assert!(by["input.js"].parents.is_empty());
+        // dependency, with input.js as parent
+        assert_eq!(by["a.js"].types, vec!["dependency".to_string()]);
+        assert_eq!(by["a.js"].parents, vec!["input.js".to_string()]);
+        // asset, with input.js as parent
+        assert_eq!(by["d.txt"].types, vec!["asset".to_string()]);
+        assert_eq!(by["d.txt"].parents, vec!["input.js".to_string()]);
     }
 
     #[test]

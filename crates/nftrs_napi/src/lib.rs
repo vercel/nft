@@ -40,8 +40,20 @@ pub struct NodeFileTraceOptions {
     pub paths: Option<HashMap<String, String>>,
 }
 
+/// Why a file is included: its reason `type`s and parent files. Mirrors a
+/// `@vercel/nft` `NodeFileTraceReasons` entry.
+#[napi(object)]
+pub struct NodeFileTraceReason {
+    /// Reason types: `initial` / `dependency` / `asset` / `resolve` / `sharedlib`.
+    #[napi(js_name = "type")]
+    pub type_: Vec<String>,
+    /// The files (relative to `base`) that referenced this one.
+    pub parents: Vec<String>,
+}
+
 /// Result of [`node_file_trace`], matching `@vercel/nft`'s
-/// `NodeFileTraceResult` shape (`reasons` is added with #22).
+/// `NodeFileTraceResult` shape (`fileList` / `esmFileList` / `reasons` /
+/// `warnings`).
 #[napi(object)]
 pub struct NodeFileTraceResult {
     /// All files (relative to `base`) needed at runtime.
@@ -50,6 +62,8 @@ pub struct NodeFileTraceResult {
     pub esm_file_list: Vec<String>,
     /// Non-fatal warnings encountered during tracing.
     pub warnings: Vec<String>,
+    /// The reasons graph: file (relative to `base`) → why it's included.
+    pub reasons: HashMap<String, NodeFileTraceReason>,
 }
 
 /// Trace the runtime file dependencies of the given entry `files`.
@@ -80,10 +94,17 @@ pub fn node_file_trace(
     let entries: Vec<PathBuf> = files.into_iter().map(PathBuf::from).collect();
     let result = trace(&entries, &opts);
 
+    let reasons = result
+        .reasons
+        .into_iter()
+        .map(|(path, r)| (path, NodeFileTraceReason { type_: r.types, parents: r.parents }))
+        .collect();
+
     NodeFileTraceResult {
         file_list: result.file_list,
         esm_file_list: result.esm_file_list,
         warnings: result.warnings,
+        reasons,
     }
 }
 

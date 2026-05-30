@@ -5,9 +5,19 @@
 
 'use strict';
 
-const { join, dirname, isAbsolute } = require('node:path');
+const { join, dirname, isAbsolute, relative, sep } = require('node:path');
 const fs = require('node:fs');
 const { nodeFileTrace } = require('./index.js');
+
+// Print the `file` and recursively its parents (ports nft's `printStack`).
+function printStack(file, reasons, stdout, seen = new Set()) {
+  if (seen.has(file)) return;
+  seen.add(file);
+  stdout.push(file);
+  const reason = reasons[file];
+  if (!reason || !reason.parents || reason.parents.length === 0) return;
+  for (const parent of reason.parents) printStack(parent, reasons, stdout, seen);
+}
 
 async function cli(
   action = process.argv[2],
@@ -25,20 +35,20 @@ async function cli(
     '',
     'Commands:',
     '',
-    '  build [entrypoint]   trace and copy to the dist directory',
-    '  print [entrypoint]   trace and print the file list to stdout',
-    '   size [entrypoint]   trace and print the total size in bytes',
+    '  build [entrypoint]        trace and copy to the dist directory',
+    '  print [entrypoint]        trace and print the file list to stdout',
+    '   size [entrypoint]        trace and print the total size in bytes',
+    '    why [entrypoint] [file]  trace and print why <file> was included',
   ];
 
   if (!entrypoint || !['print', 'build', 'size', 'why'].includes(action)) {
     return usage.join('\n');
   }
 
-  const { fileList, esmFileList, warnings } = await nodeFileTrace([entrypoint], {
-    ts: true,
-    base: cwd,
-    mixedModules: true,
-  });
+  const { fileList, esmFileList, warnings, reasons } = await nodeFileTrace(
+    [entrypoint],
+    { ts: true, base: cwd, mixedModules: true },
+  );
   const allFiles = [...fileList].concat([...esmFileList]).sort();
   const stdout = [];
 
@@ -63,12 +73,14 @@ async function cli(
     }
     stdout.push(`${bytes} bytes total`);
   } else if (action === 'why') {
-    // The `reasons` graph is not yet returned by the napi binding (issue #21).
-    void exitpoint;
-    void isAbsolute;
-    throw new Error(
-      'The "why" command requires the reasons graph, which is not implemented yet (see #21).',
+    if (!exitpoint) {
+      throw new Error('Expected an additional <file> argument for the "why" command.');
+    }
+    const target = (isAbsolute(exitpoint) ? relative(cwd, exitpoint) : exitpoint).replace(
+      /[/\\]/g,
+      sep,
     );
+    printStack(target, reasons, stdout);
   }
   return stdout.join('\n');
 }

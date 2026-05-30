@@ -9,7 +9,7 @@
 //! Option wiring mirrors `compat/run.mjs` so the benchmark measures the same
 //! work the compat harness verifies.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use nftrs_core::{node_file_trace, TraceOptions};
@@ -36,8 +36,8 @@ fn repo_root() -> PathBuf {
 }
 
 /// Build `TraceOptions` matching the compat harness wiring.
-fn opts(root: &PathBuf, unit_dir: &PathBuf, name: &str) -> TraceOptions {
-    let mut base = root.clone().into_os_string();
+fn opts(root: &Path, unit_dir: &Path, name: &str) -> TraceOptions {
+    let mut base = root.to_path_buf().into_os_string();
     base.push("/");
     TraceOptions {
         base: PathBuf::from(base),
