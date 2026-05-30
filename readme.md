@@ -1,250 +1,138 @@
-# Node File Trace
+# nftrs
 
-Used to determine exactly which files (including `node_modules`) are necessary for the application runtime.
+A Rust + [OXC](https://oxc.rs) rewrite of [`@vercel/nft`](https://github.com/vercel/nft).
 
-This is similar to [@vercel/ncc](https://npmjs.com/package/@vercel/ncc) except there is no bundling performed and therefore no reliance on webpack. This achieves the same tree-shaking benefits without moving any assets or binaries.
+`nftrs` determines exactly which files (including those in `node_modules`) are
+needed at runtime for a given set of Node.js entry points. It is a drop-in
+replacement for `@vercel/nft`'s `nodeFileTrace`: same call signature, same
+result shape (`fileList` / `esmFileList` / `warnings`), backed by a native
+addon instead of a JavaScript AST walk.
+
+## Why
+
+- **Native speed.** Parsing and static analysis run in Rust on the OXC parser
+  rather than acorn + an `estree-walker` pass in JS.
+- **Drop-in API.** The npm binding (`@nftrs/core`) exposes the same
+  `nodeFileTrace(files, options)` entry point.
 
 ## Usage
 
-### Installation
+```js
+const { nodeFileTrace } = require('@nftrs/core');
+
+const { fileList } = await nodeFileTrace(['path/to/input.js']);
+console.log(fileList); // files needed at runtime, relative to `base`
+```
+
+`nodeFileTrace(files, options)` accepts the common `@vercel/nft` options:
+`base`, `processCwd`, `depth`, `ts`, `analysis`, `conditions`, `exportsOnly`,
+`moduleSyncCatchall`, and `paths`. See `crates/nftrs_napi/index.d.ts` for the
+full typed surface.
+
+## Build
+
+The Rust library entry point is `nftrs_core::node_file_trace(files, &opts)`.
 
 ```bash
-npm i @vercel/nft
+# Rust workspace
+cargo build --release
+cargo test --workspace        # 92 unit tests
+
+# Node addon (@nftrs/core)
+cd crates/nftrs_napi
+pnpm install --ignore-workspace
+./node_modules/.bin/napi build --release
+ln -sf nftrs.node nftrs.darwin-arm64.node   # platform-specific binding name
 ```
 
-### Usage
+## Compatibility
 
-Provide the list of source files as input:
+`nftrs` is validated against `@vercel/nft`'s own `test/unit` fixtures via the
+compatibility harness in `compat/`. Each fixture's traced `fileList` is
+compared against the upstream expected output.
 
-```js
-const { nodeFileTrace } = require('@vercel/nft');
-const files = ['./src/main.js', './src/second.js'];
-const { fileList } = await nodeFileTrace(files);
+**Compat: 148/151 `test/unit` fixtures** match `@vercel/nft`.
+
+```bash
+node compat/run.mjs            # human summary
+node compat/run.mjs --check    # CI ratchet vs compat/baseline.json
 ```
 
-The list of files will include all `node_modules` modules and assets that may be needed by the application code.
+> Reproduction note: a local run on this environment (Node 24.16.0) measured
+> **147/151**, with 4 fixtures (`phantomjs-prebuilt`, `pixelmatch`,
+> `resolve-hook`, `shiki`) requiring their per-fixture npm dependencies to be
+> installed first. The 3 skipped fixtures are platform/Node-version specific
+> (see the skip lists in `compat/run.mjs`).
 
-### Options
+## Coverage
 
-#### Base
+Rust coverage is measured with [`cargo llvm-cov`](https://github.com/taiki-e/cargo-llvm-cov):
 
-The base path for the file list - all files will be provided as relative to this base.
-
-By default the `process.cwd()` is used:
-
-```js
-const { fileList } = await nodeFileTrace(files, {
-  base: process.cwd(),
-});
+```bash
+cargo llvm-cov --workspace --summary-only
 ```
 
-Any files/folders above the `base` are ignored in the listing and analysis.
+Measured on this environment (cargo-llvm-cov 0.8.4, 92 passing unit tests):
 
-#### Process Cwd
+| Scope                                           | Region  | Line    |
+| ----------------------------------------------- | ------- | ------- |
+| Workspace                                       | 70.90%  | 71.65%  |
+| Library crates (excludes `nftrs_napi` FFI shim) | 71.50%  | 72.40%  |
 
-When applying analysis certain functions rely on the `process.cwd()` value, such as `path.resolve('./relative')` or even a direct `process.cwd()`
-invocation.
+The `nftrs_napi` shim is a thin FFI boundary exercised through the compat
+harness rather than Rust unit tests, so it reports 0% under `cargo llvm-cov`.
 
-Setting the `processCwd` option allows this analysis to be guided to the right path to ensure that assets are correctly detected.
+## Benchmarks
 
-```js
-const { fileList } = await nodeFileTrace(files, {
-  processCwd: path.resolve(__dirname),
-});
+Two complementary measurements:
+
+1. **`cargo bench`** — a [Criterion](https://github.com/bheisler/criterion.rs)
+   benchmark (`crates/nftrs_core/benches/trace.rs`) timing
+   `node_file_trace` directly over a representative set of fixtures, with no
+   JS/napi overhead.
+2. **`compat/bench.mjs`** — times `@vercel/nft`'s `nodeFileTrace` against the
+   `@nftrs/core` napi binding over the same fixtures, with identical options.
+
+```bash
+cargo bench -p nftrs_core --bench trace   # native Criterion timings
+node compat/bench.mjs                       # nftrs vs @vercel/nft speedup
 ```
 
-By default `processCwd` is the same as `base`.
+### Criterion (native `node_file_trace`, median)
 
-#### Exports & Imports
+| Fixture            | Time     |
+| ------------------ | -------- |
+| import-meta-url    | 44.8 µs  |
+| wildcard           | 301.5 µs |
+| webpack-wrapper    | 79.9 µs  |
+| asset-fs-extra     | 185.3 µs |
+| asset-fs-inlining  | 50.9 µs  |
+| multi-input        | 496.0 µs |
+| browserify         | 129.3 µs |
+| asset-graceful-fs  | 179.9 µs |
+| asset-package-json | 35.6 µs  |
+| class-static       | 50.3 µs  |
 
-By default tracing of the [Node.js "exports" and "imports" fields](https://nodejs.org/dist/latest-v14.x/docs/api/esm.html#esm_package_entry_points) is supported, with the `"node"`, `"require"`, `"import"` and `"default"` conditions traced as defined.
+### nftrs vs @vercel/nft (end-to-end via napi, Node 24.16.0, median of 100 iters)
 
-Alternatively the explicit list of conditions can be provided:
+| Fixture            | @vercel/nft | nftrs      | Speedup   |
+| ------------------ | ----------- | ---------- | --------- |
+| import-meta-url    | 0.48 ms     | 0.05 ms    | ~10x      |
+| wildcard           | 1.06 ms     | 0.25 ms    | ~4x       |
+| webpack-wrapper    | 0.75 ms     | 0.07 ms    | ~10x      |
+| asset-fs-extra     | 24.40 ms    | 7.89 ms    | ~3x       |
+| asset-fs-inlining  | 0.37 ms     | 0.06 ms    | ~6x       |
+| multi-input        | 1.76 ms     | 0.49 ms    | ~4x       |
+| browserify         | 0.99 ms     | 0.13 ms    | ~8x       |
+| asset-graceful-fs  | 5.26 ms     | 0.57 ms    | ~9x       |
+| asset-package-json | 0.26 ms     | 0.04 ms    | ~6x       |
+| class-static       | 0.35 ms     | 0.05 ms    | ~6x       |
+| **Total**          | **35.7 ms** | **9.6 ms** | **~3.7x** |
 
-```js
-const { fileList } = await nodeFileTrace(files, {
-  conditions: ['node', 'production'],
-});
-```
+Speedups vary by workload (3x–10x per fixture); the aggregate is weighted by
+the heavy `asset-fs-extra` case. Numbers are from this machine and will differ
+across hardware and Node versions — rerun the commands above to reproduce.
 
-Only the `"node"` export should be explicitly included (if needed) when specifying the exact export condition list. The `"require"`, `"import"` and `"default"` conditions will always be traced as defined, no matter what custom conditions are set.
+## License
 
-The `"module-sync"` condition is enabled by default when tracing with Node.js 22 or newer. Set `moduleSyncCatchall` to trace both the `module-sync` branch and the normal runtime/fallback branch:
-
-```js
-const { fileList } = await nodeFileTrace(files, {
-  moduleSyncCatchall: true,
-});
-```
-
-#### Exports Only
-
-When tracing exports the `"main"` / index field will still be traced for Node.js versions without `"exports"` support.
-
-This can be disabled with the `exportsOnly` option:
-
-```js
-const { fileList } = await nodeFileTrace(files, {
-  exportsOnly: true,
-});
-```
-
-Any package with `"exports"` will then only have its exports traced, and the main will not be included at all. This can reduce the output size when targeting [Node.js 12.17.0](https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V12.md#12.17.0) or newer.
-
-#### Paths
-
-> Status: Experimental. May change at any time.
-
-Custom resolution path definitions to use.
-
-```js
-const { fileList } = await nodeFileTrace(files, {
-  paths: {
-    'utils/': '/path/to/utils/',
-  },
-});
-```
-
-Trailing slashes map directories, exact paths map exact only.
-
-#### Hooks
-
-The following FS functions can be hooked by passing them as options:
-
-- `readFile(path): Promise<string>`
-- `stat(path): Promise<FS.Stats>`
-- `readlink(path): Promise<string>`
-- `resolve(id: string, parent: string): Promise<string | string[]>`
-
-##### Advanced Resolving
-
-When providing a custom resolve hook you are responsible for returning one or more absolute paths to resolved files based on the `id` input. However it may be the case that you only want to augment or override the resolve behavior in certain cases. You can use `nft`'s underlying resolver by importing it. The builtin `resolve` function expects additional arguments that need to be forwarded from the hook
-
-- `resolve(id: string, parent: string, job: Job, isCjs: boolean): Promise<string | string[]>`
-
-Here is an example showing one id being resolved to a bespoke path while all other paths being resolved by the built-in resolver
-
-```js
-const { nodeFileTrace, resolve } = require('@vercel/nft');
-const files = ['./src/main.js', './src/second.js'];
-const { fileList } = await nodeFileTrace(files, {
-  resolve: async (id, parent, job, isCjs) => {
-    if (id === './src/main.js') {
-      return '/path/to/some/resolved/main/file.js';
-    } else {
-      return resolve(id, parent, job, isCjs);
-    }
-  },
-});
-```
-
-#### TypeScript
-
-The internal resolution supports resolving `.ts` files in traces by default.
-
-By its nature of integrating into existing build systems, the TypeScript
-compiler is not included in this project - rather the TypeScript transform
-layer requires separate integration into the `readFile` hook.
-
-#### File IO Concurrency
-
-In some large projects, the file tracing logic may process many files at the same time. In this case, if you do not limit the number of concurrent files IO, OOM problems are likely to occur.
-
-We use a default of 1024 concurrency to balance performance and memory usage for fs operations. You can increase this value to a higher number for faster speed, but be aware of the memory issues if the concurrency is too high.
-
-```js
-const { fileList } = await nodeFileTrace(files, {
-  fileIOConcurrency: 2048,
-});
-```
-
-#### Analysis
-
-Analysis options allow customizing how much analysis should be performed to exactly work out the dependency list.
-
-By default as much analysis as possible is done to ensure no possibly needed files are left out of the trace.
-
-To disable all analysis, set `analysis: false`. Alternatively, individual analysis options can be customized via:
-
-```js
-const { fileList } = await nodeFileTrace(files, {
-  // default
-  analysis: {
-    // whether to glob any analysis like __dirname + '/dir/' or require('x/' + y)
-    // that might output any file in a directory
-    emitGlobs: true,
-    // whether __filename and __dirname style
-    // expressions should be analyzed as file references
-    computeFileReferences: true,
-    // evaluate known bindings to assist with glob and file reference analysis
-    evaluatePureExpressions: true,
-  },
-});
-```
-
-#### Ignore
-
-Custom ignores can be provided to skip file inclusion (and consequently analysis of the file for references in turn as well).
-
-```js
-const { fileList } = await nodeFileTrace(files, {
-  ignore: ['./node_modules/pkg/file.js'],
-});
-```
-
-Ignore will also accept a function or globs.
-
-Note that the path provided to ignore is relative to `base`.
-
-#### Cache
-
-To persist the file cache between builds, pass an empty `cache` object:
-
-```js
-const cache = Object.create(null);
-const { fileList } = await nodeFileTrace(['index.ts'], { cache });
-// later:
-{
-  const { fileList } = await nodeFileTrace(['index.ts'], { cache });
-}
-```
-
-Note that cache invalidations are not supported so the assumption is that the file system is not changed between runs.
-
-#### Depth
-
-The `depth` option controls how many levels of the module graph to trace from the entry point files. This can be useful for limiting the scope of the trace or for debugging purposes:
-
-```js
-const { fileList } = await nodeFileTrace(files, {
-  depth: 2,
-});
-```
-
-With `depth: 0`, only the entry point files themselves are included in the trace, with no additional modules. With `depth: 1`, the entry points and their directly imported modules are traced, and so on.
-
-Note that the `depth` option cannot be less than 0. Setting a negative value will result in an error.
-
-#### Reasons
-
-To get the underlying reasons for individual files being included, a `reasons` object is also provided by the output:
-
-```js
-const { fileList, reasons } = await nodeFileTrace(files);
-```
-
-The `reasons` output will then be an object of the following form:
-
-```js
-{
-  [file: string]: {
-    type: 'dependency' | 'asset' | 'sharedlib',
-    ignored: true | false,
-    parents: string[]
-  }
-}
-```
-
-`reasons` also includes files that were ignored as `ignored: true`, with their `ignoreReason`.
-
-Every file is included because it is referenced by another file. The `parents` list will contain the list of all files that caused this file to be included.
+MIT
