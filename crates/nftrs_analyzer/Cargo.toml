@@ -22,4 +22,7 @@ oxc_ast_visit = { workspace = true }
 oxc_span = { workspace = true }
 oxc_syntax = { workspace = true }
 rustc-hash = { workspace = true }
+memchr = { workspace = true }
+smallvec = { workspace = true }
+compact_str = { workspace = true }
 globset = { workspace = true }

@@ -14,8 +14,9 @@ use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-/// Node.js builtin modules that should never be emitted as files.
-const NODE_BUILTINS: &[&str] = &[
+/// Node.js builtin modules that should never be emitted as files. A perfect
+/// hash gives O(1) membership without per-call string scans.
+static NODE_BUILTINS: phf::Set<&'static str> = phf::phf_set! {
     "assert",
     "async_hooks",
     "buffer",
@@ -58,7 +59,7 @@ const NODE_BUILTINS: &[&str] = &[
     "wasi",
     "worker_threads",
     "zlib",
-];
+};
 
 /// Node >= 22 auto-selects the `module-sync` condition.
 const NODE_SUPPORTS_MODULE_SYNC: bool = true;
@@ -67,9 +68,9 @@ const NODE_SUPPORTS_MODULE_SYNC: bool = true;
 #[must_use]
 pub fn is_builtin(specifier: &str) -> bool {
     if let Some(rest) = specifier.strip_prefix("node:") {
-        return NODE_BUILTINS.contains(&rest) || rest == "test";
+        return NODE_BUILTINS.contains(rest) || rest == "test";
     }
-    NODE_BUILTINS.contains(&specifier)
+    NODE_BUILTINS.contains(specifier)
 }
 
 /// Options affecting resolution (mirrors the relevant `Job` fields).

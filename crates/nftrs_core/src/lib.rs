@@ -9,7 +9,7 @@
 //!
 //! See <https://github.com/ubugeeei-prod/nftrs/issues/20>.
 
-use std::collections::HashSet;
+use rustc_hash::{FxHashMap, FxHashSet as HashSet};
 use std::path::{Component, Path, PathBuf};
 
 use nftrs_analyzer::{analyze, AnalyzeContext, Asset};
@@ -71,7 +71,7 @@ struct Job {
     file_set: HashSet<String>,
     esm_set: HashSet<String>,
     processed: HashSet<PathBuf>,
-    remappings: std::collections::HashMap<PathBuf, Vec<PathBuf>>,
+    remappings: FxHashMap<PathBuf, Vec<PathBuf>>,
     warnings: Vec<String>,
 }
 
@@ -95,10 +95,10 @@ impl Job {
             fs: CachedFs::new(),
             resolver: DepResolver::new(),
             file_list: Vec::new(),
-            file_set: HashSet::new(),
-            esm_set: HashSet::new(),
-            processed: HashSet::new(),
-            remappings: std::collections::HashMap::new(),
+            file_set: HashSet::default(),
+            esm_set: HashSet::default(),
+            processed: HashSet::default(),
+            remappings: FxHashMap::default(),
             warnings: Vec::new(),
         }
     }
@@ -145,7 +145,7 @@ impl Job {
     /// Resolve symlinks in `path`, emitting any in-base symlink files along the
     /// way (ports `Job.realpath`). Returns the fully resolved real path.
     fn realpath(&mut self, path: &Path) -> PathBuf {
-        let mut seen = HashSet::new();
+        let mut seen = HashSet::default();
         self.realpath_inner(path, &mut seen)
     }
 
@@ -396,11 +396,13 @@ fn collect_dir_files(dir: &Path, out: &mut Vec<PathBuf>) {
 /// glob: `**/*` when it stands for a whole path segment (preceded by `/`),
 /// else `*`. Mirrors `emitAssetDirectory`/`emitWildcardRequire`.
 fn wildcard_split(wildcard_path: &str) -> (String, String) {
-    let widx = wildcard_path.find(WILDCARD);
+    let bytes = wildcard_path.as_bytes();
+    // WILDCARD ('\x1a') and '/' are single-byte; SIMD byte scans beat str::find.
+    let widx = memchr::memchr(0x1a, bytes);
     let dir_index = match widx {
         None => wildcard_path.len(),
         // lastIndexOf('/', wildcardIndex)
-        Some(i) => wildcard_path[..i].rfind('/').map_or(0, |x| x),
+        Some(i) => memchr::memrchr(b'/', &bytes[..i]).unwrap_or(0),
     };
     let dir = wildcard_path[..dir_index].to_string();
     let pattern_path = &wildcard_path[dir_index..];
@@ -527,7 +529,7 @@ fn glob_require(wildcard_path: &str, ts: bool) -> Vec<PathBuf> {
             patterns.push(format!("{dir}{pattern}{ext}"));
         }
     }
-    let mut seen = HashSet::new();
+    let mut seen = HashSet::default();
     let mut out = Vec::new();
     for pat in patterns {
         for p in glob_walk(&dir, &pat) {

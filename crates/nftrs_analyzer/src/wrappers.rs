@@ -9,7 +9,7 @@
 //! like `const fs = __webpack_require__(0)` to that module, so the ordinary
 //! `fs`/`path`/asset detection works inside bundled code.
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap as HashMap;
 
 use oxc_ast::ast::{Expression, PropertyKey, Statement};
 use oxc_ast_visit::{walk, Visit};
@@ -21,7 +21,7 @@ pub type Externals = HashMap<String, String>;
 /// Scan `program` for bundler module tables and return the id → external map.
 #[must_use]
 pub fn extract_externals(program: &oxc_ast::ast::Program) -> Externals {
-    let mut c = ExternalCollector { externals: HashMap::new() };
+    let mut c = ExternalCollector { externals: HashMap::default() };
     c.visit_program(program);
     c.externals
 }

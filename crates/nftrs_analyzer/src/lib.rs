@@ -17,7 +17,7 @@ pub mod special_cases;
 pub mod static_eval;
 pub mod wrappers;
 
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use std::path::Path;
 
 use oxc_allocator::Allocator;
@@ -187,8 +187,8 @@ fn collect_vars(
         cwd: &ctx.cwd,
         real_cwd: &ctx.real_cwd,
         bindings,
-        vars: HashMap::new(),
-        trigger_vars: HashSet::new(),
+        vars: HashMap::default(),
+        trigger_vars: HashSet::default(),
     };
     vc.visit_program(program);
     (vc.vars, vc.trigger_vars)
@@ -317,21 +317,21 @@ struct BindingCollector {
 
 impl BindingCollector {
     fn new(dirname: &str, webpack_externals: wrappers::Externals) -> Self {
-        let mut require_fns = HashMap::new();
+        let mut require_fns = HashMap::default();
         require_fns.insert("require".to_string(), ReqBase::CurrentFile);
         Self {
             dirname: dirname.to_string(),
-            eval_bindings: HashMap::new(),
-            fs_objects: HashSet::new(),
-            fs_fns: HashMap::new(),
-            create_require_names: HashSet::new(),
-            module_ns: HashSet::new(),
+            eval_bindings: HashMap::default(),
+            fs_objects: HashSet::default(),
+            fs_fns: HashMap::default(),
+            create_require_names: HashSet::default(),
+            module_ns: HashSet::default(),
             require_fns,
             webpack_externals,
-            pino_names: HashSet::new(),
-            fastify_names: HashSet::new(),
-            default_interop_fs: HashSet::new(),
-            register_names: HashSet::new(),
+            pino_names: HashSet::default(),
+            fastify_names: HashSet::default(),
+            default_interop_fs: HashSet::default(),
+            register_names: HashSet::default(),
         }
     }
 
@@ -858,7 +858,7 @@ impl<'a> DepCollector<'a, '_> {
         if !spec.starts_with("./") && !spec.starts_with("../") {
             return;
         }
-        let abs = path_resolve(&self.eval_ctx.dirname, &[spec.to_string()]);
+        let abs = path_resolve(&self.eval_ctx.dirname, &[spec.into()]);
         self.require_globs.push(abs);
     }
 

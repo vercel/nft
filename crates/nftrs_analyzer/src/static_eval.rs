@@ -14,9 +14,11 @@
 //!
 //! See <https://github.com/ubugeeei-prod/nftrs/issues/16>, #48.
 
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 
+use compact_str::{CompactString, ToCompactString};
 use oxc_ast::ast::{Argument, Expression, TemplateLiteral};
+use smallvec::SmallVec;
 
 /// The wildcard sentinel char (`\x1a`), matching nft's `WILDCARD`.
 pub const WILDCARD: char = '\u{1a}';
@@ -81,11 +83,11 @@ pub enum Value {
 }
 
 impl Value {
-    fn as_concat_str(&self) -> String {
+    fn as_concat_str(&self) -> CompactString {
         match self {
-            Value::Str(s) => s.clone(),
-            Value::Num(n) => format_num(*n),
-            Value::Bool(b) => b.to_string(),
+            Value::Str(s) => s.into(),
+            Value::Num(n) => format_num(*n).into(),
+            Value::Bool(b) => b.to_compact_string(),
         }
     }
 
@@ -210,7 +212,7 @@ pub fn path_to_file_url(p: &str, real_cwd: &str) -> String {
     let resolved = if is_absolute_path(p) {
         normalize_posix(p)
     } else {
-        path_resolve(real_cwd, std::slice::from_ref(&p.to_string()))
+        path_resolve(real_cwd, std::slice::from_ref(&p.into()))
     };
     if p.ends_with('/') && !resolved.ends_with('/') {
         format!("file://{resolved}/")
@@ -428,8 +430,10 @@ fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Flow>
     // gate: `args.length > 0 && property !== 'concat'`). One conditional arg is
     // allowed, producing a conditional result (`args` + `args_else`).
     let is_concat = matches!(kind, CallKind::Concat(_));
-    let mut args: Vec<String> = Vec::with_capacity(call.arguments.len());
-    let mut args_else: Option<Vec<String>> = None;
+    // path.* / concat calls take only a handful of short segments; keep them
+    // inline (SmallVec) with small-string optimization (CompactString).
+    let mut args: SmallVec<[CompactString; 4]> = SmallVec::new();
+    let mut args_else: Option<SmallVec<[CompactString; 4]>> = None;
     let mut wildcards = 0u32;
     let mut all_wildcards = !call.arguments.is_empty() && !is_concat;
     for arg in &call.arguments {
@@ -458,9 +462,9 @@ fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Flow>
             // Spread / non-expression / unknown args become a WILDCARD.
             None => {
                 if let Some(e) = &mut args_else {
-                    e.push(WILDCARD.to_string());
+                    e.push(CompactString::from("\u{1a}"));
                 }
-                args.push(WILDCARD.to_string());
+                args.push(CompactString::from("\u{1a}"));
                 wildcards += 1;
             }
         }
@@ -468,7 +472,7 @@ fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Flow>
     if all_wildcards {
         return None;
     }
-    let apply = |args: &[String]| -> Option<String> {
+    let apply = |args: &[CompactString]| -> Option<String> {
         Some(match &kind {
             CallKind::PathJoin => path_join(args),
             CallKind::PathResolve => path_resolve(&ctx.cwd, args),
@@ -584,22 +588,26 @@ fn call_kind(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<CallK
 
 /// `path.join`: concatenate parts with `/` and normalize.
 #[must_use]
-pub fn path_join(parts: &[String]) -> String {
-    let joined = parts.iter().filter(|p| !p.is_empty()).cloned().collect::<Vec<_>>().join("/");
+pub fn path_join(parts: &[CompactString]) -> String {
+    let joined = parts
+        .iter()
+        .map(CompactString::as_str)
+        .filter(|p| !p.is_empty())
+        .collect::<SmallVec<[&str; 8]>>();
     if joined.is_empty() {
         ".".to_string()
     } else {
-        normalize_posix(&joined)
+        normalize_posix(&joined.join("/"))
     }
 }
 
 /// `path.resolve` from `cwd`: later absolute args reset the accumulator.
 #[must_use]
-pub fn path_resolve(cwd: &str, parts: &[String]) -> String {
+pub fn path_resolve(cwd: &str, parts: &[CompactString]) -> String {
     let mut cur = cwd.to_string();
     for part in parts {
         if part.starts_with('/') {
-            cur.clone_from(part);
+            cur = part.to_string();
         } else if !part.is_empty() {
             cur = format!("{cur}/{part}");
         }
@@ -621,7 +629,8 @@ fn dirname(p: &str) -> String {
 #[must_use]
 pub fn normalize_posix(p: &str) -> String {
     let absolute = p.starts_with('/');
-    let mut out: Vec<&str> = Vec::new();
+    // Most paths have few segments; keep them inline to avoid a heap alloc.
+    let mut out: SmallVec<[&str; 16]> = SmallVec::new();
     for seg in p.split('/') {
         match seg {
             "" | "." => {}
@@ -710,7 +719,7 @@ mod tests {
     use oxc_ast::ast::Statement;
     use oxc_parser::Parser;
     use oxc_span::SourceType;
-    use std::collections::HashMap;
+    use rustc_hash::FxHashMap as HashMap;
 
     // ---- pure posix path helpers -----------------------------------------
 
@@ -738,9 +747,9 @@ mod tests {
     fn path_join_basic() {
         assert_eq!(path_join(&["/a".into(), "b".into(), "c".into()]), "/a/b/c");
         assert_eq!(path_join(&["/a".into(), "..".into(), "b".into()]), "/b");
-        assert_eq!(path_join(&["a".into(), String::new(), "b".into()]), "a/b");
+        assert_eq!(path_join(&["a".into(), CompactString::new(""), "b".into()]), "a/b");
         assert_eq!(path_join(&[]), ".");
-        assert_eq!(path_join(&[String::new()]), ".");
+        assert_eq!(path_join(&[CompactString::new("")]), ".");
     }
 
     #[test]
@@ -789,8 +798,8 @@ mod tests {
         let Statement::ExpressionStatement(es) = stmt else { return None };
         let map: HashMap<String, Binding> =
             bindings.iter().map(|(k, v)| ((*k).to_string(), *v)).collect();
-        let vars = HashMap::new();
-        let trigger_vars = HashSet::new();
+        let vars = HashMap::default();
+        let trigger_vars = HashSet::default();
         let ctx = EvalCtx {
             dirname: "/proj/src".to_string(),
             filename: "/proj/src/index.js".to_string(),
