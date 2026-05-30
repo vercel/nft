@@ -265,6 +265,11 @@ impl Ctx<'_> {
                     self.add_module_sync(&mut paths, pkg_path, entry, cjs, None);
                     return self.validate_and_resolve_paths(&paths, cjs);
                 }
+                // A bare specifier in an `imports` map (e.g. `"#pkg": "pkg"`)
+                // resolves as an external package.
+                if is_imports && !target.starts_with('#') {
+                    return self.resolve_package(&target, &pkg_path.join("package.json"), cjs);
+                }
             }
         }
 

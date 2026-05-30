@@ -160,6 +160,16 @@ pub fn eval_flow(expr: &Expression, ctx: &EvalCtx) -> Option<Flow> {
                     }
                 }
             }
+            // `global.MONGOOSE_DRIVER_PATH` (and `GLOBAL`/`globalThis`) is an
+            // unset global binding -> falsy, so `... || './dir'` picks the
+            // fallback (ports nft's `globalBindings.MONGOOSE_DRIVER_PATH`).
+            if member.property.name == "MONGOOSE_DRIVER_PATH" {
+                if let Expression::Identifier(obj) = &member.object {
+                    if matches!(obj.name.as_str(), "global" | "GLOBAL" | "globalThis") {
+                        return Some(Flow::known(Value::Bool(false)));
+                    }
+                }
+            }
             None
         }
         Expression::BinaryExpression(bin) => eval_binary(bin, ctx),
