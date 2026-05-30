@@ -120,6 +120,7 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
         module_ns: &bindings.module_ns,
         pino_names: &bindings.pino_names,
         fastify_names: &bindings.fastify_names,
+        default_interop_fs: &bindings.default_interop_fs,
         deps: Vec::new(),
         imports: Vec::new(),
         assets: Vec::new(),
@@ -278,6 +279,9 @@ struct BindingCollector {
     pino_names: HashSet<String>,
     /// Local names bound to `fastify`.
     fastify_names: HashSet<String>,
+    /// Names whose `.default` is an fs module (babel/tsc default interop, e.g.
+    /// `var _fs = _interopRequireDefault(require("fs"))`).
+    default_interop_fs: HashSet<String>,
 }
 
 impl BindingCollector {
@@ -294,6 +298,31 @@ impl BindingCollector {
             require_fns,
             pino_names: HashSet::new(),
             fastify_names: HashSet::new(),
+            default_interop_fs: HashSet::new(),
+        }
+    }
+
+    /// If `init` is `<interopFn>(require("M"))`, return `(is_default, "M")`.
+    /// `is_default` distinguishes `_interopRequireDefault`/`__importDefault`
+    /// (the module is at `.default`) from the wildcard interops (the var is the
+    /// module).
+    fn interop_module(init: &Expression) -> Option<(bool, String)> {
+        let Expression::CallExpression(call) = unwrap_expr(init) else { return None };
+        let Expression::Identifier(callee) = unwrap_expr(&call.callee) else { return None };
+        let is_default = match callee.name.as_str() {
+            "_interopRequireDefault" | "__importDefault" => true,
+            "_interopRequireWildcard" | "__importStar" => false,
+            _ => return None,
+        };
+        let arg = call.arguments.first().and_then(Argument::as_expression)?;
+        let Expression::CallExpression(req) = unwrap_expr(arg) else { return None };
+        let Expression::Identifier(rc) = &req.callee else { return None };
+        if rc.name != "require" {
+            return None;
+        }
+        match req.arguments.first() {
+            Some(Argument::StringLiteral(s)) => Some((is_default, s.value.to_string())),
+            _ => None,
         }
     }
 
@@ -502,6 +531,20 @@ impl<'a> Visit<'a> for BindingCollector {
                 }
             }
         }
+        // Babel/tsc interop: `var path = _interopRequireWildcard(require("path"))`
+        // (the var is the module) / `var _fs = _interopRequireDefault(require("fs"))`
+        // (the module is at `.default`).
+        if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&decl.id, &decl.init) {
+            if let Some((is_default, module)) = Self::interop_module(init) {
+                if is_default {
+                    if is_fs_module(&module) {
+                        self.default_interop_fs.insert(id.name.to_string());
+                    }
+                } else {
+                    self.bind_object(id.name.as_str(), &module);
+                }
+            }
+        }
         // `const reaction = name => { const r = require(name); …; return r }` —
         // an arrow/function-expression require wrapper assigned to a var.
         if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&decl.id, &decl.init) {
@@ -557,6 +600,7 @@ struct DepCollector<'a, 'b> {
     module_ns: &'b HashSet<String>,
     pino_names: &'b HashSet<String>,
     fastify_names: &'b HashSet<String>,
+    default_interop_fs: &'b HashSet<String>,
     deps: Vec<String>,
     imports: Vec<String>,
     assets: Vec<Asset>,
@@ -763,13 +807,28 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
                         }
                     }
                 } else if let Expression::StaticMemberExpression(inner) = &member.object {
-                    // `fs.promises.readdir(...)` / `fs.default.readFileSync(...)`
-                    if matches!(inner.property.name.as_str(), "promises" | "default") {
-                        if let Expression::Identifier(o) = &inner.object {
-                            if self.fs_objects.contains(o.name.as_str()) {
-                                if let Some(kind) = fs_method_kind(prop) {
-                                    self.handle_fs_call(kind, call);
-                                }
+                    // `fs.promises.readdir(...)` / `fs.default.readFileSync(...)`,
+                    // or default-interop `fs_1.default.readFileSync(...)`.
+                    if let Expression::Identifier(o) = &inner.object {
+                        let is_fs = (matches!(inner.property.name.as_str(), "promises" | "default")
+                            && self.fs_objects.contains(o.name.as_str()))
+                            || (inner.property.name == "default"
+                                && self.default_interop_fs.contains(o.name.as_str()));
+                        if is_fs {
+                            if let Some(kind) = fs_method_kind(prop) {
+                                self.handle_fs_call(kind, call);
+                            }
+                        }
+                    }
+                } else if let Expression::ComputedMemberExpression(inner) = &member.object {
+                    // default-interop with bracket access: `_fs["default"].readFileSync(...)`
+                    if let (Expression::Identifier(o), Expression::StringLiteral(k)) =
+                        (&inner.object, &inner.expression)
+                    {
+                        if k.value == "default" && self.default_interop_fs.contains(o.name.as_str())
+                        {
+                            if let Some(kind) = fs_method_kind(prop) {
+                                self.handle_fs_call(kind, call);
                             }
                         }
                     }
