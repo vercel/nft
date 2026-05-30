@@ -9,6 +9,7 @@
 //!
 //! See <https://github.com/ubugeeei-prod/nftrs/issues/20>.
 
+use compact_str::format_compact;
 use rustc_hash::{FxHashMap, FxHashSet as HashSet};
 use std::path::{Component, Path, PathBuf};
 
@@ -224,7 +225,8 @@ impl Job {
         }
 
         let Some(source) = self.fs.read_to_string(&real) else {
-            self.warnings.push(format!("File {} does not exist.", real.display()));
+            self.warnings
+                .push(format_compact!("File {} does not exist.", real.display()).into_string());
             return;
         };
 
@@ -480,21 +482,23 @@ fn valid_wildcard(asset_path: &str, module_dir: &str, cwd: &str, module_path: &s
     };
     let stripped = &asset_path[..asset_path.len() - suffix.len()];
     // do not emit __dirname or cwd
-    if asset_path == format!("{module_dir}{suffix}") || asset_path == format!("{cwd}{suffix}") {
+    if asset_path == format_compact!("{module_dir}{suffix}")
+        || asset_path == format_compact!("{cwd}{suffix}")
+    {
         return false;
     }
     // do not emit node_modules
-    if asset_path.ends_with(&format!("/node_modules{suffix}")) {
+    if asset_path.ends_with(format_compact!("/node_modules{suffix}").as_str()) {
         return false;
     }
     // do not emit directories above __dirname
-    if module_dir.starts_with(&format!("{stripped}/")) {
+    if module_dir.starts_with(format_compact!("{stripped}/").as_str()) {
         return false;
     }
     // inside node_modules: do not emit above the package's node_modules base
     if let Some(idx) = module_path.find("/node_modules") {
-        let nm_base = format!("{}/node_modules/", &module_path[..idx]);
-        if !asset_path.starts_with(&nm_base) {
+        let nm_base = format_compact!("{}/node_modules/", &module_path[..idx]);
+        if !asset_path.starts_with(nm_base.as_str()) {
             return false;
         }
     }
@@ -504,7 +508,7 @@ fn valid_wildcard(asset_path: &str, module_dir: &str, cwd: &str, module_path: &s
 /// `emitAssetDirectory`: glob the files matching a wildcard asset path.
 fn glob_asset(wildcard_path: &str) -> Vec<PathBuf> {
     let (dir, pattern) = wildcard_split(wildcard_path);
-    glob_walk(&dir, &format!("{dir}{pattern}"))
+    glob_walk(&dir, &format_compact!("{dir}{pattern}"))
         .into_iter()
         .filter(|p| !excluded_glob_file(p))
         .collect()
@@ -518,7 +522,7 @@ fn glob_require(wildcard_path: &str, ts: bool) -> Vec<PathBuf> {
     let (dir, pattern) = wildcard_split(wildcard_path);
     let mut patterns = Vec::new();
     if pattern.ends_with('*') {
-        patterns.push(format!("{dir}{pattern}"));
+        patterns.push(format_compact!("{dir}{pattern}").into_string());
     } else {
         let mut exts: Vec<&str> = vec!["", ".js", ".json", ".node"];
         if ts {
@@ -526,7 +530,7 @@ fn glob_require(wildcard_path: &str, ts: bool) -> Vec<PathBuf> {
             exts.push(".tsx");
         }
         for ext in exts {
-            patterns.push(format!("{dir}{pattern}{ext}"));
+            patterns.push(format_compact!("{dir}{pattern}{ext}").into_string());
         }
     }
     let mut seen = HashSet::default();
@@ -679,7 +683,8 @@ mod trace_tests {
     impl Fx {
         fn new() -> Self {
             let n = N.fetch_add(1, Ordering::SeqCst);
-            let root = std::env::temp_dir().join(format!("nftrs_trace_{}_{n}", std::process::id()));
+            let root = std::env::temp_dir()
+                .join(format_compact!("nftrs_trace_{}_{n}", std::process::id()).as_str());
             std::fs::create_dir_all(&root).unwrap();
             Self { root }
         }
@@ -748,7 +753,10 @@ mod trace_tests {
     fn does_not_emit_files_outside_base() {
         let f = Fx::new();
         // an asset that escapes the base must not be emitted.
-        f.file("input.js", "const fs=require('fs'); fs.readFileSync(__dirname + '/../../etc/passwd');");
+        f.file(
+            "input.js",
+            "const fs=require('fs'); fs.readFileSync(__dirname + '/../../etc/passwd');",
+        );
         let list = f.trace("input.js");
         assert!(list.iter().all(|p| !p.contains("passwd")));
     }

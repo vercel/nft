@@ -5,6 +5,10 @@
 //! `warnings`). `reasons` and the JS callback overrides are still being wired
 //! — see <https://github.com/ubugeeei-prod/nftrs/issues/22>.
 
+// `#[napi]` expands to code that uses `std::format!` for type-conversion error
+// messages, which we can't rewrite; the workspace bans `format!` elsewhere.
+#![allow(clippy::disallowed_macros)]
+
 use std::collections::HashMap;
 use std::path::PathBuf;
 

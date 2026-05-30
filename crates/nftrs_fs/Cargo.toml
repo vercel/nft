@@ -16,3 +16,4 @@ workspace = true
 
 [dependencies]
 rustc-hash = { workspace = true }
+compact_str = { workspace = true }

@@ -340,7 +340,10 @@ impl SizeHistogram {
         }
         let lo = 1u64 << (i - 1);
         let hi = 1u64 << i.min(63);
-        format!("{lo}..{hi}")
+        let mut s = lo.to_string();
+        s.push_str("..");
+        s.push_str(&hi.to_string());
+        s
     }
 
     /// Iterates `(label, count)` pairs, skipping empty buckets.

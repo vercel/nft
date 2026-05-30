@@ -1,0 +1,6 @@
+# Forbid `format!` — it always heap-allocates a `String`. Prefer
+# `compact_str::format_compact!` (small-string-optimized `CompactString`),
+# `push_str`/`write!` into an existing buffer, or `[..].concat()`.
+disallowed-macros = [
+  { path = "std::format", reason = "use compact_str::format_compact! or push_str/concat to avoid heap String allocations" },
+]

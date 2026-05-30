@@ -20,8 +20,11 @@ pub mod wrappers;
 use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use std::path::Path;
 
+use compact_str::CompactString;
 use oxc_allocator::Allocator;
-use oxc_ast::ast::{Argument, BindingPattern, Expression, FormalParameters, FunctionBody, Statement};
+use oxc_ast::ast::{
+    Argument, BindingPattern, Expression, FormalParameters, FunctionBody, Statement,
+};
 use oxc_ast_visit::{walk, Visit};
 use oxc_parser::Parser;
 use oxc_span::SourceType;
@@ -344,7 +347,7 @@ impl BindingCollector {
         }
         let key = match call.arguments.first()?.as_expression()? {
             Expression::StringLiteral(s) => s.value.to_string(),
-            Expression::NumericLiteral(n) if n.value.fract() == 0.0 => format!("{}", n.value as i64),
+            Expression::NumericLiteral(n) if n.value.fract() == 0.0 => (n.value as i64).to_string(),
             _ => return None,
         };
         self.webpack_externals.get(&key).cloned()
@@ -408,8 +411,9 @@ impl BindingCollector {
         match call.arguments.first().and_then(Argument::as_expression) {
             Some(Expression::NewExpression(new_expr)) => {
                 if let Some(Argument::StringLiteral(rel)) = new_expr.arguments.first() {
-                    let dir =
-                        static_eval::normalize_posix(&format!("{}/{}", self.dirname, rel.value));
+                    let dir = static_eval::normalize_posix(
+                        &[self.dirname.as_str(), "/", rel.value.as_str()].concat(),
+                    );
                     return Some(ReqBase::Dir(dir));
                 }
                 Some(ReqBase::CurrentFile)
@@ -601,8 +605,10 @@ impl<'a> Visit<'a> for BindingCollector {
             }
         }
         // `const join = path.join` — alias a path-module member to its binding.
-        if let (BindingPattern::BindingIdentifier(id), Some(Expression::StaticMemberExpression(m))) =
-            (&decl.id, &decl.init)
+        if let (
+            BindingPattern::BindingIdentifier(id),
+            Some(Expression::StaticMemberExpression(m)),
+        ) = (&decl.id, &decl.init)
         {
             if let Expression::Identifier(o) = &m.object {
                 if matches!(self.eval_bindings.get(o.name.as_str()), Some(Binding::PathModule)) {
@@ -650,9 +656,7 @@ impl<'a> Visit<'a> for BindingCollector {
         // an arrow/function-expression require wrapper assigned to a var.
         if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&decl.id, &decl.init) {
             let wrapper = match init {
-                Expression::ArrowFunctionExpression(a) => {
-                    is_require_wrapper(&a.params, &a.body)
-                }
+                Expression::ArrowFunctionExpression(a) => is_require_wrapper(&a.params, &a.body),
                 Expression::FunctionExpression(f) => {
                     f.body.as_ref().is_some_and(|b| is_require_wrapper(&f.params, b))
                 }
@@ -730,7 +734,8 @@ impl<'a> DepCollector<'a, '_> {
             if let Some(Expression::ArrayExpression(arr)) = find_object_prop(obj, key) {
                 for el in &arr.elements {
                     if let oxc_ast::ast::ArrayExpressionElement::ObjectExpression(inner) = el {
-                        if let Some(Expression::StringLiteral(s)) = find_object_prop(inner, "target")
+                        if let Some(Expression::StringLiteral(s)) =
+                            find_object_prop(inner, "target")
                         {
                             self.deps.push(s.value.to_string());
                         }
@@ -837,18 +842,14 @@ impl<'a> DepCollector<'a, '_> {
         }
     }
 
-    fn add_specifier(&mut self, s: String, is_import: bool, base: &ReqBase) {
-        let target = if is_import {
-            &mut self.imports
-        } else {
-            &mut self.deps
-        };
+    fn add_specifier(&mut self, s: CompactString, is_import: bool, base: &ReqBase) {
+        let target = if is_import { &mut self.imports } else { &mut self.deps };
         match base {
-            ReqBase::CurrentFile => target.push(s),
+            ReqBase::CurrentFile => target.push(s.into_string()),
             ReqBase::Dir(dir) if s.starts_with('.') => {
-                target.push(normalize_posix(&format!("{dir}/{s}")));
+                target.push(normalize_posix(&[dir.as_str(), "/", &s].concat()));
             }
-            ReqBase::Dir(_) => target.push(s),
+            ReqBase::Dir(_) => target.push(s.into_string()),
         }
     }
 
@@ -950,12 +951,11 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
                     // `fs.promises.readdir(...)` / `fs.default.readFileSync(...)`,
                     // or default-interop `fs_1.default.readFileSync(...)`.
                     if let Expression::Identifier(o) = &inner.object {
-                        let is_fs = (matches!(
-                            inner.property.name.as_str(),
-                            "promises" | "default" | "a"
-                        ) && self.fs_objects.contains(o.name.as_str()))
-                            || (inner.property.name == "default"
-                                && self.default_interop_fs.contains(o.name.as_str()));
+                        let is_fs =
+                            (matches!(inner.property.name.as_str(), "promises" | "default" | "a")
+                                && self.fs_objects.contains(o.name.as_str()))
+                                || (inner.property.name == "default"
+                                    && self.default_interop_fs.contains(o.name.as_str()));
                         if is_fs {
                             if let Some(kind) = fs_method_kind(prop) {
                                 self.handle_fs_call(kind, call);
@@ -1059,11 +1059,11 @@ fn asset_path_str(s: &str) -> Option<String> {
 /// into both of its branches. Only string values are returned.
 fn flow_asset_strs(flow: &Flow) -> Vec<String> {
     match flow {
-        Flow::Value { value: Value::Str(s), .. } => vec![s.clone()],
+        Flow::Value { value: Value::Str(s), .. } => vec![s.to_string()],
         Flow::Cond { if_true, els } => [if_true, els]
             .into_iter()
             .filter_map(|v| match v {
-                Value::Str(s) => Some(s.clone()),
+                Value::Str(s) => Some(s.to_string()),
                 _ => None,
             })
             .collect(),
@@ -1153,13 +1153,17 @@ mod tests {
 
     #[test]
     fn require_wrapper_function() {
-        let r = analyze_src("function load(name) { const m = require(name); return m; } load('./dep');");
+        let r = analyze_src(
+            "function load(name) { const m = require(name); return m; } load('./dep');",
+        );
         assert!(r.deps.contains(&"./dep".to_string()));
     }
 
     #[test]
     fn require_wrapper_arrow() {
-        let r = analyze_src("const load = (name) => { const m = require(name); return m; }; load('./dep');");
+        let r = analyze_src(
+            "const load = (name) => { const m = require(name); return m; }; load('./dep');",
+        );
         assert!(r.deps.contains(&"./dep".to_string()));
     }
 
@@ -1225,13 +1229,16 @@ mod tests {
 
     #[test]
     fn dirname_concat_dotdot_normalized() {
-        let r = analyze_src("const fs = require('fs'); fs.readFileSync(__dirname + '/../pkg.json');");
+        let r =
+            analyze_src("const fs = require('fs'); fs.readFileSync(__dirname + '/../pkg.json');");
         assert!(files(&r).contains(&"/proj/pkg.json".to_string()));
     }
 
     #[test]
     fn import_meta_url_asset() {
-        let r = analyze_src("import fs from 'fs'; fs.readFileSync(new URL('./asset.txt', import.meta.url));");
+        let r = analyze_src(
+            "import fs from 'fs'; fs.readFileSync(new URL('./asset.txt', import.meta.url));",
+        );
         assert!(files(&r).contains(&"/proj/src/asset.txt".to_string()));
     }
 
@@ -1245,7 +1252,9 @@ mod tests {
 
     #[test]
     fn conditional_fs_asset_both_branches() {
-        let r = analyze_src("const fs = require('fs'); fs.readFileSync(`${__dirname}/asset${u ? '1' : '2'}.txt`);");
+        let r = analyze_src(
+            "const fs = require('fs'); fs.readFileSync(`${__dirname}/asset${u ? '1' : '2'}.txt`);",
+        );
         let fs = files(&r);
         assert!(fs.contains(&"/proj/src/asset1.txt".to_string()));
         assert!(fs.contains(&"/proj/src/asset2.txt".to_string()));
@@ -1268,7 +1277,9 @@ mod tests {
     fn pino_constructor_and_fastify() {
         let r1 = analyze_src("import pino from 'pino'; pino({ transport: { target: 't1' } });");
         assert!(r1.deps.contains(&"t1".to_string()));
-        let r2 = analyze_src("import fastify from 'fastify'; fastify({ logger: { transport: { target: 't2' } } });");
+        let r2 = analyze_src(
+            "import fastify from 'fastify'; fastify({ logger: { transport: { target: 't2' } } });",
+        );
         assert!(r2.deps.contains(&"t2".to_string()));
     }
 
@@ -1318,7 +1329,8 @@ mod tests {
             real_cwd: "/proj".to_string(),
             compute_file_references: true,
         };
-        let r = analyze(Path::new("/proj/src/x.ts"), "import x from './a'; const y: number = 1;", &ctx);
+        let r =
+            analyze(Path::new("/proj/src/x.ts"), "import x from './a'; const y: number = 1;", &ctx);
         assert!(r.is_esm);
         assert!(r.imports.contains(&"./a".to_string()));
     }

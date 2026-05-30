@@ -16,7 +16,7 @@
 
 use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 
-use compact_str::{CompactString, ToCompactString};
+use compact_str::{format_compact, CompactString, ToCompactString};
 use oxc_ast::ast::{Argument, Expression, TemplateLiteral};
 use smallvec::SmallVec;
 
@@ -77,7 +77,7 @@ pub struct EvalCtx<'b> {
 /// A statically-evaluated value. Only the variants nft's analysis needs.
 #[derive(Clone)]
 pub enum Value {
-    Str(String),
+    Str(CompactString),
     Num(f64),
     Bool(bool),
 }
@@ -85,8 +85,8 @@ pub enum Value {
 impl Value {
     fn as_concat_str(&self) -> CompactString {
         match self {
-            Value::Str(s) => s.into(),
-            Value::Num(n) => format_num(*n).into(),
+            Value::Str(s) => s.clone(),
+            Value::Num(n) => format_num(*n),
             Value::Bool(b) => b.to_compact_string(),
         }
     }
@@ -116,11 +116,11 @@ impl Flow {
     }
 }
 
-fn format_num(n: f64) -> String {
+fn format_num(n: f64) -> CompactString {
     if n.fract() == 0.0 && n.is_finite() {
-        format!("{}", n as i64)
+        format_compact!("{}", n as i64)
     } else {
-        format!("{n}")
+        format_compact!("{n}")
     }
 }
 
@@ -143,15 +143,15 @@ pub fn eval(expr: &Expression, ctx: &EvalCtx) -> Option<Value> {
 /// knowable. This is the full nft `evaluate` with `computeBranches = true`.
 pub fn eval_flow(expr: &Expression, ctx: &EvalCtx) -> Option<Flow> {
     match expr {
-        Expression::StringLiteral(s) => Some(Flow::known(Value::Str(s.value.to_string()))),
+        Expression::StringLiteral(s) => Some(Flow::known(Value::Str(s.value.as_str().into()))),
         Expression::NumericLiteral(n) => Some(Flow::known(Value::Num(n.value))),
         Expression::BooleanLiteral(b) => Some(Flow::known(Value::Bool(b.value))),
         Expression::TemplateLiteral(t) => eval_template(t, ctx),
         Expression::Identifier(id) => match id.name.as_str() {
-            "__dirname" => Some(Flow::known(Value::Str(ctx.dirname.clone()))),
-            "__filename" => Some(Flow::known(Value::Str(ctx.filename.clone()))),
+            "__dirname" => Some(Flow::known(Value::Str(ctx.dirname.as_str().into()))),
+            "__filename" => Some(Flow::known(Value::Str(ctx.filename.as_str().into()))),
             name => match ctx.bindings.get(name) {
-                Some(Binding::PathSep) => Some(Flow::known(Value::Str("/".to_string()))),
+                Some(Binding::PathSep) => Some(Flow::known(Value::Str("/".into()))),
                 _ => ctx.vars.get(name).cloned(),
             },
         },
@@ -160,7 +160,7 @@ pub fn eval_flow(expr: &Expression, ctx: &EvalCtx) -> Option<Flow> {
             if member.property.name == "sep" {
                 if let Expression::Identifier(obj) = &member.object {
                     if matches!(ctx.bindings.get(obj.name.as_str()), Some(Binding::PathModule)) {
-                        return Some(Flow::known(Value::Str("/".to_string())));
+                        return Some(Flow::known(Value::Str("/".into())));
                     }
                 }
             }
@@ -196,28 +196,28 @@ pub fn eval_flow(expr: &Expression, ctx: &EvalCtx) -> Option<Flow> {
 }
 
 /// The module's `file:` URL (`import.meta.url` / `pathToFileURL(__filename)`).
-fn import_meta_url(ctx: &EvalCtx) -> String {
-    format!("file://{}", ctx.filename)
+fn import_meta_url(ctx: &EvalCtx) -> CompactString {
+    format_compact!("file://{}", ctx.filename)
 }
 
 /// `fileURLToPath`: strip a `file://` scheme to a plain path.
-pub fn file_url_to_path(s: &str) -> String {
-    s.strip_prefix("file://").map_or_else(|| s.to_string(), str::to_string)
+pub fn file_url_to_path(s: &str) -> CompactString {
+    s.strip_prefix("file://").map_or_else(|| s.into(), Into::into)
 }
 
 /// `pathToFileURL`: a path to a `file:` URL, resolving relative paths against
 /// `real_cwd` and preserving a trailing slash (directory URL).
 #[must_use]
-pub fn path_to_file_url(p: &str, real_cwd: &str) -> String {
+pub fn path_to_file_url(p: &str, real_cwd: &str) -> CompactString {
     let resolved = if is_absolute_path(p) {
         normalize_posix(p)
     } else {
         path_resolve(real_cwd, std::slice::from_ref(&p.into()))
     };
     if p.ends_with('/') && !resolved.ends_with('/') {
-        format!("file://{resolved}/")
+        format_compact!("file://{resolved}/")
     } else {
-        format!("file://{resolved}")
+        format_compact!("file://{resolved}")
     }
 }
 
@@ -241,8 +241,8 @@ fn eval_new_url(new: &oxc_ast::ast::NewExpression, ctx: &EvalCtx) -> Option<Flow
         Some(i) => &parent_path[..i],
         None => return None,
     };
-    let resolved = normalize_posix(&format!("{base_dir}/{rel}"));
-    Some(Flow::known(Value::Str(format!("file://{resolved}"))))
+    let resolved = normalize_posix(&format_compact!("{base_dir}/{rel}"));
+    Some(Flow::known(Value::Str(format_compact!("file://{resolved}"))))
 }
 
 fn eval_binary(bin: &oxc_ast::ast::BinaryExpression, ctx: &EvalCtx) -> Option<Flow> {
@@ -256,13 +256,13 @@ fn eval_binary(bin: &oxc_ast::ast::BinaryExpression, ctx: &EvalCtx) -> Option<Fl
         match (&l, &r) {
             (None, Some(Flow::Value { value: Value::Str(rs), wildcards })) => {
                 return Some(Flow::Value {
-                    value: Value::Str(format!("{WILDCARD}{rs}")),
+                    value: Value::Str(format_compact!("{WILDCARD}{rs}")),
                     wildcards: wildcards + 1,
                 });
             }
             (Some(Flow::Value { value: Value::Str(ls), wildcards }), None) => {
                 return Some(Flow::Value {
-                    value: Value::Str(format!("{ls}{WILDCARD}")),
+                    value: Value::Str(format_compact!("{ls}{WILDCARD}")),
                     wildcards: wildcards + 1,
                 });
             }
@@ -275,12 +275,14 @@ fn eval_binary(bin: &oxc_ast::ast::BinaryExpression, ctx: &EvalCtx) -> Option<Fl
     // Conditional propagation: one side conditional, the other a plain value.
     match (&l, &r) {
         (Flow::Cond { if_true, els }, Flow::Value { value, .. }) => {
-            return apply_binop(op, if_true, value)
-                .and_then(|t| apply_binop(op, els, value).map(|e| Flow::Cond { if_true: t, els: e }));
+            return apply_binop(op, if_true, value).and_then(|t| {
+                apply_binop(op, els, value).map(|e| Flow::Cond { if_true: t, els: e })
+            });
         }
         (Flow::Value { value, .. }, Flow::Cond { if_true, els }) => {
-            return apply_binop(op, value, if_true)
-                .and_then(|t| apply_binop(op, value, els).map(|e| Flow::Cond { if_true: t, els: e }));
+            return apply_binop(op, value, if_true).and_then(|t| {
+                apply_binop(op, value, els).map(|e| Flow::Cond { if_true: t, els: e })
+            });
         }
         (Flow::Value { value: lv, wildcards: lw }, Flow::Value { value: rv, wildcards: rw }) => {
             let res = apply_binop(op, lv, rv)?;
@@ -297,7 +299,7 @@ fn apply_binop(op: oxc_ast::ast::BinaryOperator, l: &Value, r: &Value) -> Option
     match op {
         B::Addition => Some(match (l, r) {
             (Value::Num(a), Value::Num(b)) => Value::Num(a + b),
-            _ => Value::Str(format!("{}{}", l.as_concat_str(), r.as_concat_str())),
+            _ => Value::Str(format_compact!("{}{}", l.as_concat_str(), r.as_concat_str())),
         }),
         B::Equality | B::StrictEquality => Some(Value::Bool(values_eq(l, r))),
         B::Inequality | B::StrictInequality => Some(Value::Bool(!values_eq(l, r))),
@@ -363,10 +365,10 @@ fn eval_template(t: &TemplateLiteral, ctx: &EvalCtx) -> Option<Flow> {
     // conditional interpolation is seen, two branches. nft supports at most one
     // conditional branch per template.
     enum Acc {
-        Value { out: String, wildcards: u32 },
-        Cond { if_true: String, els: String },
+        Value { out: CompactString, wildcards: u32 },
+        Cond { if_true: CompactString, els: CompactString },
     }
-    let mut acc = Acc::Value { out: String::new(), wildcards: 0 };
+    let mut acc = Acc::Value { out: CompactString::default(), wildcards: 0 };
     for (i, quasi) in t.quasis.iter().enumerate() {
         let cooked = quasi.value.cooked.as_ref()?.as_str();
         match &mut acc {
@@ -407,8 +409,8 @@ fn eval_template(t: &TemplateLiteral, ctx: &EvalCtx) -> Option<Flow> {
                 // promote to a conditional template (only one allowed)
                 Acc::Value { out, wildcards: 0 } => {
                     acc = Acc::Cond {
-                        if_true: format!("{out}{}", ct.as_concat_str()),
-                        els: format!("{out}{}", ce.as_concat_str()),
+                        if_true: format_compact!("{out}{}", ct.as_concat_str()),
+                        els: format_compact!("{out}{}", ce.as_concat_str()),
                     };
                 }
                 _ => return None,
@@ -472,26 +474,23 @@ fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Flow>
     if all_wildcards {
         return None;
     }
-    let apply = |args: &[CompactString]| -> Option<String> {
+    let apply = |args: &[CompactString]| -> Option<CompactString> {
         Some(match &kind {
-            CallKind::PathJoin => path_join(args),
-            CallKind::PathResolve => path_resolve(&ctx.cwd, args),
-            CallKind::PathDirname => dirname(args.first()?),
-            CallKind::ProcessCwd => ctx.cwd.clone(),
+            CallKind::PathJoin => path_join(args).into(),
+            CallKind::PathResolve => path_resolve(&ctx.cwd, args).into(),
+            CallKind::PathDirname => dirname(args.first()?).into(),
+            CallKind::ProcessCwd => ctx.cwd.as_str().into(),
             CallKind::FileUrlToPath => file_url_to_path(args.first()?),
             CallKind::PathToFileUrl => path_to_file_url(args.first()?, &ctx.real_cwd),
             // resolveFrom(dir, spec): resolve `spec` against `dir`.
-            CallKind::ResolveFrom => path_resolve(args.first()?, &args[1..]),
-            CallKind::Concat(base) => format!("{base}{}", args.concat()),
+            CallKind::ResolveFrom => path_resolve(args.first()?, &args[1..]).into(),
+            CallKind::Concat(base) => format_compact!("{base}{}", args.concat()),
         })
     };
     let result = apply(&args)?;
     if let Some(args_else) = args_else {
         let result_else = apply(&args_else)?;
-        return Some(Flow::Cond {
-            if_true: Value::Str(result),
-            els: Value::Str(result_else),
-        });
+        return Some(Flow::Cond { if_true: Value::Str(result), els: Value::Str(result_else) });
     }
     // nft validates the wildcard count is preserved by the static fn.
     if wildcards > 0 && count_wildcards(&result) != wildcards {
@@ -513,7 +512,7 @@ enum CallKind {
     /// `resolveFrom(dir, specifier)`.
     ResolveFrom,
     /// `'base'.concat(...)` — carries the base string.
-    Concat(String),
+    Concat(CompactString),
 }
 
 /// Whether `obj` refers to the `path` module: a `path`-bound identifier, or a
@@ -607,9 +606,11 @@ pub fn path_resolve(cwd: &str, parts: &[CompactString]) -> String {
     let mut cur = cwd.to_string();
     for part in parts {
         if part.starts_with('/') {
-            cur = part.to_string();
+            cur.clear();
+            cur.push_str(part);
         } else if !part.is_empty() {
-            cur = format!("{cur}/{part}");
+            cur.push('/');
+            cur.push_str(part);
         }
     }
     normalize_posix(&cur)
@@ -646,7 +647,10 @@ pub fn normalize_posix(p: &str) -> String {
     }
     let body = out.join("/");
     if absolute {
-        format!("/{body}")
+        let mut s = String::with_capacity(body.len() + 1);
+        s.push('/');
+        s.push_str(&body);
+        s
     } else if body.is_empty() {
         ".".to_string()
     } else {
@@ -792,7 +796,7 @@ mod tests {
         let allocator = Allocator::default();
         let st = SourceType::default().with_module(true);
         // Wrap in parens so a leading string literal isn't parsed as a directive.
-        let wrapped = format!("({src})");
+        let wrapped = format_compact!("({src})");
         let ret = Parser::new(&allocator, &wrapped, st).parse();
         let stmt = ret.program.body.first()?;
         let Statement::ExpressionStatement(es) = stmt else { return None };
@@ -810,8 +814,8 @@ mod tests {
             trigger_vars: &trigger_vars,
         };
         match eval(&es.expression, &ctx)? {
-            Value::Str(s) => Some(s),
-            Value::Num(n) => Some(format!("{n}")),
+            Value::Str(s) => Some(s.into_string()),
+            Value::Num(n) => Some(n.to_string()),
             Value::Bool(b) => Some(b.to_string()),
         }
     }
@@ -838,7 +842,10 @@ mod tests {
     #[test]
     fn eval_path_join_and_resolve() {
         let b = path_binds();
-        assert_eq!(eval_str("path.join(__dirname, 'a', 'b')", &b).as_deref(), Some("/proj/src/a/b"));
+        assert_eq!(
+            eval_str("path.join(__dirname, 'a', 'b')", &b).as_deref(),
+            Some("/proj/src/a/b")
+        );
         assert_eq!(eval_str("path.resolve('a')", &b).as_deref(), Some("/proj/a"));
         assert_eq!(eval_str("path.dirname('/a/b/c')", &b).as_deref(), Some("/a/b"));
         assert_eq!(eval_str("process.cwd() + '/x'", &b).as_deref(), Some("/proj/x"));
@@ -876,7 +883,10 @@ mod tests {
     #[test]
     fn eval_global_mongoose_driver_is_falsy() {
         // global.MONGOOSE_DRIVER_PATH || './dir' -> './dir'
-        assert_eq!(eval_str("global.MONGOOSE_DRIVER_PATH || './dir'", &[]).as_deref(), Some("./dir"));
+        assert_eq!(
+            eval_str("global.MONGOOSE_DRIVER_PATH || './dir'", &[]).as_deref(),
+            Some("./dir")
+        );
     }
 
     #[test]

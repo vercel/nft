@@ -12,6 +12,7 @@
 
 use std::path::{Path, PathBuf};
 
+use compact_str::format_compact;
 use serde_json::Value;
 
 /// Node.js builtin modules that should never be emitted as files. A perfect
@@ -150,7 +151,8 @@ impl DepResolver {
 }
 
 fn not_found(specifier: &str, parent: &Path) -> String {
-    format!("Cannot find module '{specifier}' loaded from {}", parent.display())
+    format_compact!("Cannot find module '{specifier}' loaded from {}", parent.display())
+        .into_string()
 }
 
 struct Ctx<'a> {
@@ -175,14 +177,14 @@ impl Ctx<'_> {
         let real_dir = path.parent().and_then(|p| std::fs::canonicalize(p).ok());
         let not_in_node_modules = match &real_dir {
             Some(rd) => !rd.to_string_lossy().contains("/node_modules/"),
-            None => path
-                .strip_prefix(self.opts.base)
-                .is_ok_and(|rest| !format!("/{}", rest.to_string_lossy()).contains("/node_modules/")),
+            None => path.strip_prefix(self.opts.base).is_ok_and(|rest| {
+                !format_compact!("/{}", rest.to_string_lossy()).contains("/node_modules/")
+            }),
         };
         let under_base_non_nm = under_base && not_in_node_modules;
         if self.opts.ts && under_base_non_nm {
             for ext in [".ts", ".tsx"] {
-                let cand = PathBuf::from(format!("{s}{ext}"));
+                let cand = PathBuf::from(format_compact!("{s}{ext}"));
                 if cand.is_file() {
                     return Some(cand);
                 }
@@ -197,7 +199,7 @@ impl Ctx<'_> {
             ] {
                 if let Some(stem) = s.strip_suffix(js) {
                     for ext in ts_exts {
-                        let cand = PathBuf::from(format!("{stem}{ext}"));
+                        let cand = PathBuf::from(format_compact!("{stem}{ext}"));
                         if cand.is_file() {
                             return Some(cand);
                         }
@@ -206,7 +208,7 @@ impl Ctx<'_> {
             }
         }
         for ext in [".js", ".json", ".node"] {
-            let cand = PathBuf::from(format!("{s}{ext}"));
+            let cand = PathBuf::from(format_compact!("{s}{ext}"));
             if cand.is_file() {
                 return Some(cand);
             }
@@ -317,7 +319,7 @@ impl Ctx<'_> {
                     get_exports_target(entry, self.opts.conditions, cjs, NODE_SUPPORTS_MODULE_SYNC)
                 {
                     if target.ends_with('/') && target.starts_with("./") {
-                        let resolved = format!(
+                        let resolved = format_compact!(
                             "{}{}{}",
                             pkg_path.to_string_lossy(),
                             &target[1..],
@@ -402,7 +404,7 @@ impl Ctx<'_> {
 
     fn resolve_package(&mut self, name: &str, parent: &Path, cjs: bool) -> Option<Vec<PathBuf>> {
         let pkg_name = get_pkg_name(name)?;
-        let subpath = format!(".{}", &name[pkg_name.len()..]);
+        let subpath = format_compact!(".{}", &name[pkg_name.len()..]);
 
         // Package self-reference resolution.
         let mut self_resolved: Option<Vec<PathBuf>> = None;
@@ -483,7 +485,7 @@ impl Ctx<'_> {
                 return Some(vec![PathBuf::from(target)]);
             }
             if key.ends_with('/') && name.starts_with(key.as_str()) {
-                let path_target = format!("{target}{}", &name[key.len()..]);
+                let path_target = format_compact!("{target}{}", &name[key.len()..]);
                 let p = PathBuf::from(&path_target);
                 if let Some(resolved) = self.resolve_file(&p).or_else(|| self.resolve_dir(&p)) {
                     return Some(vec![resolved]);
@@ -531,7 +533,7 @@ fn join_target(pkg_path: &Path, target: &str, replacement: Option<&str>) -> Path
         Some(r) => tail.replace('*', r),
         None => tail.to_string(),
     };
-    PathBuf::from(format!("{}{tail}", pkg_path.to_string_lossy()))
+    PathBuf::from(format_compact!("{}{tail}", pkg_path.to_string_lossy()))
 }
 
 fn push_unique(paths: &mut Vec<PathBuf>, p: PathBuf) {
@@ -631,7 +633,8 @@ mod tests {
     impl Fixture {
         fn new() -> Self {
             let n = COUNTER.fetch_add(1, Ordering::SeqCst);
-            let root = std::env::temp_dir().join(format!("nftrs_res_{}_{n}", std::process::id()));
+            let root = std::env::temp_dir()
+                .join(format_compact!("nftrs_res_{}_{n}", std::process::id()).as_str());
             std::fs::create_dir_all(&root).unwrap();
             Self { root }
         }

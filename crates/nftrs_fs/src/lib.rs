@@ -89,13 +89,15 @@ pub fn realpath(path: &Path) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use compact_str::format_compact;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     static N: AtomicUsize = AtomicUsize::new(0);
 
     fn tmpdir() -> PathBuf {
         let n = N.fetch_add(1, Ordering::SeqCst);
-        let d = std::env::temp_dir().join(format!("nftrs_fs_{}_{n}", std::process::id()));
+        let d = std::env::temp_dir()
+            .join(format_compact!("nftrs_fs_{}_{n}", std::process::id()).as_str());
         std::fs::create_dir_all(&d).unwrap();
         d
     }

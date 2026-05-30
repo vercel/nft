@@ -4,8 +4,8 @@
 //! whose runtime files can't be discovered by static analysis alone (native
 //! binaries, asset directories, …).
 
-use crate::Asset;
 use crate::static_eval::normalize_posix;
+use crate::Asset;
 
 /// Extra emissions for a module: asset paths/dirs and dependency paths
 /// (absolute), discovered purely from the module's file `id`.
@@ -29,7 +29,7 @@ pub fn package_name(id: &str) -> Option<String> {
     let mut parts = rest.split('/');
     let first = parts.next()?;
     let name = if first.starts_with('@') {
-        format!("{first}/{}", parts.next()?)
+        [first, "/", parts.next()?].concat()
     } else {
         first.to_string()
     };
@@ -41,7 +41,7 @@ pub fn package_name(id: &str) -> Option<String> {
 }
 
 fn resolve(dir: &str, rel: &str) -> String {
-    normalize_posix(&format!("{dir}/{rel}"))
+    normalize_posix(&[dir, "/", rel].concat())
 }
 
 /// Compute the special-case emissions for the module at `id` (its dir is
@@ -54,7 +54,9 @@ pub fn special_case(id: &str, dir: &str) -> SpecialCase {
         Some("@generated/photon") if id.ends_with("@generated/photon/index.js") => {
             out.assets.push(Asset::Dir(resolve(dir, "runtime")));
         }
-        Some("@serialport/bindings-cpp") if id.ends_with("@serialport/bindings-cpp/dist/index.js") => {
+        Some("@serialport/bindings-cpp")
+            if id.ends_with("@serialport/bindings-cpp/dist/index.js") =>
+        {
             out.assets.push(Asset::Dir(resolve(dir, "../build/Release")));
             out.assets.push(Asset::Dir(resolve(dir, "../prebuilds")));
         }
@@ -90,10 +92,7 @@ mod tests {
 
     #[test]
     fn package_name_basic() {
-        assert_eq!(
-            package_name("/x/node_modules/lodash/index.js").as_deref(),
-            Some("lodash")
-        );
+        assert_eq!(package_name("/x/node_modules/lodash/index.js").as_deref(), Some("lodash"));
     }
 
     #[test]
@@ -106,10 +105,7 @@ mod tests {
 
     #[test]
     fn package_name_nested_node_modules() {
-        assert_eq!(
-            package_name("/a/node_modules/x/node_modules/y/lib.js").as_deref(),
-            Some("y")
-        );
+        assert_eq!(package_name("/a/node_modules/x/node_modules/y/lib.js").as_deref(), Some("y"));
     }
 
     #[test]

@@ -80,9 +80,9 @@ fn key_string(key: &PropertyKey) -> Option<String> {
 
 fn format_index(n: f64) -> String {
     if n.fract() == 0.0 {
-        format!("{}", n as i64)
+        (n as i64).to_string()
     } else {
-        format!("{n}")
+        n.to_string()
     }
 }
 
