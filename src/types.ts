@@ -68,15 +68,14 @@ export type NodeFileTraceReasonType =
   | 'asset'
   | 'sharedlib';
 
-export interface NodeFileTraceReasons
-  extends Map<
-    string,
-    {
-      type: NodeFileTraceReasonType[];
-      ignored: boolean;
-      parents: Set<string>;
-    }
-  > {}
+export interface NodeFileTraceReasons extends Map<
+  string,
+  {
+    type: NodeFileTraceReasonType[];
+    ignored: boolean;
+    parents: Set<string>;
+  }
+> {}
 
 export interface NodeFileTraceResult {
   fileList: Set<string>;

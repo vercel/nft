@@ -24,12 +24,12 @@ Design, profiling, and CI/CD follow [`ubugeeei-prod/ox-content`](https://github.
 
 ## npm / crate naming
 
-| Kind | Name |
-| --- | --- |
-| Main JS package | `@nftrs/core` |
-| Native binary (per-platform optionalDeps) | `@nftrs/binding-{platform}` |
-| napi crate | `nftrs_napi` (`binaryName: nftrs`, `packageName: @nftrs/binding`) |
-| Crate prefix | `nftrs_*` |
+| Kind                                      | Name                                                              |
+| ----------------------------------------- | ----------------------------------------------------------------- |
+| Main JS package                           | `@nftrs/core`                                                     |
+| Native binary (per-platform optionalDeps) | `@nftrs/binding-{platform}`                                       |
+| napi crate                                | `nftrs_napi` (`binaryName: nftrs`, `packageName: @nftrs/binding`) |
+| Crate prefix                              | `nftrs_*`                                                         |
 
 ---
 
@@ -64,20 +64,25 @@ Lints follow ox-content as well (clippy `pedantic` / `nursery` / `cargo` as warn
 ## Milestones
 
 ### M0 — Foundation
+
 Stand up the workspace, CI, napi skeleton, and the benchmark/profiling foundation. Reach a state that
 "runs even when empty and is measurable."
 
 ### M1 — Full `@vercel/nft` compatibility (the gate) ★ highest priority
+
 Port analyzer / resolver / special-cases / wrappers / static-eval and turn nft's whole test suite green.
 **No optimization until this passes.**
 
 ### M2 — Misskey end-to-end
+
 Run against a real Misskey build, close gaps and diffs, and satisfy "works completely."
 
 ### M3 — Performance & AI-automated optimization
+
 On top of the benchmark foundation, drive speed down profile-first. Make the AI optimization loop runnable.
 
 ### M4 — Release
+
 OIDC trusted publish of `@nftrs/core` + `@nftrs/binding-*` to npm. crates.io / docs.
 
 ---
@@ -87,6 +92,7 @@ OIDC trusted publish of `@nftrs/core` + `@nftrs/binding-*` to npm. crates.io / d
 > Labels: `M0`-`M4`, `area:fs` / `area:resolver` / `area:analyzer` / `area:core` / `area:napi` / `area:ci` / `area:bench` / `area:compat`, `type:feat` / `type:infra` / `type:test` / `type:perf`
 
 ### M0 — Foundation
+
 1. **[infra] Initialize Cargo workspace** — `Cargo.toml` (members, workspace.package, lints, release profile), `rust-toolchain.toml`, `.node-version`, `deny.toml`, pin OXC deps.
 2. **[infra] Create crate skeletons** — the 9 crates above as empty libs that `cargo build` cleanly.
 3. **[napi] napi-rs skeleton** — `nftrs_napi` (`crate-type=["cdylib","rlib"]`, `napi-build`) + `package.json` (`@nftrs/core`, napi targets, `binaryName/packageName`) + binding loader `index.js` + generated `index.d.ts`. `version()` and a stub `nodeFileTrace` callable from Node.
@@ -96,6 +102,7 @@ OIDC trusted publish of `@nftrs/core` + `@nftrs/binding-*` to npm. crates.io / d
 7. **[infra] Issue/PR templates + labels** — port templates (incl. `production_readiness`), bulk-create labels via `gh label`.
 
 ### M1 — Full `@vercel/nft` compatibility
+
 8. **[test] Compatibility harness** — run nft's `test/unit` (154) / `test/integration` (89) / `test/ecmascript` / `test/cli` against the built napi binary. Port the expected-value comparison (fileList/reasons). Track progress as "N/154 passing."
 9. **[fs] Cached FS + realpath** — `readFile`/`stat`/`readlink` caches, `realpath` (symlink-loop detection, emit in-base symlinks), `fileIOConcurrency`.
 10. **[resolver] oxc_resolver integration** — Node resolution via oxc_resolver. Basic extensions/index/`package.json` main resolution.
@@ -104,7 +111,7 @@ OIDC trusted publish of `@nftrs/core` + `@nftrs/binding-*` to npm. crates.io / d
 13. **[analyzer] Parsing foundation (oxc)** — parse CJS/ESM/TS/JSX/import-attributes with oxc. `isESM` detection. parse-failure warning behavior.
 14. **[analyzer] require/import/export detection** — `require()`, `require.resolve`, dynamic `import()`, static `import`/`export ... from`, `module.exports`/`exports.x` dependency extraction.
 15. **[analyzer] Port static-eval** — the static expression evaluation engine (`src/utils/static-eval.ts`, 588 lines). Template literals, binary ops, `path.join` folding, etc.
-16. **[analyzer] __dirname/__filename/import.meta.url** — bindings and their contribution to asset-path resolution.
+16. **[analyzer] **dirname/**filename/import.meta.url** — bindings and their contribution to asset-path resolution.
 17. **[analyzer] Asset reference detection & globs** — argument resolution for `fs.readFile` etc., `emitAssetDirectory`, wildcard/glob (picomatch -> `globset`), `computeFileReferences`/`emitGlobs`/`evaluatePureExpressions`.
 18. **[analyzer] Port wrappers** — `src/utils/wrappers.ts` (742 lines). Unwrap bundler output wrappers.
 19. **[analyzer] Port special-cases** — `src/utils/special-cases.ts` (390 lines). pino/prisma/express/`@grpc` and other per-package hacks.
@@ -115,17 +122,20 @@ OIDC trusted publish of `@nftrs/core` + `@nftrs/binding-*` to npm. crates.io / d
 24. **[test] Turn the full suite green** — pass all fixtures via the harness from #8. Port Windows/macOS/Node-version skip rules. **DoD for M1.**
 
 ### M2 — Misskey end-to-end
+
 25. **[compat] Validate Misskey build** — swap `@vercel/nft` for nftrs in Misskey's build path, run it, and diff the output (fileList) against `@vercel/nft`.
 26. **[compat] Fix Misskey gaps** — minimize each missing fixture from #25, add it as a `test/unit`-style case, and fix.
 27. **[bench] Benchmark the real Misskey workload** — pin the Misskey trace as a criterion bench + profiling target and put it under regression watch.
 
 ### M3 — Performance & AI-automated optimization
+
 28. **[perf] Profile-driven hotspot optimization** — identify top entries from span/alloc reports and optimize (fewer allocations, zero-copy, caching).
 29. **[perf] Parallel tracing** — parallelize fs I/O and parsing (rayon / tokio). Beat `@vercel/nft`'s async concurrency.
 30. **[bench] AI optimization loop foundation** — profile JSON -> candidate extraction -> agent optimization PR -> auto accept/reject via the bench regression gate, runnable via Workflow / cron. Build out `nftrs bench --json` / `nftrs profile --json`.
 31. **[bench] Continuous baseline tracking** — record benchmark history nightly and visualize long-term trends.
 
 ### M4 — Release
+
 32. **[infra] publish.yml** — multi-target napi build (5 platforms) + binding subpackage creation + OIDC trusted publish (`@nftrs/core` / `@nftrs/binding-*`). Port ox-content's `publish.yml`.
 33. **[infra] crates.io publish (optional)** — publish `nftrs_*` in dependency order.
 34. **[infra] Docs & README** — usage, compatibility matrix, benchmark results, migration guide.

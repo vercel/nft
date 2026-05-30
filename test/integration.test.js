@@ -7,7 +7,7 @@ const { fork, exec: execOrig } = require('child_process');
 
 const exec = require('util').promisify(execOrig);
 
-jest.setTimeout(200_000);
+// jest.setTimeout(200_000) — global test timeout is configured in vite.config.ts.
 
 const integrationDir = `${__dirname}${path.sep}integration`;
 

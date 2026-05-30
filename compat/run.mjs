@@ -36,21 +36,32 @@ const filter = filterIdx !== -1 ? args[filterIdx + 1] : null;
 
 // Skip rules ported from test/unit.test.js (platform / node version specific).
 const skipOnWindows = [
-  'datadog-pprof-node-gyp', 'yarn-workspaces', 'yarn-workspaces-base-root',
-  'yarn-workspace-esm', 'asset-symlink', 'require-symlink',
+  'datadog-pprof-node-gyp',
+  'yarn-workspaces',
+  'yarn-workspaces-base-root',
+  'yarn-workspace-esm',
+  'asset-symlink',
+  'require-symlink',
 ];
 const skipOnMac = [];
 const skipOnNode20AndBelow = [
-  'module-sync-condition-es', 'module-sync-condition-cjs',
-  'module-sync-condition-es-default', 'module-sync-condition-es-nested',
-  'imports-module-sync', 'imports-module-sync-cjs', 'self-reference-module-sync',
+  'module-sync-condition-es',
+  'module-sync-condition-cjs',
+  'module-sync-condition-es-default',
+  'module-sync-condition-es-nested',
+  'imports-module-sync',
+  'imports-module-sync-cjs',
+  'self-reference-module-sync',
 ];
 const skipOnNode22AndAbove = [
-  'module-sync-condition-es-node20', 'module-sync-condition-cjs-node20',
+  'module-sync-condition-es-node20',
+  'module-sync-condition-cjs-node20',
 ];
 const skipOnNode26AndAbove = ['datadog-pprof-node-gyp', 'phantomjs-prebuilt'];
 const nodeGypTests = [
-  'datadog-pprof-node-gyp', 'microtime-node-gyp', 'zeromq-node-gyp',
+  'datadog-pprof-node-gyp',
+  'microtime-node-gyp',
+  'zeromq-node-gyp',
 ];
 if (process.platform === 'darwin' && process.arch === 'arm64') {
   skipOnMac.push('microtime-node-gyp');
@@ -78,11 +89,16 @@ function inputNamesFor(testName) {
 }
 
 function shouldSkip(testName) {
-  if (process.platform === 'win32' && skipOnWindows.includes(testName)) return 'windows';
-  if (process.platform === 'darwin' && skipOnMac.includes(testName)) return 'macos';
-  if (nodeVersion < 22 && skipOnNode20AndBelow.includes(testName)) return 'node<22';
-  if (nodeVersion >= 22 && skipOnNode22AndAbove.includes(testName)) return 'node>=22';
-  if (nodeVersion >= 26 && skipOnNode26AndAbove.includes(testName)) return 'node>=26';
+  if (process.platform === 'win32' && skipOnWindows.includes(testName))
+    return 'windows';
+  if (process.platform === 'darwin' && skipOnMac.includes(testName))
+    return 'macos';
+  if (nodeVersion < 22 && skipOnNode20AndBelow.includes(testName))
+    return 'node<22';
+  if (nodeVersion >= 22 && skipOnNode22AndAbove.includes(testName))
+    return 'node>=22';
+  if (nodeVersion >= 26 && skipOnNode26AndAbove.includes(testName))
+    return 'node>=26';
   return null;
 }
 
@@ -93,7 +109,9 @@ function readExpected(unitPath) {
 
 function readOpts(unitPath) {
   try {
-    return JSON.parse(fs.readFileSync(join(unitPath, 'test-opts.json')).toString());
+    return JSON.parse(
+      fs.readFileSync(join(unitPath, 'test-opts.json')).toString(),
+    );
   } catch {
     return {};
   }
@@ -119,7 +137,8 @@ async function traceFixture(testName) {
       ts: true,
       analysis: !testName.startsWith('basic-analysis'),
       mixedModules: testOpts?.mixedModules ?? true,
-      ignore: (str) => str.endsWith('/actual.js') || str.startsWith('usr/local'),
+      ignore: (str) =>
+        str.endsWith('/actual.js') || str.startsWith('usr/local'),
       depth: testOpts.depth,
     },
   );
@@ -172,7 +191,10 @@ async function main() {
         failed.push({ testName, expected: [...expected].sort(), actual });
       }
     } catch (err) {
-      errored.push({ testName, error: String(err && err.message ? err.message : err) });
+      errored.push({
+        testName,
+        error: String(err && err.message ? err.message : err),
+      });
     }
   }
 
@@ -187,7 +209,9 @@ async function main() {
   };
 
   if (asJson) {
-    process.stdout.write(JSON.stringify({ summary, failed, errored, skipped }, null, 2) + '\n');
+    process.stdout.write(
+      JSON.stringify({ summary, failed, errored, skipped }, null, 2) + '\n',
+    );
   } else {
     console.log(`\nnftrs compatibility — test/unit`);
     console.log('─'.repeat(48));

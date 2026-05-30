@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "description": "Node.js dependency tracing (a Rust + OXC rewrite of @vercel/nft). Drop-in nodeFileTrace.",
   "keywords": [
-    "node",
     "dependency",
-    "trace",
-    "nft",
     "napi",
+    "nft",
+    "node",
     "oxc",
-    "rust"
+    "rust",
+    "trace"
   ],
   "license": "MIT",
   "author": "ubugeeei",

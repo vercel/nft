@@ -4,7 +4,7 @@ const { join } = require('path');
 const cp = require('child_process');
 const exec = promisify(cp.exec);
 
-jest.setTimeout(15_000);
+// jest.setTimeout(15_000) — global test timeout is configured in vite.config.ts.
 
 const inputjs = 'unit/wildcard/input.js';
 const outputjs = 'unit/wildcard/assets/asset1.txt';
