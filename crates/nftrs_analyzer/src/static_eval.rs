@@ -38,6 +38,8 @@ pub enum Binding {
     PathSep,
     /// `url.fileURLToPath` — converts a `file:` URL to a path.
     FileUrlToPath,
+    /// The `resolve-from` default export: `resolveFrom(dir, specifier)`.
+    ResolveFrom,
 }
 
 /// Unwrap parentheses and `(0, expr)` sequence wrappers (TS/Babel interop)
@@ -449,6 +451,8 @@ fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Flow>
             CallKind::PathDirname => dirname(args.first()?),
             CallKind::ProcessCwd => ctx.cwd.clone(),
             CallKind::FileUrlToPath => file_url_to_path(args.first()?),
+            // resolveFrom(dir, spec): resolve `spec` against `dir`.
+            CallKind::ResolveFrom => path_resolve(args.first()?, &args[1..]),
             CallKind::Concat(base) => format!("{base}{}", args.concat()),
         })
     };
@@ -475,6 +479,8 @@ enum CallKind {
     ProcessCwd,
     /// `fileURLToPath(url)`.
     FileUrlToPath,
+    /// `resolveFrom(dir, specifier)`.
+    ResolveFrom,
     /// `'base'.concat(...)` — carries the base string.
     Concat(String),
 }
@@ -486,6 +492,7 @@ fn call_kind(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<CallK
             Some(Binding::PathResolve) => Some(CallKind::PathResolve),
             Some(Binding::PathDirname) => Some(CallKind::PathDirname),
             Some(Binding::FileUrlToPath) => Some(CallKind::FileUrlToPath),
+            Some(Binding::ResolveFrom) => Some(CallKind::ResolveFrom),
             _ => None,
         },
         Expression::StaticMemberExpression(member) => {

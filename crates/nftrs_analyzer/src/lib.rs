@@ -372,6 +372,8 @@ impl BindingCollector {
             self.pino_names.insert(local.to_string());
         } else if module == "fastify" {
             self.fastify_names.insert(local.to_string());
+        } else if module == "resolve-from" {
+            self.eval_bindings.insert(local.to_string(), Binding::ResolveFrom);
         }
     }
 
