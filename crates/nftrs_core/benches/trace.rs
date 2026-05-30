@@ -36,7 +36,7 @@ fn repo_root() -> PathBuf {
 }
 
 /// Build `TraceOptions` matching the compat harness wiring.
-fn opts(root: &Path, unit_dir: &Path, name: &str) -> TraceOptions {
+fn opts(root: &Path, unit_dir: &Path, name: &str) -> TraceOptions<'static> {
     let mut base = root.to_path_buf().into_os_string();
     base.push("/");
     TraceOptions {
@@ -58,6 +58,8 @@ fn opts(root: &Path, unit_dir: &Path, name: &str) -> TraceOptions {
                 unit_dir.join("esm-paths-trailer/").to_string_lossy().into_owned(),
             ),
         ],
+        resolve: None,
+        ignore: None,
     }
 }
 

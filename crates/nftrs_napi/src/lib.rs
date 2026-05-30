@@ -2,43 +2,20 @@
 //!
 //! Aims to be a drop-in replacement for `@vercel/nft`'s `nodeFileTrace`:
 //! same signature and return shape (`fileList` / `esmFileList` / `reasons` /
-//! `warnings`). `reasons` and the JS callback overrides are still being wired
-//! — see <https://github.com/ubugeeei-prod/nftrs/issues/22>.
+//! `warnings`), including the `resolve` and `ignore` JS callback overrides
+//! (invoked synchronously during tracing).
 
 // `#[napi]` expands to code that uses `std::format!` for type-conversion error
 // messages, which we can't rewrite; the workspace bans `format!` elsewhere.
 #![allow(clippy::disallowed_macros)]
 
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
+use napi::bindgen_prelude::{Either3, FnArgs, Function, Object};
+use napi::Result;
 use napi_derive::napi;
-use nftrs_core::{node_file_trace as trace, TraceOptions};
-
-/// Options for [`node_file_trace`]. Mirrors a subset of `@vercel/nft`'s
-/// `NodeFileTraceOptions`; unrecognized fields are ignored.
-#[napi(object)]
-#[derive(Default)]
-pub struct NodeFileTraceOptions {
-    /// Base path for the returned file list. Defaults to `process.cwd()`.
-    pub base: Option<String>,
-    /// Working directory for `process.cwd()` resolution. Defaults to `base`.
-    pub process_cwd: Option<String>,
-    /// Max dependency depth to follow (`undefined` = unlimited).
-    pub depth: Option<u32>,
-    /// Whether to resolve `.ts`/`.tsx` files. Defaults to `true`.
-    pub ts: Option<bool>,
-    /// Whether to compute asset/file references. Defaults to `true`.
-    pub analysis: Option<bool>,
-    /// Active resolution conditions (default `["node"]`).
-    pub conditions: Option<Vec<String>>,
-    /// Only resolve via `exports` (no legacy `main` fallback).
-    pub exports_only: Option<bool>,
-    /// Treat `module-sync` as auto-selectable for wildcard subpaths.
-    pub module_sync_catchall: Option<bool>,
-    /// `paths` option: specifier (or `prefix/`) → target path.
-    pub paths: Option<HashMap<String, String>>,
-}
+use nftrs_core::{node_file_trace as trace, ResolveOverride, TraceOptions};
 
 /// Why a file is included: its reason `type`s and parent files. Mirrors a
 /// `@vercel/nft` `NodeFileTraceReasons` entry.
@@ -66,29 +43,83 @@ pub struct NodeFileTraceResult {
     pub reasons: HashMap<String, NodeFileTraceReason>,
 }
 
+/// The JS `resolve` override: `(specifier, parent, cjs) -> string | string[] |
+/// false | undefined`. Called synchronously on the JS thread during tracing.
+type ResolveFn<'a> =
+    Function<'a, FnArgs<(String, String, bool)>, Option<Either3<bool, String, Vec<String>>>>;
+/// The JS `ignore` predicate: `(path) -> boolean` over a base-relative path.
+type IgnoreFn<'a> = Function<'a, FnArgs<(String,)>, bool>;
+
+/// Read an optional scalar option field by its JS key.
+fn opt<V: napi::bindgen_prelude::FromNapiValue>(options: Option<&Object>, key: &str) -> Option<V> {
+    options.and_then(|o| o.get::<V>(key).ok().flatten())
+}
+
 /// Trace the runtime file dependencies of the given entry `files`.
-#[napi]
+///
+/// Takes the options as a raw object so the `resolve` / `ignore` callbacks
+/// (JS functions, which can't live in a `#[napi(object)]` struct) can be
+/// pulled out and invoked synchronously during the trace.
+#[napi(ts_args_type = "files: Array<string>, options?: {
+  base?: string
+  processCwd?: string
+  depth?: number
+  ts?: boolean
+  analysis?: boolean
+  conditions?: Array<string>
+  exportsOnly?: boolean
+  moduleSyncCatchall?: boolean
+  paths?: Record<string, string>
+  resolve?: (specifier: string, parent: string, cjs: boolean) => string | Array<string> | false | undefined
+  ignore?: (path: string) => boolean
+}")]
 pub fn node_file_trace(
     files: Vec<String>,
-    options: Option<NodeFileTraceOptions>,
-) -> NodeFileTraceResult {
-    let options = options.unwrap_or_default();
-    let base = options
-        .base
-        .clone()
+    options: Option<Object>,
+) -> Result<NodeFileTraceResult> {
+    let o = options.as_ref();
+    let base = opt::<String>(o, "base")
         .map_or_else(|| std::env::current_dir().unwrap_or_default(), PathBuf::from);
-    let process_cwd = options.process_cwd.map_or_else(|| base.clone(), PathBuf::from);
+    let process_cwd = opt::<String>(o, "processCwd").map_or_else(|| base.clone(), PathBuf::from);
+    let paths: Vec<(String, String)> = opt::<HashMap<String, String>>(o, "paths")
+        .map(|m| m.into_iter().collect())
+        .unwrap_or_default();
+
+    // The `resolve` / `ignore` JS callbacks, wrapped as Rust closures that call
+    // back into JS synchronously (we're on the JS thread for this whole call).
+    let resolve_fn = o.and_then(|o| o.get::<ResolveFn>("resolve").ok().flatten());
+    let ignore_fn = o.and_then(|o| o.get::<IgnoreFn>("ignore").ok().flatten());
+
+    let resolve = resolve_fn.map(|f| {
+        Box::new(move |spec: &str, parent: &Path, cjs: bool| {
+            let parent = parent.to_string_lossy().into_owned();
+            match f.call(FnArgs::from((spec.to_string(), parent, cjs))) {
+                Ok(Some(Either3::A(false))) => Some(ResolveOverride::Ignored),
+                Ok(Some(Either3::B(s))) => Some(ResolveOverride::Resolved(vec![s])),
+                Ok(Some(Either3::C(v))) => Some(ResolveOverride::Resolved(v)),
+                // truthy non-string / undefined / a thrown error: fall through
+                // to the built-in resolver.
+                _ => None,
+            }
+        }) as Box<nftrs_core::ResolveHook>
+    });
+    let ignore = ignore_fn.map(|f| {
+        Box::new(move |rel: &str| f.call(FnArgs::from((rel.to_string(),))).unwrap_or(false))
+            as Box<nftrs_core::IgnoreHook>
+    });
 
     let opts = TraceOptions {
         base,
         process_cwd,
-        depth: options.depth.map(|d| d as usize),
-        ts: options.ts.unwrap_or(true),
-        analysis: options.analysis.unwrap_or(true),
-        conditions: options.conditions.unwrap_or_default(),
-        exports_only: options.exports_only.unwrap_or(false),
-        module_sync_catchall: options.module_sync_catchall.unwrap_or(false),
-        paths: options.paths.map(|m| m.into_iter().collect()).unwrap_or_default(),
+        depth: opt::<u32>(o, "depth").map(|d| d as usize),
+        ts: opt::<bool>(o, "ts").unwrap_or(true),
+        analysis: opt::<bool>(o, "analysis").unwrap_or(true),
+        conditions: opt::<Vec<String>>(o, "conditions").unwrap_or_default(),
+        exports_only: opt::<bool>(o, "exportsOnly").unwrap_or(false),
+        module_sync_catchall: opt::<bool>(o, "moduleSyncCatchall").unwrap_or(false),
+        paths,
+        resolve,
+        ignore,
     };
 
     let entries: Vec<PathBuf> = files.into_iter().map(PathBuf::from).collect();
@@ -100,12 +131,12 @@ pub fn node_file_trace(
         .map(|(path, r)| (path, NodeFileTraceReason { type_: r.types, parents: r.parents }))
         .collect();
 
-    NodeFileTraceResult {
+    Ok(NodeFileTraceResult {
         file_list: result.file_list,
         esm_file_list: result.esm_file_list,
         warnings: result.warnings,
         reasons,
-    }
+    })
 }
 
 /// The `@nftrs/core` package version.

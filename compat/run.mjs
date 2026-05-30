@@ -139,6 +139,9 @@ async function traceFixture(testName) {
       mixedModules: testOpts?.mixedModules ?? true,
       ignore: (str) =>
         str.endsWith('/actual.js') || str.startsWith('usr/local'),
+      resolve: testName.startsWith('resolve-hook')
+        ? (id) => `custom-resolution-${id}`
+        : undefined,
       depth: testOpts.depth,
     },
   );

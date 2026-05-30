@@ -17,9 +17,28 @@ use nftrs_analyzer::{analyze, AnalyzeContext, Asset};
 use nftrs_fs::{normalize, CachedFs};
 use nftrs_resolver::{DepResolver, ResolveOpts};
 
+/// The outcome of a user `resolve` hook for one specifier (ports the
+/// `string | string[] | false` return of nft's `resolve` override).
+pub enum ResolveOverride {
+    /// Use these path(s)/strings as the resolution (emitted as dependencies).
+    Resolved(Vec<String>),
+    /// Explicitly ignore the specifier (resolve to nothing); nft's `false`.
+    Ignored,
+}
+
+/// A user `resolve` override: `(specifier, parent, cjs) -> override`. Returning
+/// `None` falls through to the built-in resolver (nft's `undefined`).
+pub type ResolveHook<'a> = dyn Fn(&str, &Path, bool) -> Option<ResolveOverride> + 'a;
+
+/// A user `ignore` predicate over a base-relative path: `true` drops the file
+/// (ports nft's `ignore` callback, applied on top of the default base-escape
+/// rule).
+pub type IgnoreHook<'a> = dyn Fn(&str) -> bool + 'a;
+
 /// Options for a trace run. Mirrors the subset of `NodeFileTraceOptions`
 /// wired so far.
-pub struct TraceOptions {
+#[derive(Default)]
+pub struct TraceOptions<'a> {
     /// Base path; emitted files are relative to this.
     pub base: PathBuf,
     /// Working directory for `process.cwd()` resolution. Defaults to `base`.
@@ -38,6 +57,10 @@ pub struct TraceOptions {
     pub module_sync_catchall: bool,
     /// `paths` option entries (`name`/`prefix/` → target).
     pub paths: Vec<(String, String)>,
+    /// Optional user `resolve` override (see [`ResolveHook`]).
+    pub resolve: Option<Box<ResolveHook<'a>>>,
+    /// Optional user `ignore` predicate (see [`IgnoreHook`]).
+    pub ignore: Option<Box<IgnoreHook<'a>>>,
 }
 
 /// File extensions excluded from directory asset globbing (native build
@@ -68,7 +91,7 @@ pub struct TraceResult {
     pub reasons: Vec<(String, Reason)>,
 }
 
-struct Job {
+struct Job<'a> {
     base: PathBuf,
     cwd: PathBuf,
     depth: Option<usize>,
@@ -78,6 +101,10 @@ struct Job {
     exports_only: bool,
     module_sync_catchall: bool,
     paths: Vec<(String, String)>,
+    /// User `resolve` override; consulted before the built-in resolver.
+    resolve_hook: Option<&'a ResolveHook<'a>>,
+    /// User `ignore` predicate; drops files on top of the base-escape rule.
+    ignore_hook: Option<&'a IgnoreHook<'a>>,
     fs: CachedFs,
     resolver: DepResolver,
     file_list: Vec<String>,
@@ -91,8 +118,8 @@ struct Job {
     reason_order: Vec<String>,
 }
 
-impl Job {
-    fn new(opts: &TraceOptions) -> Self {
+impl<'a> Job<'a> {
+    fn new(opts: &'a TraceOptions<'a>) -> Self {
         let conditions = if opts.conditions.is_empty() {
             vec!["node".to_string()]
         } else {
@@ -108,6 +135,8 @@ impl Job {
             exports_only: opts.exports_only,
             module_sync_catchall: opts.module_sync_catchall,
             paths: opts.paths.clone(),
+            resolve_hook: opts.resolve.as_deref(),
+            ignore_hook: opts.ignore.as_deref(),
             fs: CachedFs::new(),
             resolver: DepResolver::new(),
             file_list: Vec::new(),
@@ -141,6 +170,29 @@ impl Job {
         cjs: bool,
         depth: Option<usize>,
     ) {
+        // A user `resolve` override (nft's `resolve`) replaces the built-in
+        // resolver for this specifier. `&ResolveHook` is `Copy`, so lift it out
+        // before the `&mut self` emit calls.
+        if let Some(hook) = self.resolve_hook {
+            match hook(specifier, parent, cjs) {
+                Some(ResolveOverride::Ignored) => return,
+                Some(ResolveOverride::Resolved(targets)) => {
+                    for t in targets {
+                        let target = if Path::new(&t).is_absolute() {
+                            PathBuf::from(&t)
+                        } else {
+                            self.base.join(&t)
+                        };
+                        // The override may name a virtual path that doesn't
+                        // exist on disk; emit it directly as a terminal
+                        // dependency without realpath/analysis.
+                        self.emit_file(&target, Some(parent), "dependency");
+                    }
+                    return;
+                }
+                None => {} // fall through to the built-in resolver
+            }
+        }
         let opts = self.resolve_opts();
         match self.resolver.resolve(specifier, parent, cjs, &opts) {
             Ok(resolution) => {
@@ -198,6 +250,13 @@ impl Job {
         let rel = relative(&self.base, real);
         if rel.starts_with("..") {
             return false;
+        }
+        // User `ignore` predicate, applied on top of the default base-escape
+        // rule. `&IgnoreHook` is `Copy`, so it doesn't conflict with `&mut self`.
+        if let Some(ignore) = self.ignore_hook {
+            if ignore(&rel) {
+                return false;
+            }
         }
         let parent_rel = parent.map(|p| relative(&self.base, p));
         self.record_reason(&rel, parent_rel.as_deref(), reason);
@@ -854,6 +913,8 @@ mod trace_tests {
                 exports_only: false,
                 module_sync_catchall: false,
                 paths: vec![],
+                resolve: None,
+                ignore: None,
             };
             let mut list = node_file_trace(&[self.root.join(entry)], &opts).file_list;
             list.sort();
@@ -870,6 +931,8 @@ mod trace_tests {
                 exports_only: false,
                 module_sync_catchall: false,
                 paths: vec![],
+                resolve: None,
+                ignore: None,
             };
             node_file_trace(&[self.root.join(entry)], &opts)
         }
@@ -960,9 +1023,69 @@ mod trace_tests {
             exports_only: false,
             module_sync_catchall: false,
             paths: vec![],
+            resolve: None,
+            ignore: None,
         };
         let list = node_file_trace(&[f.root.join("input.js")], &opts).file_list;
         assert!(list.contains(&"input.js".to_string()));
         assert!(!list.contains(&"b.js".to_string()));
+    }
+
+    /// Build default `TraceOptions` rooted at `root`, for hook tests.
+    fn opts_for<'a>(root: &Path) -> TraceOptions<'a> {
+        TraceOptions {
+            base: root.to_path_buf(),
+            process_cwd: root.to_path_buf(),
+            depth: None,
+            ts: true,
+            analysis: true,
+            conditions: vec!["node".to_string()],
+            exports_only: false,
+            module_sync_catchall: false,
+            paths: vec![],
+            resolve: None,
+            ignore: None,
+        }
+    }
+
+    #[test]
+    fn resolve_hook_overrides_resolution() {
+        let f = Fx::new();
+        f.file("input.js", "require('./local-dep');\nrequire('external-dep');");
+        let mut opts = opts_for(&f.root);
+        // Mirror nft's `resolve-hook` fixture: map every specifier to a virtual
+        // path that need not exist on disk.
+        opts.resolve = Some(Box::new(|id: &str, _p: &Path, _cjs: bool| {
+            Some(ResolveOverride::Resolved(vec![["custom-resolution-", id].concat()]))
+        }));
+        let mut list = node_file_trace(&[f.root.join("input.js")], &opts).file_list;
+        list.sort();
+        assert!(list.contains(&"custom-resolution-./local-dep".to_string()), "{list:?}");
+        assert!(list.contains(&"custom-resolution-external-dep".to_string()), "{list:?}");
+        assert!(list.contains(&"input.js".to_string()));
+    }
+
+    #[test]
+    fn resolve_hook_false_ignores_specifier() {
+        let f = Fx::new();
+        f.file("input.js", "require('./a');").file("a.js", "");
+        let mut opts = opts_for(&f.root);
+        opts.resolve = Some(Box::new(|_id: &str, _p: &Path, _cjs: bool| Some(ResolveOverride::Ignored)));
+        let list = node_file_trace(&[f.root.join("input.js")], &opts).file_list;
+        assert!(list.contains(&"input.js".to_string()));
+        assert!(!list.contains(&"a.js".to_string()), "ignored specifier must not be emitted: {list:?}");
+    }
+
+    #[test]
+    fn ignore_hook_drops_matching_files() {
+        let f = Fx::new();
+        f.file("input.js", "require('./a');").file("a.js", "require('./b');").file("b.js", "");
+        let mut opts = opts_for(&f.root);
+        opts.ignore = Some(Box::new(|rel: &str| rel.ends_with("a.js")));
+        let list = node_file_trace(&[f.root.join("input.js")], &opts).file_list;
+        assert!(list.contains(&"input.js".to_string()));
+        // a.js is ignored, so neither it nor its transitive dep b.js is emitted.
+        assert!(!list.contains(&"a.js".to_string()), "{list:?}");
+        assert!(!list.contains(&"b.js".to_string()), "ignored file's deps must not be followed: {list:?}");
     }
 }
