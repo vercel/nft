@@ -268,6 +268,11 @@ impl Job {
                 self.emit_dependency(&file, next_depth);
             }
         }
+
+        // Special-case dependencies (absolute paths): follow each directly.
+        for dep in analysis.extra_deps {
+            self.emit_dependency(Path::new(&dep), next_depth);
+        }
     }
 
     /// Emit a referenced asset. Files are followed as dependencies when they

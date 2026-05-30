@@ -63,6 +63,9 @@ pub struct AnalyzeResult {
     /// Absolute wildcard require patterns (containing [`static_eval::WILDCARD`]);
     /// the consumer globs each and follows the matches as dependencies.
     pub require_globs: Vec<String>,
+    /// Absolute dependency paths from special-case handlers (`emitDependency`);
+    /// the consumer follows each as a dependency.
+    pub extra_deps: Vec<String>,
     /// Whether the module is ESM.
     pub is_esm: bool,
     /// Whether parsing produced (recoverable) errors.
@@ -115,6 +118,8 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
         fs_fns: &bindings.fs_fns,
         require_fns: &bindings.require_fns,
         module_ns: &bindings.module_ns,
+        pino_names: &bindings.pino_names,
+        fastify_names: &bindings.fastify_names,
         deps: Vec::new(),
         imports: Vec::new(),
         assets: Vec::new(),
@@ -137,6 +142,13 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
         let mut scanner = AssetScanner { eval_ctx: &eval_ctx, assets: Vec::new() };
         scanner.visit_program(&ret.program);
         result.assets.extend(scanner.assets);
+    }
+
+    // Pass 4: per-package special cases keyed on the module's file id.
+    if ctx.compute_file_references {
+        let sc = special_cases::special_case(&ctx.filename, &ctx.dirname);
+        result.assets.extend(sc.assets);
+        result.extra_deps.extend(sc.deps);
     }
 
     result
@@ -262,6 +274,10 @@ struct BindingCollector {
     module_ns: HashSet<String>,
     /// require-like functions (the global `require` plus `createRequire` results).
     require_fns: HashMap<String, ReqBase>,
+    /// Local names bound to `pino` (require/import).
+    pino_names: HashSet<String>,
+    /// Local names bound to `fastify`.
+    fastify_names: HashSet<String>,
 }
 
 impl BindingCollector {
@@ -276,6 +292,8 @@ impl BindingCollector {
             create_require_names: HashSet::new(),
             module_ns: HashSet::new(),
             require_fns,
+            pino_names: HashSet::new(),
+            fastify_names: HashSet::new(),
         }
     }
 
@@ -321,6 +339,10 @@ impl BindingCollector {
             self.fs_objects.insert(local.to_string());
         } else if strip_node_prefix(module) == "module" {
             self.module_ns.insert(local.to_string());
+        } else if module == "pino" {
+            self.pino_names.insert(local.to_string());
+        } else if module == "fastify" {
+            self.fastify_names.insert(local.to_string());
         }
     }
 
@@ -357,6 +379,27 @@ impl BindingCollector {
             _ => {}
         }
     }
+}
+
+/// Find the value of a (non-computed) string/identifier-keyed property in an
+/// object literal.
+fn find_object_prop<'a, 'b>(
+    obj: &'b oxc_ast::ast::ObjectExpression<'a>,
+    key: &str,
+) -> Option<&'b Expression<'a>> {
+    use oxc_ast::ast::{ObjectPropertyKind, PropertyKey};
+    for p in &obj.properties {
+        let ObjectPropertyKind::ObjectProperty(op) = p else { continue };
+        let name = match &op.key {
+            PropertyKey::StaticIdentifier(i) => Some(i.name.as_str()),
+            PropertyKey::StringLiteral(s) => Some(s.value.as_str()),
+            _ => None,
+        };
+        if name == Some(key) {
+            return Some(&op.value);
+        }
+    }
+    None
 }
 
 /// Detect a require-wrapper function body: `var y = require(<firstParam>); …;
@@ -512,6 +555,8 @@ struct DepCollector<'a, 'b> {
     fs_fns: &'b HashMap<String, FsKind>,
     require_fns: &'b HashMap<String, ReqBase>,
     module_ns: &'b HashSet<String>,
+    pino_names: &'b HashSet<String>,
+    fastify_names: &'b HashSet<String>,
     deps: Vec<String>,
     imports: Vec<String>,
     assets: Vec<Asset>,
@@ -526,6 +571,51 @@ impl<'a> DepCollector<'a, '_> {
     fn push_dep_arg(&mut self, call: &oxc_ast::ast::CallExpression<'a>, base: &ReqBase) {
         if let Some(arg0) = call.arguments.first().and_then(Argument::as_expression) {
             self.process_require_arg(arg0, false, base);
+        }
+    }
+
+    /// `processPinoTransportObject`: extract `target` strings from a pino
+    /// transport config (`{ target }`, `{ targets: [...] }`, `{ pipeline: [...] }`).
+    fn process_pino_transport_object(&mut self, obj: &oxc_ast::ast::ObjectExpression<'a>) {
+        if let Some(Expression::StringLiteral(s)) = find_object_prop(obj, "target") {
+            self.deps.push(s.value.to_string());
+        }
+        for key in ["targets", "pipeline"] {
+            if let Some(Expression::ArrayExpression(arr)) = find_object_prop(obj, key) {
+                for el in &arr.elements {
+                    if let oxc_ast::ast::ArrayExpressionElement::ObjectExpression(inner) = el {
+                        if let Some(Expression::StringLiteral(s)) = find_object_prop(inner, "target")
+                        {
+                            self.deps.push(s.value.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// `pino({ transport: {...} })` — process the nested transport config.
+    fn handle_pino_config(&mut self, call: &oxc_ast::ast::CallExpression<'a>, key: &str) {
+        if let Some(Expression::ObjectExpression(cfg)) =
+            call.arguments.first().and_then(Argument::as_expression)
+        {
+            if let Some(Expression::ObjectExpression(t)) = find_object_prop(cfg, key) {
+                self.process_pino_transport_object(t);
+            }
+        }
+    }
+
+    /// `fastify({ logger: { transport: {...} } })`.
+    fn handle_fastify_config(&mut self, call: &oxc_ast::ast::CallExpression<'a>) {
+        if let Some(Expression::ObjectExpression(cfg)) =
+            call.arguments.first().and_then(Argument::as_expression)
+        {
+            if let Some(Expression::ObjectExpression(logger)) = find_object_prop(cfg, "logger") {
+                if let Some(Expression::ObjectExpression(t)) = find_object_prop(logger, "transport")
+                {
+                    self.process_pino_transport_object(t);
+                }
+            }
         }
     }
 
@@ -637,12 +727,25 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
             Expression::Identifier(id) => {
                 if let Some(kind) = self.fs_fns.get(id.name.as_str()).copied() {
                     self.handle_fs_call(kind, call);
+                } else if self.pino_names.contains(id.name.as_str()) {
+                    // pino({ transport: { target: '...' } })
+                    self.handle_pino_config(call, "transport");
+                } else if self.fastify_names.contains(id.name.as_str()) {
+                    // fastify({ logger: { transport: { target: '...' } } })
+                    self.handle_fastify_config(call);
                 }
             }
             Expression::StaticMemberExpression(member) => {
                 let prop = member.property.name.as_str();
                 if let Expression::Identifier(obj) = &member.object {
-                    if let Some(base) = self.require_fns.get(obj.name.as_str()) {
+                    if self.pino_names.contains(obj.name.as_str()) && prop == "transport" {
+                        // pino.transport({ target | targets | pipeline })
+                        if let Some(Expression::ObjectExpression(o)) =
+                            call.arguments.first().and_then(Argument::as_expression)
+                        {
+                            self.process_pino_transport_object(o);
+                        }
+                    } else if let Some(base) = self.require_fns.get(obj.name.as_str()) {
                         // <require-like>.resolve(...)
                         if prop == "resolve" {
                             let base = base.clone();
