@@ -1,4 +1,4 @@
 {
-  "passed": 140,
+  "passed": 142,
   "note": "Linux-CI passing count of test/unit fixtures whose fileList matches @vercel/nft (macOS runs ~9 higher due to platform-specific fixtures — this baseline tracks the CI runner). Bump as fixtures turn green on CI; compat --check fails if the count regresses below this."
 }
