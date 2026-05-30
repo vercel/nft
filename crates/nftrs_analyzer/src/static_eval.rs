@@ -38,6 +38,8 @@ pub enum Binding {
     PathSep,
     /// `url.fileURLToPath` — converts a `file:` URL to a path.
     FileUrlToPath,
+    /// `url.pathToFileURL` — converts a path to a `file:` URL.
+    PathToFileUrl,
     /// The `resolve-from` default export: `resolveFrom(dir, specifier)`.
     ResolveFrom,
 }
@@ -59,6 +61,9 @@ pub struct EvalCtx<'b> {
     pub dirname: String,
     pub filename: String,
     pub cwd: String,
+    /// The real process cwd (for `pathToFileURL`), which may differ from the
+    /// analysis `cwd` (`process.cwd()`).
+    pub real_cwd: String,
     pub bindings: &'b HashMap<String, Binding>,
     /// Locals bound to a statically-known value, e.g. `const x = './a'`.
     pub vars: &'b HashMap<String, Flow>,
@@ -196,6 +201,22 @@ fn import_meta_url(ctx: &EvalCtx) -> String {
 /// `fileURLToPath`: strip a `file://` scheme to a plain path.
 pub fn file_url_to_path(s: &str) -> String {
     s.strip_prefix("file://").map_or_else(|| s.to_string(), str::to_string)
+}
+
+/// `pathToFileURL`: a path to a `file:` URL, resolving relative paths against
+/// `real_cwd` and preserving a trailing slash (directory URL).
+#[must_use]
+pub fn path_to_file_url(p: &str, real_cwd: &str) -> String {
+    let resolved = if is_absolute_path(p) {
+        normalize_posix(p)
+    } else {
+        path_resolve(real_cwd, std::slice::from_ref(&p.to_string()))
+    };
+    if p.ends_with('/') && !resolved.ends_with('/') {
+        format!("file://{resolved}/")
+    } else {
+        format!("file://{resolved}")
+    }
 }
 
 /// Evaluate `new URL(rel, parent)` where `parent` is a `file:` URL or path.
@@ -454,6 +475,7 @@ fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Flow>
             CallKind::PathDirname => dirname(args.first()?),
             CallKind::ProcessCwd => ctx.cwd.clone(),
             CallKind::FileUrlToPath => file_url_to_path(args.first()?),
+            CallKind::PathToFileUrl => path_to_file_url(args.first()?, &ctx.real_cwd),
             // resolveFrom(dir, spec): resolve `spec` against `dir`.
             CallKind::ResolveFrom => path_resolve(args.first()?, &args[1..]),
             CallKind::Concat(base) => format!("{base}{}", args.concat()),
@@ -482,6 +504,8 @@ enum CallKind {
     ProcessCwd,
     /// `fileURLToPath(url)`.
     FileUrlToPath,
+    /// `pathToFileURL(path)`.
+    PathToFileUrl,
     /// `resolveFrom(dir, specifier)`.
     ResolveFrom,
     /// `'base'.concat(...)` — carries the base string.
@@ -520,6 +544,7 @@ fn call_kind(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<CallK
             Some(Binding::PathResolve) => Some(CallKind::PathResolve),
             Some(Binding::PathDirname) => Some(CallKind::PathDirname),
             Some(Binding::FileUrlToPath) => Some(CallKind::FileUrlToPath),
+            Some(Binding::PathToFileUrl) => Some(CallKind::PathToFileUrl),
             Some(Binding::ResolveFrom) => Some(CallKind::ResolveFrom),
             _ => None,
         },
@@ -742,6 +767,14 @@ mod tests {
         assert_eq!(file_url_to_path("file://"), "");
     }
 
+    #[test]
+    fn path_to_file_url_handles_abs_rel_and_trailing_slash() {
+        assert_eq!(path_to_file_url("/a/b.js", "/cwd"), "file:///a/b.js");
+        assert_eq!(path_to_file_url("./x", "/cwd"), "file:///cwd/x");
+        // a directory ('./') keeps its trailing slash
+        assert_eq!(path_to_file_url("./", "/cwd"), "file:///cwd/");
+    }
+
     // ---- eval via a parsed expression ------------------------------------
 
     /// Evaluate the first expression-statement of `src` with the given path
@@ -762,6 +795,7 @@ mod tests {
             dirname: "/proj/src".to_string(),
             filename: "/proj/src/index.js".to_string(),
             cwd: "/proj".to_string(),
+            real_cwd: "/proj".to_string(),
             bindings: &map,
             vars: &vars,
             trigger_vars: &trigger_vars,

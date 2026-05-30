@@ -47,6 +47,8 @@ pub struct AnalyzeContext {
     pub dirname: String,
     pub filename: String,
     pub cwd: String,
+    /// The real process cwd (for `pathToFileURL`); usually the trace `base`.
+    pub real_cwd: String,
     /// Whether to compute `fs.*` file references (`analysis.computeFileReferences`).
     pub compute_file_references: bool,
 }
@@ -111,6 +113,7 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
         dirname: ctx.dirname.clone(),
         filename: ctx.filename.clone(),
         cwd: ctx.cwd.clone(),
+        real_cwd: ctx.real_cwd.clone(),
         bindings: &bindings.eval_bindings,
         vars: &vars,
         trigger_vars: &trigger_vars,
@@ -125,6 +128,7 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
         pino_names: &bindings.pino_names,
         fastify_names: &bindings.fastify_names,
         default_interop_fs: &bindings.default_interop_fs,
+        register_names: &bindings.register_names,
         deps: Vec::new(),
         imports: Vec::new(),
         assets: Vec::new(),
@@ -181,6 +185,7 @@ fn collect_vars(
         dirname: &ctx.dirname,
         filename: &ctx.filename,
         cwd: &ctx.cwd,
+        real_cwd: &ctx.real_cwd,
         bindings,
         vars: HashMap::new(),
         trigger_vars: HashSet::new(),
@@ -196,6 +201,7 @@ struct VarCollector<'b> {
     dirname: &'b str,
     filename: &'b str,
     cwd: &'b str,
+    real_cwd: &'b str,
     bindings: &'b HashMap<String, Binding>,
     vars: HashMap<String, Flow>,
     trigger_vars: HashSet<String>,
@@ -210,6 +216,7 @@ impl<'a> Visit<'a> for VarCollector<'_> {
                     dirname: self.dirname.to_string(),
                     filename: self.filename.to_string(),
                     cwd: self.cwd.to_string(),
+                    real_cwd: self.real_cwd.to_string(),
                     bindings: self.bindings,
                     vars: &self.vars,
                     trigger_vars: &self.trigger_vars,
@@ -302,6 +309,8 @@ struct BindingCollector {
     /// Names whose `.default` is an fs module (babel/tsc default interop, e.g.
     /// `var _fs = _interopRequireDefault(require("fs"))`).
     default_interop_fs: HashSet<String>,
+    /// Local names bound to `module.register` (the ESM loader hook registrar).
+    register_names: HashSet<String>,
     /// Bundler module table: id (array index / object key) → external module.
     webpack_externals: wrappers::Externals,
 }
@@ -322,6 +331,7 @@ impl BindingCollector {
             pino_names: HashSet::new(),
             fastify_names: HashSet::new(),
             default_interop_fs: HashSet::new(),
+            register_names: HashSet::new(),
         }
     }
 
@@ -441,8 +451,12 @@ impl BindingCollector {
             }
         } else if strip_node_prefix(module) == "url" && imported == "fileURLToPath" {
             self.eval_bindings.insert(local.to_string(), Binding::FileUrlToPath);
+        } else if strip_node_prefix(module) == "url" && imported == "pathToFileURL" {
+            self.eval_bindings.insert(local.to_string(), Binding::PathToFileUrl);
         } else if strip_node_prefix(module) == "module" && imported == "createRequire" {
             self.create_require_names.insert(local.to_string());
+        } else if strip_node_prefix(module) == "module" && imported == "register" {
+            self.register_names.insert(local.to_string());
         }
     }
 
@@ -461,6 +475,19 @@ impl BindingCollector {
             }
             _ => {}
         }
+    }
+}
+
+/// The base directory a parent-URL path denotes: a directory URL (trailing
+/// slash) is itself the base; a file URL uses its parent directory.
+fn url_parent_dir(p: &str) -> String {
+    if let Some(dir) = p.strip_suffix('/') {
+        return dir.to_string();
+    }
+    match p.rfind('/') {
+        Some(0) => "/".to_string(),
+        Some(i) => p[..i].to_string(),
+        None => ".".to_string(),
     }
 }
 
@@ -675,6 +702,7 @@ struct DepCollector<'a, 'b> {
     pino_names: &'b HashSet<String>,
     fastify_names: &'b HashSet<String>,
     default_interop_fs: &'b HashSet<String>,
+    register_names: &'b HashSet<String>,
     deps: Vec<String>,
     imports: Vec<String>,
     assets: Vec<Asset>,
@@ -720,6 +748,41 @@ impl<'a> DepCollector<'a, '_> {
             if let Some(Expression::ObjectExpression(t)) = find_object_prop(cfg, key) {
                 self.process_pino_transport_object(t);
             }
+        }
+    }
+
+    /// `register(specifier, parentURL?)` (the ESM loader-hook registrar):
+    /// resolve `specifier` relative to the parent URL's directory.
+    fn handle_register(&mut self, call: &oxc_ast::ast::CallExpression<'a>) {
+        let Some(spec) = call.arguments.first().and_then(Argument::as_expression) else {
+            return;
+        };
+        let base = self.register_base(call.arguments.get(1));
+        self.process_require_arg(spec, false, &base);
+    }
+
+    /// The base directory the second `register` argument denotes (a parent
+    /// `file:` URL, or `{ parentURL }`). Defaults to the current module.
+    fn register_base(&self, arg: Option<&Argument<'a>>) -> ReqBase {
+        let Some(arg_expr) = arg.and_then(Argument::as_expression) else {
+            return ReqBase::CurrentFile;
+        };
+        // `{ parentURL: <url> }` → use the parentURL value.
+        let url_expr = if let Expression::ObjectExpression(o) = unwrap_expr(arg_expr) {
+            match find_object_prop(o, "parentURL") {
+                Some(e) => e,
+                None => return ReqBase::CurrentFile,
+            }
+        } else {
+            arg_expr
+        };
+        match eval_flow(url_expr, self.eval_ctx) {
+            Some(Flow::Value { value: Value::Str(s), .. }) if s.starts_with("file://") => {
+                let p = static_eval::file_url_to_path(&s);
+                let base = url_parent_dir(&p);
+                ReqBase::Dir(base)
+            }
+            _ => ReqBase::CurrentFile,
         }
     }
 
@@ -851,6 +914,9 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
                 } else if self.fastify_names.contains(id.name.as_str()) {
                     // fastify({ logger: { transport: { target: '...' } } })
                     self.handle_fastify_config(call);
+                } else if self.register_names.contains(id.name.as_str()) {
+                    // register('./hook', parentURL) — destructured module.register
+                    self.handle_register(call);
                 }
             }
             Expression::StaticMemberExpression(member) => {
@@ -873,8 +939,8 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
                         // module.require(...)
                         self.push_dep_arg(call, &ReqBase::CurrentFile);
                     } else if self.module_ns.contains(obj.name.as_str()) && prop == "register" {
-                        // module.register('./hook', ...) — ESM loader hook dep
-                        self.push_dep_arg(call, &ReqBase::CurrentFile);
+                        // module.register('./hook', parentURL) — ESM loader hook
+                        self.handle_register(call);
                     } else if self.fs_objects.contains(obj.name.as_str()) {
                         if let Some(kind) = fs_method_kind(prop) {
                             self.handle_fs_call(kind, call);
@@ -1020,6 +1086,7 @@ mod tests {
             dirname: "/proj/src".to_string(),
             filename: "/proj/src/index.js".to_string(),
             cwd: "/proj".to_string(),
+            real_cwd: "/proj".to_string(),
             compute_file_references: true,
         };
         analyze(Path::new("/proj/src/index.js"), src, &ctx)
@@ -1060,6 +1127,22 @@ mod tests {
         assert!(r.imports.contains(&"./a".to_string()));
         assert!(r.imports.contains(&"./b".to_string()));
         assert!(r.imports.contains(&"./c".to_string()));
+    }
+
+    #[test]
+    fn module_register_hooks() {
+        // register relative to the current file (parentURL = import.meta.url),
+        // relative to the real cwd (pathToFileURL('./')), and a bare specifier.
+        let r = analyze_src(
+            "const { register } = require('module');\n\
+             const { pathToFileURL } = require('url');\n\
+             register('./hook.mjs', import.meta.url);\n\
+             register('./sub/hook2.mjs', pathToFileURL('./'));\n\
+             register('test-pkg');",
+        );
+        assert!(r.deps.contains(&"/proj/src/hook.mjs".to_string())); // current-file dir
+        assert!(r.deps.contains(&"/proj/sub/hook2.mjs".to_string())); // real_cwd-relative
+        assert!(r.deps.contains(&"test-pkg".to_string())); // bare
     }
 
     #[test]
@@ -1211,6 +1294,7 @@ mod tests {
             dirname: "/proj/node_modules/shiki/dist".to_string(),
             filename: "/proj/node_modules/shiki/dist/index.js".to_string(),
             cwd: "/proj".to_string(),
+            real_cwd: "/proj".to_string(),
             compute_file_references: true,
         };
         let r = analyze(Path::new(&ctx.filename), "module.exports = {};", &ctx);
@@ -1231,6 +1315,7 @@ mod tests {
             dirname: "/proj/src".to_string(),
             filename: "/proj/src/x.ts".to_string(),
             cwd: "/proj".to_string(),
+            real_cwd: "/proj".to_string(),
             compute_file_references: true,
         };
         let r = analyze(Path::new("/proj/src/x.ts"), "import x from './a'; const y: number = 1;", &ctx);

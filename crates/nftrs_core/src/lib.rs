@@ -233,6 +233,9 @@ impl Job {
             dirname,
             filename: real.to_string_lossy().into_owned(),
             cwd: self.cwd.to_string_lossy().into_owned(),
+            // `pathToFileURL` resolves against the real process cwd, which the
+            // trace `base` mirrors.
+            real_cwd: self.base.to_string_lossy().into_owned(),
             compute_file_references: self.analysis,
         };
         let analysis = analyze(&real, &source, &ctx);
