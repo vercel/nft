@@ -121,6 +121,9 @@ export function loadVercelNft() {
  */
 export function findBackendEntry(checkoutDir) {
   const candidates = [
+    // Newer Misskey (>= 2026.x) bundles the backend with rolldown to a single
+    // `built/entry.js`; older layouts used `built/boot/entry.js`.
+    { rel: 'packages/backend/built/entry.js', kind: 'built-js' },
     { rel: 'packages/backend/built/boot/entry.js', kind: 'built-js' },
     { rel: 'packages/backend/built/index.js', kind: 'built-js' },
     { rel: 'packages/backend/src/boot/entry.ts', kind: 'src-ts' },
