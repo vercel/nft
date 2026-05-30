@@ -208,7 +208,13 @@ impl Job {
         }
 
         let real_str = real.to_string_lossy();
-        if real_str.ends_with(".json") || real_str.ends_with(".node") {
+        if real_str.ends_with(".json") {
+            return;
+        }
+        if real_str.ends_with(".node") {
+            // A native addon: also emit the package's sibling shared libraries
+            // (`sharedLibEmit`), which it may `dlopen` at runtime.
+            self.shared_lib_emit(&real);
             return;
         }
 
@@ -315,6 +321,20 @@ impl Job {
         }
     }
 
+    /// `sharedLibEmit`: when a `.node` addon is emitted, also emit the sibling
+    /// shared libraries (`.dylib`/`.so`/`.dll`) within its package, which it may
+    /// load at runtime.
+    fn shared_lib_emit(&mut self, node_path: &Path) {
+        let s = node_path.to_string_lossy();
+        let Some(base) = get_package_base(&s) else { return };
+        let base = base.to_string();
+        let mut libs = Vec::new();
+        collect_shared_libs(Path::new(&base), &mut libs);
+        for f in libs {
+            self.emit_file(&f);
+        }
+    }
+
     fn emit_asset_path(&mut self, path: &Path, depth: Option<usize>) {
         // nft only emits assets that exist on disk (`emitAssetPath` stats first),
         // so a computed-but-absent path (e.g. a platform-specific binary that is
@@ -364,6 +384,58 @@ pub fn node_file_trace(files: &[PathBuf], opts: &TraceOptions) -> TraceResult {
 /// Whether `path` is strictly inside directory `parent`.
 fn in_path(path: &Path, parent: &Path) -> bool {
     path != parent && path.starts_with(parent)
+}
+
+/// The package base directory of `id` (up to and including `node_modules/<pkg>`,
+/// scoped or not). Ports nft's `getPackageBase`.
+fn get_package_base(id: &str) -> Option<&str> {
+    let idx = id.rfind("node_modules")?;
+    let before_ok = idx == 0 || id.as_bytes().get(idx - 1) == Some(&b'/');
+    if !before_ok || id.as_bytes().get(idx + 12) != Some(&b'/') {
+        return None;
+    }
+    let start = idx + 13;
+    let rest = &id[start..];
+    let mut parts = rest.split('/');
+    let first = parts.next()?;
+    let pkg_len =
+        if first.starts_with('@') { first.len() + 1 + parts.next()?.len() } else { first.len() };
+    if pkg_len == 0 {
+        None
+    } else {
+        Some(&id[..start + pkg_len])
+    }
+}
+
+/// Whether `name` is a platform shared library (for the host platform, which is
+/// also the runtime for the napi binding).
+#[allow(clippy::case_sensitive_file_extension_comparisons)] // lib exts are lowercase
+fn is_shared_lib(name: &str) -> bool {
+    if cfg!(target_os = "windows") {
+        name.ends_with(".dll")
+    } else if cfg!(target_os = "macos") {
+        name.ends_with(".dylib") || name.ends_with(".so") || name.contains(".so.")
+    } else {
+        name.ends_with(".so") || name.contains(".so.")
+    }
+}
+
+/// Recursively collect shared-library files under `dir` (skipping nested
+/// `node_modules`).
+fn collect_shared_libs(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Ok(ft) = entry.file_type() else { continue };
+        if ft.is_dir() {
+            if entry.file_name() == "node_modules" {
+                continue;
+            }
+            collect_shared_libs(&path, out);
+        } else if is_shared_lib(&entry.file_name().to_string_lossy()) {
+            out.push(path);
+        }
+    }
 }
 
 /// Recursively collect files under `dir`, skipping `node_modules` and names/
@@ -667,6 +739,31 @@ mod tests {
         assert!(excluded_glob_file(Path::new("/a/foo.h")));
         assert!(excluded_glob_file(Path::new("/a/README.md")));
         assert!(!excluded_glob_file(Path::new("/a/index.js")));
+    }
+
+    #[test]
+    fn package_base() {
+        assert_eq!(
+            get_package_base("/p/node_modules/sharp/build/Release/sharp.node"),
+            Some("/p/node_modules/sharp")
+        );
+        assert_eq!(
+            get_package_base("/p/node_modules/@img/sharp-darwin/lib/x.node"),
+            Some("/p/node_modules/@img/sharp-darwin")
+        );
+        assert_eq!(get_package_base("/p/src/a.node"), None);
+    }
+
+    #[test]
+    fn shared_lib_detection() {
+        if cfg!(target_os = "windows") {
+            assert!(is_shared_lib("foo.dll"));
+        } else {
+            assert!(is_shared_lib("libfoo.so"));
+            assert!(is_shared_lib("libfoo.so.1"));
+            assert!(!is_shared_lib("foo.js"));
+            assert!(!is_shared_lib("foo.node"));
+        }
     }
 }
 
