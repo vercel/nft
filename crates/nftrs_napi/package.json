@@ -19,6 +19,7 @@
     "directory": "crates/nftrs_napi"
   },
   "files": [
+    "cli.js",
     "index.js",
     "index.d.ts"
   ],
@@ -45,5 +46,8 @@
       "aarch64-unknown-linux-gnu",
       "x86_64-pc-windows-msvc"
     ]
+  },
+  "bin": {
+    "nftrs": "cli.js"
   }
 }
