@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a tracing result that differs from @vercel/nft, a crash, or other incorrect behaviour.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. `nftrs` aims to be a drop-in
+        replacement for `@vercel/nft`'s `nodeFileTrace`, so the most useful
+        reports show where our output diverges from the original.
+
+        Please search existing issues first to avoid duplicates.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug. If this is a tracing-correctness issue, describe the entrypoint(s) and which files were wrongly included or omitted.
+      placeholder: Tracing `index.js` omitted `node_modules/foo/data.json`, which @vercel/nft includes.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: A minimal project, code snippet, or `nodeFileTrace(...)` call that reproduces the issue. A link to a repo or a gist is ideal.
+      render: js
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What did you expect? If @vercel/nft produces a different result, please paste its `fileList` for comparison.
+    validations:
+      required: true
+  - type: input
+    id: nftrs-version
+    attributes:
+      label: "@nftrs/core version"
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS / arch
+      description: e.g. macOS 14 arm64, Ubuntu 24.04 x86_64, Windows 11 x86_64
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      placeholder: v24.0.0
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I confirmed the behaviour differs from `@vercel/nft` (where applicable).

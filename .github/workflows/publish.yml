@@ -1,0 +1,194 @@
+name: Publish
+
+# Publishes @nftrs/core and the per-platform @nftrs/binding-* packages to npm
+# using OIDC trusted publishing (no NPM_TOKEN). See docs/PUBLISHING.md for the
+# one-time npm "trusted publisher" setup that this workflow depends on.
+#
+# Trigger by pushing a version tag (e.g. `v0.1.0`) or manually via the Actions
+# tab. The version must already be set in crates/nftrs_napi/package.json and the
+# workspace Cargo.toml before tagging.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Build the platform packages but do not publish to npm"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  # Directory (relative to the napi package) holding the per-platform packages.
+  APP_DIR: crates/nftrs_napi
+
+jobs:
+  # 1. Build the native addon for every target in the napi-rs matrix and upload
+  #    each `.node` binary as an artifact for the publish job to collect.
+  build:
+    name: Build - ${{ matrix.settings.target }}
+    runs-on: ${{ matrix.settings.host }}
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: macos-latest
+            target: x86_64-apple-darwin
+          - host: macos-latest
+            target: aarch64-apple-darwin
+          - host: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - host: ubuntu-24.04
+            target: aarch64-unknown-linux-gnu
+          - host: windows-2025
+            target: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .node-version
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: ${{ matrix.settings.target }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: ${{ matrix.settings.target }}
+
+      # aarch64 Linux is cross-compiled; napi-rs uses zig under the hood.
+      - name: Build (cross via zig)
+        if: matrix.settings.target == 'aarch64-unknown-linux-gnu'
+        working-directory: ${{ env.APP_DIR }}
+        run: >-
+          npx --yes -p @napi-rs/cli@3 napi build
+          --release --platform
+          --target ${{ matrix.settings.target }}
+          --use-napi-cross
+
+      - name: Build (native)
+        if: matrix.settings.target != 'aarch64-unknown-linux-gnu'
+        working-directory: ${{ env.APP_DIR }}
+        run: >-
+          npx --yes -p @napi-rs/cli@3 napi build
+          --release --platform
+          --target ${{ matrix.settings.target }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: ${{ env.APP_DIR }}/*.node
+          if-no-files-found: error
+          retention-days: 7
+
+  # 2. Collect every binary, lay out the per-platform npm packages, and publish
+  #    @nftrs/core + each @nftrs/binding-* with provenance via OIDC.
+  publish:
+    name: Publish to npm
+    needs: build
+    runs-on: ubuntu-24.04
+    # The "npm-publish" environment can carry required reviewers / branch
+    # protections on npm releases (see docs/PUBLISHING.md).
+    environment: npm-publish
+    permissions:
+      contents: read
+      # Required for npm OIDC trusted publishing and provenance attestations.
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      # npm >= 11.5.1 (Node >= 22.14) is required for OIDC trusted publishing.
+      # actions/setup-node wires up the registry; no NPM_TOKEN / auth file.
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .node-version
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Ensure npm supports trusted publishing
+        run: |
+          npm install -g npm@latest
+          npm --version
+
+      - name: Install Vite+
+        run: npm install -g vite-plus
+
+      - name: Install JS dependencies
+        run: vp install
+
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: ${{ env.APP_DIR }}/artifacts
+          pattern: bindings-*
+          # Flatten every bindings-<target> artifact into ./artifacts so the
+          # `napi artifacts` step can find each `nftrs.<platform>.node`.
+          merge-multiple: true
+
+      # napi-rs: create the per-platform package dirs under npm/, then move each
+      # downloaded `.node` into the matching package and stamp versions.
+      - name: Create per-platform npm package dirs
+        working-directory: ${{ env.APP_DIR }}
+        run: npx --yes -p @napi-rs/cli@3 napi create-npm-dirs
+
+      - name: Move artifacts into platform packages
+        working-directory: ${{ env.APP_DIR }}
+        run: npx --yes -p @napi-rs/cli@3 napi artifacts --output-dir ./artifacts
+
+      # pre-publish stamps each per-platform package.json version to match the
+      # root package and copies the matching addon in. We do not create a GitHub
+      # release here (the `--gh-release` flag is off by default).
+      - name: Stamp versions and copy addons into platform packages
+        working-directory: ${{ env.APP_DIR }}
+        run: npx --yes -p @napi-rs/cli@3 napi pre-publish
+
+      - name: Inspect publish layout
+        working-directory: ${{ env.APP_DIR }}
+        run: ls -R ./npm
+
+      # Publish the per-platform @nftrs/binding-* packages first so that
+      # @nftrs/core's optionalDependencies resolve once it goes out.
+      - name: Publish @nftrs/binding-* packages
+        if: ${{ !inputs.dry-run }}
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          for dir in npm/*/; do
+            if [ -f "${dir}package.json" ]; then
+              echo "Publishing ${dir}"
+              npm publish "$dir" --provenance --access public
+            fi
+          done
+
+      - name: Publish @nftrs/core
+        if: ${{ !inputs.dry-run }}
+        working-directory: ${{ env.APP_DIR }}
+        run: npm publish --provenance --access public
+
+      - name: Dry run (no publish)
+        if: ${{ inputs.dry-run }}
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          for dir in npm/*/; do
+            [ -f "${dir}package.json" ] && npm publish "$dir" --provenance --access public --dry-run
+          done
+          npm publish --provenance --access public --dry-run

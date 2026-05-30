@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest a capability, an option, or a compatibility improvement.
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        `nftrs` tracks `@vercel/nft` for compatibility. Feature requests that
+        improve parity with the upstream behaviour, performance, or the napi
+        surface are very welcome.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do, and what is getting in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the API, option, or behaviour you would like. If this maps to an `@vercel/nft` feature, link the relevant docs or source.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true

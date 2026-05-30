@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question / discussion
+    url: https://github.com/ubugeeei-prod/nftrs/discussions
+    about: Ask a question or discuss an idea. Please do not open an issue for general questions.
+  - name: Upstream @vercel/nft
+    url: https://github.com/vercel/nft/issues
+    about: nftrs is a Rust + napi rewrite of @vercel/nft. For issues with the original JS implementation, file upstream.
