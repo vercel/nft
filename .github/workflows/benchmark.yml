@@ -1,0 +1,59 @@
+name: Benchmark
+
+# Run the `node_file_trace` criterion benchmark on the PR's base and head and
+# comment the per-fixture delta. Fails if any fixture regresses beyond 10%.
+on:
+  pull_request:
+    paths:
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/benchmark.yml'
+      - '.github/scripts/compare-bench.mjs'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: benchmark-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Benchmark base (${{ github.base_ref }})
+        run: |
+          git checkout --detach ${{ github.event.pull_request.base.sha }}
+          cargo bench --bench trace -- --save-baseline base
+
+      - name: Benchmark head (compare to base)
+        run: |
+          git checkout --detach ${{ github.event.pull_request.head.sha }}
+          cargo bench --bench trace -- --baseline base
+
+      - name: Compare and comment
+        id: compare
+        run: node .github/scripts/compare-bench.mjs | tee bench-comment.md
+        continue-on-error: true
+
+      - name: Post PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: benchmark
+          path: bench-comment.md
+
+      - name: Fail on regression
+        if: steps.compare.outcome == 'failure'
+        run: |
+          echo "::error::A node_file_trace benchmark regressed beyond the threshold."
+          exit 1
