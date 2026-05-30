@@ -1,6 +1,6 @@
 {
   "name": "@nftrs/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Node.js dependency tracing (a Rust + OXC rewrite of @vercel/nft). Drop-in nodeFileTrace.",
   "keywords": [
     "dependency",

@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.0.0"
+version = "0.1.0"
 authors = ["ubugeeei"]
 categories = ["development-tools"]
 edition = "2021"
@@ -58,11 +58,11 @@ use_self = "allow"
 
 [workspace.dependencies]
 # Internal crates
-nftrs_fs = { version = "0.0.0", path = "crates/nftrs_fs" }
-nftrs_resolver = { version = "0.0.0", path = "crates/nftrs_resolver" }
-nftrs_analyzer = { version = "0.0.0", path = "crates/nftrs_analyzer" }
-nftrs_core = { version = "0.0.0", path = "crates/nftrs_core" }
-nftrs_profiler = { version = "0.0.0", path = "crates/nftrs_profiler" }
+nftrs_fs = { version = "0.1.0", path = "crates/nftrs_fs" }
+nftrs_resolver = { version = "0.1.0", path = "crates/nftrs_resolver" }
+nftrs_analyzer = { version = "0.1.0", path = "crates/nftrs_analyzer" }
+nftrs_core = { version = "0.1.0", path = "crates/nftrs_core" }
+nftrs_profiler = { version = "0.1.0", path = "crates/nftrs_profiler" }
 
 # Perf (rustc-hash is declared with the other shared deps below)
 memchr = "2"

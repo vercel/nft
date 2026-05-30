@@ -541,7 +541,7 @@ dependencies = [
 
 [[package]]
 name = "nftrs_analyzer"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "compact_str 0.8.2",
  "globset",
@@ -558,7 +558,7 @@ dependencies = [
 
 [[package]]
 name = "nftrs_core"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "compact_str 0.8.2",
  "criterion",
@@ -572,7 +572,7 @@ dependencies = [
 
 [[package]]
 name = "nftrs_fs"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "compact_str 0.8.2",
  "rustc-hash",
@@ -580,7 +580,7 @@ dependencies = [
 
 [[package]]
 name = "nftrs_napi"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "napi",
  "napi-build",
@@ -590,11 +590,11 @@ dependencies = [
 
 [[package]]
 name = "nftrs_profiler"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "nftrs_resolver"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "compact_str 0.8.2",
  "nftrs_fs",
