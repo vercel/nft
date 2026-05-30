@@ -311,6 +311,12 @@ impl Job {
     }
 
     fn emit_asset_path(&mut self, path: &Path, depth: Option<usize>) {
+        // nft only emits assets that exist on disk (`emitAssetPath` stats first),
+        // so a computed-but-absent path (e.g. a platform-specific binary that is
+        // not present) is skipped rather than emitted.
+        if !path.exists() {
+            return;
+        }
         // Directories are only emitted via explicit `readdirSync` (Asset::Dir);
         // a bare `__dirname` surfaced by the general scanner is skipped here.
         if path.is_dir() {

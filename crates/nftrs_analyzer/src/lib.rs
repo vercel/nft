@@ -95,8 +95,11 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
         return result;
     }
 
+    // Pass 0: bundler module table (webpack/browserify externals).
+    let externals = wrappers::extract_externals(&ret.program);
+
     // Pass 1: collect module bindings (path/fs/process aliases, createRequire).
-    let mut bindings = BindingCollector::new(&ctx.dirname);
+    let mut bindings = BindingCollector::new(&ctx.dirname, externals.clone());
     bindings.visit_program(&ret.program);
 
     // Pass 1b: collect statically-known local variables (`const x = './a'`),
@@ -135,6 +138,14 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
     result.assets = collector.assets;
     result.require_globs = collector.require_globs;
     result.is_esm = collector.is_esm;
+
+    // Bundled externals (`module.exports = require("X")` table entries) are
+    // dependencies of the bundle.
+    for module in externals.into_values() {
+        if !result.deps.contains(&module) {
+            result.deps.push(module);
+        }
+    }
 
     // Pass 3: general asset scan — emit maximal static absolute-path
     // expressions that trace back to a path trigger (e.g.
@@ -282,10 +293,12 @@ struct BindingCollector {
     /// Names whose `.default` is an fs module (babel/tsc default interop, e.g.
     /// `var _fs = _interopRequireDefault(require("fs"))`).
     default_interop_fs: HashSet<String>,
+    /// Bundler module table: id (array index / object key) → external module.
+    webpack_externals: wrappers::Externals,
 }
 
 impl BindingCollector {
-    fn new(dirname: &str) -> Self {
+    fn new(dirname: &str, webpack_externals: wrappers::Externals) -> Self {
         let mut require_fns = HashMap::new();
         require_fns.insert("require".to_string(), ReqBase::CurrentFile);
         Self {
@@ -296,9 +309,39 @@ impl BindingCollector {
             create_require_names: HashSet::new(),
             module_ns: HashSet::new(),
             require_fns,
+            webpack_externals,
             pino_names: HashSet::new(),
             fastify_names: HashSet::new(),
             default_interop_fs: HashSet::new(),
+        }
+    }
+
+    /// If `init` is a bundled-require call `<ident>(<id-literal>)` whose id is in
+    /// the module table, return the external module it re-exports.
+    fn webpack_require_external(&self, init: &Expression) -> Option<String> {
+        let Expression::CallExpression(call) = unwrap_expr(init) else { return None };
+        if !matches!(unwrap_expr(&call.callee), Expression::Identifier(_)) {
+            return None;
+        }
+        let key = match call.arguments.first()?.as_expression()? {
+            Expression::StringLiteral(s) => s.value.to_string(),
+            Expression::NumericLiteral(n) if n.value.fract() == 0.0 => format!("{}", n.value as i64),
+            _ => return None,
+        };
+        self.webpack_externals.get(&key).cloned()
+    }
+
+    /// If `init` is a webpack `.n()` default-getter call `<x>.n(<src>)`, return
+    /// the source identifier `src` (so it can be aliased to its module).
+    fn webpack_default_getter_src(init: &Expression) -> Option<String> {
+        let Expression::CallExpression(call) = unwrap_expr(init) else { return None };
+        let Expression::StaticMemberExpression(m) = unwrap_expr(&call.callee) else { return None };
+        if m.property.name != "n" {
+            return None;
+        }
+        match call.arguments.first().and_then(Argument::as_expression) {
+            Some(Expression::Identifier(id)) => Some(id.name.to_string()),
+            _ => None,
         }
     }
 
@@ -530,6 +573,26 @@ impl<'a> Visit<'a> for BindingCollector {
                     if let Some(b) = path_member_binding(m.property.name.as_str()) {
                         self.eval_bindings.insert(id.name.to_string(), b);
                     }
+                }
+            }
+        }
+        // Bundled-require alias: `const fs = __webpack_require__(0)` where module
+        // 0 re-exports `require("fs")` -> bind `fs` to that module.
+        if !self.webpack_externals.is_empty() {
+            if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&decl.id, &decl.init) {
+                if let Some(module) = self.webpack_require_external(init) {
+                    self.bind_object(id.name.as_str(), &module);
+                }
+            }
+        }
+        // webpack `.n()` interop default getter: `const d = __webpack_require__.n(x)`
+        // aliases `d` to `x`'s module (so `d().resolve(...)` works like path).
+        if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&decl.id, &decl.init) {
+            if let Some(src) = Self::webpack_default_getter_src(init) {
+                if matches!(self.eval_bindings.get(&src), Some(Binding::PathModule)) {
+                    self.eval_bindings.insert(id.name.to_string(), Binding::PathModule);
+                } else if self.fs_objects.contains(&src) {
+                    self.fs_objects.insert(id.name.to_string());
                 }
             }
         }
@@ -812,8 +875,10 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
                     // `fs.promises.readdir(...)` / `fs.default.readFileSync(...)`,
                     // or default-interop `fs_1.default.readFileSync(...)`.
                     if let Expression::Identifier(o) = &inner.object {
-                        let is_fs = (matches!(inner.property.name.as_str(), "promises" | "default")
-                            && self.fs_objects.contains(o.name.as_str()))
+                        let is_fs = (matches!(
+                            inner.property.name.as_str(),
+                            "promises" | "default" | "a"
+                        ) && self.fs_objects.contains(o.name.as_str()))
                             || (inner.property.name == "default"
                                 && self.default_interop_fs.contains(o.name.as_str()));
                         if is_fs {

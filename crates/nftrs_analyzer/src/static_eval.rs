@@ -485,6 +485,31 @@ enum CallKind {
     Concat(String),
 }
 
+/// Whether `obj` refers to the `path` module: a `path`-bound identifier, or a
+/// no-arg call of one (the webpack `__webpack_require__.n(path)()` default
+/// getter, which returns the module for a CJS dependency).
+fn is_path_module_obj(obj: &Expression, ctx: &EvalCtx) -> bool {
+    let id = match unwrap_expr(obj) {
+        Expression::Identifier(o) => o,
+        // webpack default getter call: `path_default()`
+        Expression::CallExpression(c) => match unwrap_expr(&c.callee) {
+            Expression::Identifier(o) => o,
+            _ => return false,
+        },
+        // webpack default accessor: `path_default.a` / `path_default.default`
+        Expression::StaticMemberExpression(m)
+            if matches!(m.property.name.as_str(), "a" | "default") =>
+        {
+            match &m.object {
+                Expression::Identifier(o) => o,
+                _ => return false,
+            }
+        }
+        _ => return false,
+    };
+    matches!(ctx.bindings.get(id.name.as_str()), Some(Binding::PathModule))
+}
+
 fn call_kind(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<CallKind> {
     match unwrap_expr(&call.callee) {
         Expression::Identifier(id) => match ctx.bindings.get(id.name.as_str()) {
@@ -497,14 +522,18 @@ fn call_kind(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<CallK
         },
         Expression::StaticMemberExpression(member) => {
             let prop = member.property.name.as_str();
+            // The object may be a `path` identifier or a webpack default-getter
+            // call `path_default()` that yields the `path` module.
+            if is_path_module_obj(&member.object, ctx) {
+                return match prop {
+                    "join" => Some(CallKind::PathJoin),
+                    "resolve" => Some(CallKind::PathResolve),
+                    "dirname" => Some(CallKind::PathDirname),
+                    _ => None,
+                };
+            }
             if let Expression::Identifier(obj) = &member.object {
                 match ctx.bindings.get(obj.name.as_str()) {
-                    Some(Binding::PathModule) => match prop {
-                        "join" => Some(CallKind::PathJoin),
-                        "resolve" => Some(CallKind::PathResolve),
-                        "dirname" => Some(CallKind::PathDirname),
-                        _ => None,
-                    },
                     Some(Binding::ProcessModule) if prop == "cwd" => Some(CallKind::ProcessCwd),
                     _ if obj.name == "process" && prop == "cwd" => Some(CallKind::ProcessCwd),
                     _ => None,
