@@ -104,7 +104,7 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
 
     // Pass 1b: collect statically-known local variables (`const x = './a'`),
     // so later expressions can resolve identifiers to their values.
-    let vars = collect_vars(&ret.program, ctx, &bindings.eval_bindings);
+    let (vars, trigger_vars) = collect_vars(&ret.program, ctx, &bindings.eval_bindings);
 
     // Pass 2: collect deps/imports/assets.
     let eval_ctx = EvalCtx {
@@ -113,6 +113,7 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
         cwd: ctx.cwd.clone(),
         bindings: &bindings.eval_bindings,
         vars: &vars,
+        trigger_vars: &trigger_vars,
     };
     let mut collector = DepCollector {
         compute_file_references: ctx.compute_file_references,
@@ -175,26 +176,29 @@ fn collect_vars(
     program: &oxc_ast::ast::Program,
     ctx: &AnalyzeContext,
     bindings: &HashMap<String, Binding>,
-) -> HashMap<String, Flow> {
+) -> (HashMap<String, Flow>, HashSet<String>) {
     let mut vc = VarCollector {
         dirname: &ctx.dirname,
         filename: &ctx.filename,
         cwd: &ctx.cwd,
         bindings,
         vars: HashMap::new(),
+        trigger_vars: HashSet::new(),
     };
     vc.visit_program(program);
-    vc.vars
+    (vc.vars, vc.trigger_vars)
 }
 
 /// Evaluates `name = <init>` declarators in source order, growing `vars` so a
-/// later initializer can reference an earlier constant.
+/// later initializer can reference an earlier constant. Also tracks which vars
+/// derive from a path trigger (`__dirname` etc.).
 struct VarCollector<'b> {
     dirname: &'b str,
     filename: &'b str,
     cwd: &'b str,
     bindings: &'b HashMap<String, Binding>,
     vars: HashMap<String, Flow>,
+    trigger_vars: HashSet<String>,
 }
 
 impl<'a> Visit<'a> for VarCollector<'_> {
@@ -208,11 +212,16 @@ impl<'a> Visit<'a> for VarCollector<'_> {
                     cwd: self.cwd.to_string(),
                     bindings: self.bindings,
                     vars: &self.vars,
+                    trigger_vars: &self.trigger_vars,
                 };
                 let flow = eval_flow(init, &ctx);
+                let is_trigger = static_eval::contains_trigger(init, &ctx);
                 drop(ctx);
                 if let Some(f) = flow {
                     self.vars.insert(name.to_string(), f);
+                }
+                if is_trigger {
+                    self.trigger_vars.insert(name.to_string());
                 }
             }
         }
@@ -1118,6 +1127,17 @@ mod tests {
             "const path = require('path'); const fs = require('fs'); fs.readFileSync(path.join(__dirname, 'a', x) + '.txt');",
         );
         assert!(files(&r).iter().any(|f| f == "/proj/src/a/\u{1a}.txt"));
+    }
+
+    #[test]
+    fn trigger_var_derived_wildcard_asset() {
+        // `dir` derives from __dirname, so a wildcard path built from it is an
+        // asset even though __dirname is not written literally.
+        let r = analyze_src(
+            "const path = require('path'); const dir = path.join(__dirname, 'assets');\n\
+             const f = path.join(dir, proto + '.txt'); load(f);",
+        );
+        assert!(files(&r).iter().any(|f| f == "/proj/src/assets/\u{1a}.txt"));
     }
 
     #[test]

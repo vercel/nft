@@ -14,7 +14,7 @@
 //!
 //! See <https://github.com/ubugeeei-prod/nftrs/issues/16>, #48.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use oxc_ast::ast::{Argument, Expression, TemplateLiteral};
 
@@ -62,6 +62,9 @@ pub struct EvalCtx<'b> {
     pub bindings: &'b HashMap<String, Binding>,
     /// Locals bound to a statically-known value, e.g. `const x = './a'`.
     pub vars: &'b HashMap<String, Flow>,
+    /// Locals whose value derives from a path trigger (`__dirname` etc.), e.g.
+    /// `const dir = path.join(__dirname, 'assets')`.
+    pub trigger_vars: &'b HashSet<String>,
 }
 
 /// A statically-evaluated value. Only the variants nft's analysis needs.
@@ -632,7 +635,10 @@ pub fn is_absolute_path(s: &str) -> bool {
 #[must_use]
 pub fn contains_trigger(expr: &Expression, ctx: &EvalCtx) -> bool {
     match expr {
-        Expression::Identifier(id) => matches!(id.name.as_str(), "__dirname" | "__filename"),
+        Expression::Identifier(id) => {
+            matches!(id.name.as_str(), "__dirname" | "__filename")
+                || ctx.trigger_vars.contains(id.name.as_str())
+        }
         Expression::TemplateLiteral(t) => t.expressions.iter().any(|e| contains_trigger(e, ctx)),
         Expression::BinaryExpression(b) => {
             contains_trigger(&b.left, ctx) || contains_trigger(&b.right, ctx)
@@ -751,12 +757,14 @@ mod tests {
         let map: HashMap<String, Binding> =
             bindings.iter().map(|(k, v)| ((*k).to_string(), *v)).collect();
         let vars = HashMap::new();
+        let trigger_vars = HashSet::new();
         let ctx = EvalCtx {
             dirname: "/proj/src".to_string(),
             filename: "/proj/src/index.js".to_string(),
             cwd: "/proj".to_string(),
             bindings: &map,
             vars: &vars,
+            trigger_vars: &trigger_vars,
         };
         match eval(&es.expression, &ctx)? {
             Value::Str(s) => Some(s),
