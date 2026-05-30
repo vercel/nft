@@ -1,0 +1,3 @@
+# Transient run artifacts produced by measure.mjs / loop.mjs.
+snapshots/
+candidates/

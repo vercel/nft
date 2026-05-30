@@ -80,6 +80,7 @@ Run against a real Misskey build, close gaps and diffs, and satisfy "works compl
 ### M3 — Performance & AI-automated optimization
 
 On top of the benchmark foundation, drive speed down profile-first. Make the AI optimization loop runnable.
+The measure → candidate → re-measure → gate scaffold is documented in [`OPTIMIZE.md`](./OPTIMIZE.md).
 
 ### M4 — Release
 
