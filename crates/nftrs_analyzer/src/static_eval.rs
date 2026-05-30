@@ -642,3 +642,166 @@ fn is_cwd_or_resolve(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> bool
         _ => false,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use oxc_allocator::Allocator;
+    use oxc_ast::ast::Statement;
+    use oxc_parser::Parser;
+    use oxc_span::SourceType;
+    use std::collections::HashMap;
+
+    // ---- pure posix path helpers -----------------------------------------
+
+    #[test]
+    fn normalize_posix_collapses_dot_and_dotdot() {
+        assert_eq!(normalize_posix("/a/b/../c"), "/a/c");
+        assert_eq!(normalize_posix("/a/./b"), "/a/b");
+        assert_eq!(normalize_posix("/a//b"), "/a/b");
+        assert_eq!(normalize_posix("/a/b/.."), "/a");
+        assert_eq!(normalize_posix("/a/../.."), "/");
+        assert_eq!(normalize_posix("a/b/../c"), "a/c");
+        assert_eq!(normalize_posix("./a"), "a");
+        assert_eq!(normalize_posix("../a"), "../a");
+        assert_eq!(normalize_posix(""), ".");
+        assert_eq!(normalize_posix("/"), "/");
+    }
+
+    #[test]
+    fn normalize_posix_keeps_wildcard_segment() {
+        assert_eq!(normalize_posix("/a/\u{1a}/b"), "/a/\u{1a}/b");
+        assert_eq!(normalize_posix("/a/x\u{1a}.txt"), "/a/x\u{1a}.txt");
+    }
+
+    #[test]
+    fn path_join_basic() {
+        assert_eq!(path_join(&["/a".into(), "b".into(), "c".into()]), "/a/b/c");
+        assert_eq!(path_join(&["/a".into(), "..".into(), "b".into()]), "/b");
+        assert_eq!(path_join(&["a".into(), String::new(), "b".into()]), "a/b");
+        assert_eq!(path_join(&[]), ".");
+        assert_eq!(path_join(&[String::new()]), ".");
+    }
+
+    #[test]
+    fn path_resolve_absolute_resets() {
+        assert_eq!(path_resolve("/cwd", &["a".into(), "b".into()]), "/cwd/a/b");
+        assert_eq!(path_resolve("/cwd", &["/abs".into(), "b".into()]), "/abs/b");
+        assert_eq!(path_resolve("/cwd", &["./a".into()]), "/cwd/a");
+        assert_eq!(path_resolve("/cwd", &["../a".into()]), "/a");
+        assert_eq!(path_resolve("/cwd", &[]), "/cwd");
+    }
+
+    #[test]
+    fn is_absolute_path_works() {
+        assert!(is_absolute_path("/a/b"));
+        assert!(!is_absolute_path("a/b"));
+        assert!(!is_absolute_path("./a"));
+        assert!(!is_absolute_path("file:///a"));
+    }
+
+    #[test]
+    fn file_url_to_path_strips_scheme() {
+        assert_eq!(file_url_to_path("file:///a/b.txt"), "/a/b.txt");
+        assert_eq!(file_url_to_path("/a/b.txt"), "/a/b.txt");
+        assert_eq!(file_url_to_path("file://"), "");
+    }
+
+    // ---- eval via a parsed expression ------------------------------------
+
+    /// Evaluate the first expression-statement of `src` with the given path
+    /// bindings, returning the string value (if any).
+    fn eval_str(src: &str, bindings: &[(&str, Binding)]) -> Option<String> {
+        let allocator = Allocator::default();
+        let st = SourceType::default().with_module(true);
+        // Wrap in parens so a leading string literal isn't parsed as a directive.
+        let wrapped = format!("({src})");
+        let ret = Parser::new(&allocator, &wrapped, st).parse();
+        let stmt = ret.program.body.first()?;
+        let Statement::ExpressionStatement(es) = stmt else { return None };
+        let map: HashMap<String, Binding> =
+            bindings.iter().map(|(k, v)| ((*k).to_string(), *v)).collect();
+        let vars = HashMap::new();
+        let ctx = EvalCtx {
+            dirname: "/proj/src".to_string(),
+            filename: "/proj/src/index.js".to_string(),
+            cwd: "/proj".to_string(),
+            bindings: &map,
+            vars: &vars,
+        };
+        match eval(&es.expression, &ctx)? {
+            Value::Str(s) => Some(s),
+            Value::Num(n) => Some(format!("{n}")),
+            Value::Bool(b) => Some(b.to_string()),
+        }
+    }
+
+    fn path_binds() -> Vec<(&'static str, Binding)> {
+        vec![("path", Binding::PathModule), ("process", Binding::ProcessModule)]
+    }
+
+    #[test]
+    fn eval_literals_and_concat() {
+        assert_eq!(eval_str("'abc'", &[]).as_deref(), Some("abc"));
+        assert_eq!(eval_str("1 + 2", &[]).as_deref(), Some("3"));
+        assert_eq!(eval_str("'a' + 'b' + 'c'", &[]).as_deref(), Some("abc"));
+        assert_eq!(eval_str("'a'.concat('b', 'c')", &[]).as_deref(), Some("abc"));
+    }
+
+    #[test]
+    fn eval_dirname_and_filename() {
+        assert_eq!(eval_str("__dirname + '/x'", &[]).as_deref(), Some("/proj/src/x"));
+        assert_eq!(eval_str("__filename", &[]).as_deref(), Some("/proj/src/index.js"));
+        assert_eq!(eval_str("`${__dirname}/a.txt`", &[]).as_deref(), Some("/proj/src/a.txt"));
+    }
+
+    #[test]
+    fn eval_path_join_and_resolve() {
+        let b = path_binds();
+        assert_eq!(eval_str("path.join(__dirname, 'a', 'b')", &b).as_deref(), Some("/proj/src/a/b"));
+        assert_eq!(eval_str("path.resolve('a')", &b).as_deref(), Some("/proj/a"));
+        assert_eq!(eval_str("path.dirname('/a/b/c')", &b).as_deref(), Some("/a/b"));
+        assert_eq!(eval_str("process.cwd() + '/x'", &b).as_deref(), Some("/proj/x"));
+        assert_eq!(eval_str("path.sep", &b).as_deref(), Some("/"));
+    }
+
+    #[test]
+    fn eval_wildcards_for_unknown_subexpression() {
+        // unknown identifier -> WILDCARD fill in a `+`/template/join.
+        let b = path_binds();
+        assert_eq!(
+            eval_str("path.join(__dirname, unknown) + '.txt'", &b).as_deref(),
+            Some("/proj/src/\u{1a}.txt")
+        );
+        assert_eq!(eval_str("'./x/' + unknown", &[]).as_deref(), Some("./x/\u{1a}"));
+        assert_eq!(eval_str("`m${unknown}`", &[]).as_deref(), Some("m\u{1a}"));
+    }
+
+    #[test]
+    fn eval_conditional_is_not_a_single_value() {
+        // `a ? x : y` with unknown test is a Flow::Cond, so `eval` returns None.
+        assert_eq!(eval_str("unknown ? '/a' : '/b'", &[]), None);
+    }
+
+    #[test]
+    fn eval_import_meta_and_url() {
+        assert_eq!(eval_str("import.meta.url", &[]).as_deref(), Some("file:///proj/src/index.js"));
+        // new URL(rel, import.meta.url) resolves against the module dir.
+        assert_eq!(
+            eval_str("new URL('./a.txt', import.meta.url)", &[]).as_deref(),
+            Some("file:///proj/src/a.txt")
+        );
+    }
+
+    #[test]
+    fn eval_global_mongoose_driver_is_falsy() {
+        // global.MONGOOSE_DRIVER_PATH || './dir' -> './dir'
+        assert_eq!(eval_str("global.MONGOOSE_DRIVER_PATH || './dir'", &[]).as_deref(), Some("./dir"));
+    }
+
+    #[test]
+    fn eval_returns_none_for_unknown() {
+        assert_eq!(eval_str("unknownVar", &[]), None);
+        assert_eq!(eval_str("foo.bar()", &[]), None);
+    }
+}

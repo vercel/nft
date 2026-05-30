@@ -604,3 +604,142 @@ fn pjson_boundary(path: &Path) -> Option<PathBuf> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+    /// A throwaway directory tree for resolution tests.
+    struct Fixture {
+        root: PathBuf,
+    }
+
+    impl Fixture {
+        fn new() -> Self {
+            let n = COUNTER.fetch_add(1, Ordering::SeqCst);
+            let root = std::env::temp_dir().join(format!("nftrs_res_{}_{n}", std::process::id()));
+            std::fs::create_dir_all(&root).unwrap();
+            Self { root }
+        }
+
+        fn file(&self, rel: &str, contents: &str) -> &Self {
+            let p = self.root.join(rel);
+            std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+            std::fs::write(p, contents).unwrap();
+            self
+        }
+
+        fn resolve(&self, specifier: &str, parent_rel: &str, cjs: bool) -> Option<Vec<PathBuf>> {
+            let conditions = vec!["node".to_string()];
+            let opts = ResolveOpts {
+                base: &self.root,
+                ts: true,
+                conditions: &conditions,
+                exports_only: false,
+                module_sync_catchall: false,
+                paths: &[],
+            };
+            DepResolver::new()
+                .resolve(specifier, &self.root.join(parent_rel), cjs, &opts)
+                .ok()
+                .map(|r| r.paths)
+        }
+
+        /// The single resolved path, relative to the fixture root (posix).
+        fn resolve1(&self, specifier: &str, parent_rel: &str) -> Option<String> {
+            let paths = self.resolve(specifier, parent_rel, true)?;
+            let p = paths.first()?;
+            Some(p.strip_prefix(&self.root).unwrap().to_string_lossy().replace('\\', "/"))
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[test]
+    fn resolves_relative_file_with_extension() {
+        let f = Fixture::new();
+        f.file("a.js", "").file("main.js", "");
+        assert_eq!(f.resolve1("./a", "main.js").as_deref(), Some("a.js"));
+        assert_eq!(f.resolve1("./a.js", "main.js").as_deref(), Some("a.js"));
+    }
+
+    #[test]
+    fn resolves_directory_index() {
+        let f = Fixture::new();
+        f.file("dir/index.js", "").file("main.js", "");
+        assert_eq!(f.resolve1("./dir", "main.js").as_deref(), Some("dir/index.js"));
+    }
+
+    #[test]
+    fn trailing_slash_prefers_directory_index() {
+        let f = Fixture::new();
+        // both `d.js` and `d/index.js` exist; trailing slash must pick the dir.
+        f.file("d.js", "").file("d/index.js", "").file("main.js", "");
+        assert_eq!(f.resolve1("./d", "main.js").as_deref(), Some("d.js"));
+        assert_eq!(f.resolve1("./d/", "main.js").as_deref(), Some("d/index.js"));
+    }
+
+    #[test]
+    fn js_specifier_maps_to_ts_source() {
+        let f = Fixture::new();
+        f.file("dep1.ts", "").file("main.js", "");
+        assert_eq!(f.resolve1("./dep1.js", "main.js").as_deref(), Some("dep1.ts"));
+    }
+
+    #[test]
+    fn extension_precedence_js_over_json() {
+        let f = Fixture::new();
+        f.file("a.js", "").file("a.json", "").file("main.js", "");
+        // .ts/.tsx checked first under ts, then .js — here only .js/.json exist.
+        assert_eq!(f.resolve1("./a", "main.js").as_deref(), Some("a.js"));
+    }
+
+    #[test]
+    fn resolves_package_main() {
+        let f = Fixture::new();
+        f.file("node_modules/pkg/package.json", r#"{"name":"pkg","main":"lib/m.js"}"#)
+            .file("node_modules/pkg/lib/m.js", "")
+            .file("main.js", "");
+        assert_eq!(f.resolve1("pkg", "main.js").as_deref(), Some("node_modules/pkg/lib/m.js"));
+    }
+
+    #[test]
+    fn resolves_package_index_without_main() {
+        let f = Fixture::new();
+        f.file("node_modules/pkg/package.json", r#"{"name":"pkg"}"#)
+            .file("node_modules/pkg/index.js", "")
+            .file("main.js", "");
+        assert_eq!(f.resolve1("pkg", "main.js").as_deref(), Some("node_modules/pkg/index.js"));
+    }
+
+    #[test]
+    fn builtin_resolves_to_empty() {
+        let f = Fixture::new();
+        f.file("main.js", "");
+        assert_eq!(f.resolve("fs", "main.js", true), Some(vec![]));
+        assert_eq!(f.resolve("node:path", "main.js", true), Some(vec![]));
+    }
+
+    #[test]
+    fn missing_module_errors() {
+        let f = Fixture::new();
+        f.file("main.js", "");
+        assert_eq!(f.resolve("./nope", "main.js", true), None);
+    }
+
+    #[test]
+    fn is_builtin_recognizes_node_prefix() {
+        assert!(is_builtin("fs"));
+        assert!(is_builtin("node:fs"));
+        assert!(is_builtin("node:test"));
+        assert!(!is_builtin("express"));
+        assert!(!is_builtin("./local"));
+    }
+}

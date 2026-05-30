@@ -566,3 +566,199 @@ fn relative(base: &Path, path: &Path) -> String {
     }
     parts.join("/")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn relative_paths() {
+        assert_eq!(relative(Path::new("/a/b"), Path::new("/a/b/c/d.js")), "c/d.js");
+        assert_eq!(relative(Path::new("/a/b"), Path::new("/a/b")), "");
+        assert_eq!(relative(Path::new("/a/b/c"), Path::new("/a/b/x.js")), "../x.js");
+        assert_eq!(relative(Path::new("/a/b"), Path::new("/x/y.js")), "../../x/y.js");
+    }
+
+    #[test]
+    fn wildcard_split_trailing_wildcard() {
+        let (dir, pat) = wildcard_split("/a/assets/x\u{1a}.txt");
+        assert_eq!(dir, "/a/assets");
+        assert_eq!(pat, "/x*.txt");
+    }
+
+    #[test]
+    fn wildcard_split_segment_wildcard() {
+        // a `\x1a` preceded by `/` matches a whole path segment -> `**/*`.
+        let (dir, pat) = wildcard_split("/a/\u{1a}/b.txt");
+        assert_eq!(dir, "/a");
+        assert_eq!(pat, "/**/*/b.txt");
+    }
+
+    #[test]
+    fn wildcard_split_bare() {
+        let (dir, pat) = wildcard_split("/a/mods/mod\u{1a}");
+        assert_eq!(dir, "/a/mods");
+        assert_eq!(pat, "/mod*");
+    }
+
+    #[test]
+    fn valid_wildcard_rejects_cwd_and_dirname() {
+        // never glob the cwd or the module dir
+        assert!(!valid_wildcard("/proj/\u{1a}", "/proj/src", "/proj", "/proj/src/i.js"));
+        assert!(!valid_wildcard("/proj/src/\u{1a}", "/proj/src", "/proj", "/proj/src/i.js"));
+    }
+
+    #[test]
+    fn valid_wildcard_rejects_node_modules_and_parents() {
+        assert!(!valid_wildcard(
+            "/proj/node_modules/\u{1a}",
+            "/proj/src",
+            "/proj",
+            "/proj/src/i.js"
+        ));
+        // directory above the module dir
+        assert!(!valid_wildcard("/proj/\u{1a}", "/proj/src/deep", "/other", "/proj/src/deep/i.js"));
+    }
+
+    #[test]
+    fn valid_wildcard_accepts_subdir() {
+        assert!(valid_wildcard(
+            "/proj/src/assets/\u{1a}.txt",
+            "/proj/src",
+            "/proj",
+            "/proj/src/i.js"
+        ));
+    }
+
+    #[test]
+    fn valid_wildcard_respects_package_node_modules_base() {
+        // inside node_modules: asset must stay within the package's nm base
+        assert!(!valid_wildcard(
+            "/proj/other/\u{1a}",
+            "/proj/node_modules/p/lib",
+            "/proj",
+            "/proj/node_modules/p/lib/i.js"
+        ));
+        assert!(valid_wildcard(
+            "/proj/node_modules/p/data/\u{1a}",
+            "/proj/node_modules/p/lib",
+            "/proj",
+            "/proj/node_modules/p/lib/i.js"
+        ));
+    }
+
+    #[test]
+    fn excluded_glob_files() {
+        assert!(excluded_glob_file(Path::new("/a/foo.h")));
+        assert!(excluded_glob_file(Path::new("/a/README.md")));
+        assert!(!excluded_glob_file(Path::new("/a/index.js")));
+    }
+}
+
+#[cfg(test)]
+mod trace_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static N: AtomicUsize = AtomicUsize::new(0);
+
+    struct Fx {
+        root: PathBuf,
+    }
+    impl Fx {
+        fn new() -> Self {
+            let n = N.fetch_add(1, Ordering::SeqCst);
+            let root = std::env::temp_dir().join(format!("nftrs_trace_{}_{n}", std::process::id()));
+            std::fs::create_dir_all(&root).unwrap();
+            Self { root }
+        }
+        fn file(&self, rel: &str, body: &str) -> &Self {
+            let p = self.root.join(rel);
+            std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+            std::fs::write(p, body).unwrap();
+            self
+        }
+        fn trace(&self, entry: &str) -> Vec<String> {
+            let opts = TraceOptions {
+                base: self.root.clone(),
+                process_cwd: self.root.clone(),
+                depth: None,
+                ts: true,
+                analysis: true,
+                conditions: vec!["node".to_string()],
+                exports_only: false,
+                module_sync_catchall: false,
+                paths: vec![],
+            };
+            let mut list = node_file_trace(&[self.root.join(entry)], &opts).file_list;
+            list.sort();
+            list
+        }
+    }
+    impl Drop for Fx {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[test]
+    fn traces_require_chain() {
+        let f = Fx::new();
+        f.file("input.js", "require('./a');")
+            .file("a.js", "require('./b');")
+            .file("b.js", "module.exports = 1;");
+        let list = f.trace("input.js");
+        assert!(list.contains(&"input.js".to_string()));
+        assert!(list.contains(&"a.js".to_string()));
+        assert!(list.contains(&"b.js".to_string()));
+    }
+
+    #[test]
+    fn traces_fs_asset() {
+        let f = Fx::new();
+        f.file("input.js", "const fs=require('fs'); fs.readFileSync(__dirname + '/data.txt');")
+            .file("data.txt", "x");
+        let list = f.trace("input.js");
+        assert!(list.contains(&"data.txt".to_string()));
+    }
+
+    #[test]
+    fn traces_wildcard_require_glob() {
+        let f = Fx::new();
+        f.file("input.js", "const n=unknown; require(`./mods/mod${n}`);")
+            .file("mods/mod1.js", "")
+            .file("mods/mod2.js", "");
+        let list = f.trace("input.js");
+        assert!(list.contains(&"mods/mod1.js".to_string()));
+        assert!(list.contains(&"mods/mod2.js".to_string()));
+    }
+
+    #[test]
+    fn does_not_emit_files_outside_base() {
+        let f = Fx::new();
+        // an asset that escapes the base must not be emitted.
+        f.file("input.js", "const fs=require('fs'); fs.readFileSync(__dirname + '/../../etc/passwd');");
+        let list = f.trace("input.js");
+        assert!(list.iter().all(|p| !p.contains("passwd")));
+    }
+
+    #[test]
+    fn depth_zero_stops_recursion() {
+        let f = Fx::new();
+        f.file("input.js", "require('./a');").file("a.js", "require('./b');").file("b.js", "");
+        let opts = TraceOptions {
+            base: f.root.clone(),
+            process_cwd: f.root.clone(),
+            depth: Some(0),
+            ts: true,
+            analysis: true,
+            conditions: vec!["node".to_string()],
+            exports_only: false,
+            module_sync_catchall: false,
+            paths: vec![],
+        };
+        let list = node_file_trace(&[f.root.join("input.js")], &opts).file_list;
+        assert!(list.contains(&"input.js".to_string()));
+        assert!(!list.contains(&"b.js".to_string()));
+    }
+}

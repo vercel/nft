@@ -83,3 +83,76 @@ pub fn special_case(id: &str, dir: &str) -> SpecialCase {
     }
     out
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn package_name_basic() {
+        assert_eq!(
+            package_name("/x/node_modules/lodash/index.js").as_deref(),
+            Some("lodash")
+        );
+    }
+
+    #[test]
+    fn package_name_scoped() {
+        assert_eq!(
+            package_name("/x/node_modules/@generated/photon/index.js").as_deref(),
+            Some("@generated/photon")
+        );
+    }
+
+    #[test]
+    fn package_name_nested_node_modules() {
+        assert_eq!(
+            package_name("/a/node_modules/x/node_modules/y/lib.js").as_deref(),
+            Some("y")
+        );
+    }
+
+    #[test]
+    fn package_name_none_outside_node_modules() {
+        assert_eq!(package_name("/a/b/c.js"), None);
+    }
+
+    #[test]
+    fn shiki_emits_language_and_theme_dirs() {
+        let id = "/p/node_modules/shiki/dist/index.js";
+        let sc = special_case(id, "/p/node_modules/shiki/dist");
+        let dirs: Vec<_> = sc
+            .assets
+            .iter()
+            .map(|a| match a {
+                Asset::Dir(d) => d.clone(),
+                Asset::File(f) => f.clone(),
+            })
+            .collect();
+        assert!(dirs.contains(&"/p/node_modules/shiki/languages".to_string()));
+        assert!(dirs.contains(&"/p/node_modules/shiki/themes".to_string()));
+    }
+
+    #[test]
+    fn photon_emits_runtime_dir() {
+        let id = "/p/node_modules/@generated/photon/index.js";
+        let sc = special_case(id, "/p/node_modules/@generated/photon");
+        assert!(matches!(
+            sc.assets.first(),
+            Some(Asset::Dir(d)) if d == "/p/node_modules/@generated/photon/runtime"
+        ));
+    }
+
+    #[test]
+    fn pixelmatch_emits_bin_dependency() {
+        let id = "/p/node_modules/pixelmatch/index.js";
+        let sc = special_case(id, "/p/node_modules/pixelmatch");
+        assert_eq!(sc.deps, vec!["/p/node_modules/pixelmatch/bin/pixelmatch".to_string()]);
+    }
+
+    #[test]
+    fn no_special_case_for_unknown_package() {
+        let sc = special_case("/p/node_modules/lodash/index.js", "/p/node_modules/lodash");
+        assert!(sc.assets.is_empty() && sc.deps.is_empty());
+    }
+}

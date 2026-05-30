@@ -936,3 +936,220 @@ fn flow_asset_strs(flow: &Flow) -> Vec<String> {
 fn eval_asset_strs(expr: &Expression, ctx: &EvalCtx) -> Vec<String> {
     eval_flow(expr, ctx).map(|f| flow_asset_strs(&f)).unwrap_or_default()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn analyze_src(src: &str) -> AnalyzeResult {
+        let ctx = AnalyzeContext {
+            dirname: "/proj/src".to_string(),
+            filename: "/proj/src/index.js".to_string(),
+            cwd: "/proj".to_string(),
+            compute_file_references: true,
+        };
+        analyze(Path::new("/proj/src/index.js"), src, &ctx)
+    }
+
+    fn files(r: &AnalyzeResult) -> Vec<String> {
+        r.assets
+            .iter()
+            .filter_map(|a| match a {
+                Asset::File(s) => Some(s.clone()),
+                Asset::Dir(_) => None,
+            })
+            .collect()
+    }
+
+    fn dirs(r: &AnalyzeResult) -> Vec<String> {
+        r.assets
+            .iter()
+            .filter_map(|a| match a {
+                Asset::Dir(s) => Some(s.clone()),
+                Asset::File(_) => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn require_and_require_resolve() {
+        let r = analyze_src("const a = require('./a'); require.resolve('./b');");
+        assert!(r.deps.contains(&"./a".to_string()));
+        assert!(r.deps.contains(&"./b".to_string()));
+        assert!(!r.is_esm);
+    }
+
+    #[test]
+    fn static_import_export_is_esm() {
+        let r = analyze_src("import x from './a'; export { y } from './b'; export * from './c';");
+        assert!(r.is_esm);
+        assert!(r.imports.contains(&"./a".to_string()));
+        assert!(r.imports.contains(&"./b".to_string()));
+        assert!(r.imports.contains(&"./c".to_string()));
+    }
+
+    #[test]
+    fn dynamic_import() {
+        let r = analyze_src("import('./lazy.js');");
+        assert!(r.imports.contains(&"./lazy.js".to_string()));
+    }
+
+    #[test]
+    fn require_wrapper_function() {
+        let r = analyze_src("function load(name) { const m = require(name); return m; } load('./dep');");
+        assert!(r.deps.contains(&"./dep".to_string()));
+    }
+
+    #[test]
+    fn require_wrapper_arrow() {
+        let r = analyze_src("const load = (name) => { const m = require(name); return m; }; load('./dep');");
+        assert!(r.deps.contains(&"./dep".to_string()));
+    }
+
+    #[test]
+    fn conditional_require_emits_both_branches() {
+        let r = analyze_src("var p = cond ? './a' : './b'; require(p + '/x');");
+        assert!(r.deps.contains(&"./a/x".to_string()));
+        assert!(r.deps.contains(&"./b/x".to_string()));
+    }
+
+    #[test]
+    fn logical_fallback_require() {
+        let r = analyze_src("require(dynamic || './fallback.js');");
+        assert!(r.deps.contains(&"./fallback.js".to_string()));
+    }
+
+    #[test]
+    fn wildcard_require_glob() {
+        let r = analyze_src("const n = unknown; require(`./mods/mod${n}`);");
+        assert_eq!(r.require_globs.len(), 1);
+        assert!(r.require_globs[0].contains('\u{1a}'));
+        assert!(r.require_globs[0].starts_with("/proj/src/mods/mod"));
+    }
+
+    #[test]
+    fn fs_read_file_asset() {
+        let r = analyze_src("const fs = require('fs'); fs.readFileSync(__dirname + '/asset.txt');");
+        assert!(files(&r).contains(&"/proj/src/asset.txt".to_string()));
+    }
+
+    #[test]
+    fn fs_readdir_dir_asset() {
+        let r = analyze_src("const fs = require('fs'); fs.readdirSync(__dirname);");
+        assert!(dirs(&r).contains(&"/proj/src".to_string()));
+    }
+
+    #[test]
+    fn fs_promises_destructured_readdir() {
+        let r = analyze_src(
+            "const fs = require('fs'); const { readdir } = fs.promises; const { resolve } = require('path'); const d = resolve(__dirname, 'posts'); readdir(d);",
+        );
+        assert!(dirs(&r).contains(&"/proj/src/posts".to_string()));
+    }
+
+    #[test]
+    fn path_join_wildcard_asset() {
+        let r = analyze_src(
+            "const path = require('path'); const fs = require('fs'); fs.readFileSync(path.join(__dirname, 'a', x) + '.txt');",
+        );
+        assert!(files(&r).iter().any(|f| f == "/proj/src/a/\u{1a}.txt"));
+    }
+
+    #[test]
+    fn dirname_concat_dotdot_normalized() {
+        let r = analyze_src("const fs = require('fs'); fs.readFileSync(__dirname + '/../pkg.json');");
+        assert!(files(&r).contains(&"/proj/pkg.json".to_string()));
+    }
+
+    #[test]
+    fn import_meta_url_asset() {
+        let r = analyze_src("import fs from 'fs'; fs.readFileSync(new URL('./asset.txt', import.meta.url));");
+        assert!(files(&r).contains(&"/proj/src/asset.txt".to_string()));
+    }
+
+    #[test]
+    fn file_url_to_path_asset() {
+        let r = analyze_src(
+            "import { readFileSync } from 'fs'; import { fileURLToPath } from 'url'; readFileSync(fileURLToPath(`${import.meta.url}/../a.txt`));",
+        );
+        assert!(files(&r).contains(&"/proj/src/a.txt".to_string()));
+    }
+
+    #[test]
+    fn conditional_fs_asset_both_branches() {
+        let r = analyze_src("const fs = require('fs'); fs.readFileSync(`${__dirname}/asset${u ? '1' : '2'}.txt`);");
+        let fs = files(&r);
+        assert!(fs.contains(&"/proj/src/asset1.txt".to_string()));
+        assert!(fs.contains(&"/proj/src/asset2.txt".to_string()));
+    }
+
+    #[test]
+    fn pino_transport_target() {
+        let r = analyze_src("const p = require('pino'); p.transport({ target: 'my-transport' });");
+        assert!(r.deps.contains(&"my-transport".to_string()));
+    }
+
+    #[test]
+    fn pino_transport_targets_array() {
+        let r = analyze_src("const pino = require('pino'); pino.transport({ targets: [{ target: 'a' }, { target: 'b' }] });");
+        assert!(r.deps.contains(&"a".to_string()));
+        assert!(r.deps.contains(&"b".to_string()));
+    }
+
+    #[test]
+    fn pino_constructor_and_fastify() {
+        let r1 = analyze_src("import pino from 'pino'; pino({ transport: { target: 't1' } });");
+        assert!(r1.deps.contains(&"t1".to_string()));
+        let r2 = analyze_src("import fastify from 'fastify'; fastify({ logger: { transport: { target: 't2' } } });");
+        assert!(r2.deps.contains(&"t2".to_string()));
+    }
+
+    #[test]
+    fn babel_interop_default_fs() {
+        let r = analyze_src(
+            "var _fs = _interopRequireDefault(require('fs')); var path = _interopRequireWildcard(require('path')); _fs[\"default\"].readFileSync(path.join(__dirname, 'a.txt'));",
+        );
+        assert!(files(&r).contains(&"/proj/src/a.txt".to_string()));
+    }
+
+    #[test]
+    fn tsc_interop_default_fs() {
+        let r = analyze_src(
+            "const fs_1 = __importDefault(require('fs')); const path = __importStar(require('path')); fs_1.default.readFileSync(path.join(__dirname, 'a.txt'));",
+        );
+        assert!(files(&r).contains(&"/proj/src/a.txt".to_string()));
+    }
+
+    #[test]
+    fn special_case_shiki_dirs() {
+        let ctx = AnalyzeContext {
+            dirname: "/proj/node_modules/shiki/dist".to_string(),
+            filename: "/proj/node_modules/shiki/dist/index.js".to_string(),
+            cwd: "/proj".to_string(),
+            compute_file_references: true,
+        };
+        let r = analyze(Path::new(&ctx.filename), "module.exports = {};", &ctx);
+        let d = dirs(&r);
+        assert!(d.contains(&"/proj/node_modules/shiki/languages".to_string()));
+        assert!(d.contains(&"/proj/node_modules/shiki/themes".to_string()));
+    }
+
+    #[test]
+    fn parse_error_flag_set() {
+        let r = analyze_src("const = = = ;");
+        assert!(r.parse_error);
+    }
+
+    #[test]
+    fn ts_source_module() {
+        let ctx = AnalyzeContext {
+            dirname: "/proj/src".to_string(),
+            filename: "/proj/src/x.ts".to_string(),
+            cwd: "/proj".to_string(),
+            compute_file_references: true,
+        };
+        let r = analyze(Path::new("/proj/src/x.ts"), "import x from './a'; const y: number = 1;", &ctx);
+        assert!(r.is_esm);
+        assert!(r.imports.contains(&"./a".to_string()));
+    }
+}

@@ -85,3 +85,61 @@ pub fn normalize(path: &Path) -> PathBuf {
 pub fn realpath(path: &Path) -> PathBuf {
     normalize(path)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static N: AtomicUsize = AtomicUsize::new(0);
+
+    fn tmpdir() -> PathBuf {
+        let n = N.fetch_add(1, Ordering::SeqCst);
+        let d = std::env::temp_dir().join(format!("nftrs_fs_{}_{n}", std::process::id()));
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    #[test]
+    fn normalize_collapses_segments() {
+        assert_eq!(normalize(Path::new("/a/b/../c")), PathBuf::from("/a/c"));
+        assert_eq!(normalize(Path::new("/a/./b")), PathBuf::from("/a/b"));
+        assert_eq!(normalize(Path::new("/a/b/../../d")), PathBuf::from("/d"));
+    }
+
+    #[test]
+    fn read_to_string_caches_and_reads() {
+        let d = tmpdir();
+        let p = d.join("f.txt");
+        std::fs::write(&p, "hello").unwrap();
+        let fs = CachedFs::new();
+        assert_eq!(fs.read_to_string(&p).as_deref(), Some("hello"));
+        // second read hits the cache and still returns the same content
+        assert_eq!(fs.read_to_string(&p).as_deref(), Some("hello"));
+        assert_eq!(fs.read_to_string(&d.join("missing")), None);
+        std::fs::remove_dir_all(&d).ok();
+    }
+
+    #[test]
+    fn is_file_detects_files_and_dirs() {
+        let d = tmpdir();
+        let p = d.join("a.js");
+        std::fs::write(&p, "").unwrap();
+        let fs = CachedFs::new();
+        assert!(fs.is_file(&p));
+        assert!(!fs.is_file(&d));
+        assert!(!fs.is_file(&d.join("nope")));
+        std::fs::remove_dir_all(&d).ok();
+    }
+
+    #[test]
+    fn pjson_boundary_finds_nearest() {
+        let d = tmpdir();
+        std::fs::create_dir_all(d.join("a/b")).unwrap();
+        std::fs::write(d.join("a/package.json"), "{}").unwrap();
+        let fs = CachedFs::new();
+        let boundary = fs.pjson_boundary(&d.join("a/b/c.js"));
+        assert_eq!(boundary, Some(d.join("a")));
+        std::fs::remove_dir_all(&d).ok();
+    }
+}
