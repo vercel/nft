@@ -21,7 +21,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use oxc_allocator::Allocator;
-use oxc_ast::ast::{Argument, BindingPattern, Expression};
+use oxc_ast::ast::{Argument, BindingPattern, Expression, FormalParameters, FunctionBody, Statement};
 use oxc_ast_visit::{walk, Visit};
 use oxc_parser::Parser;
 use oxc_span::SourceType;
@@ -359,7 +359,63 @@ impl BindingCollector {
     }
 }
 
+/// Detect a require-wrapper function body: `var y = require(<firstParam>); …;
+/// return y;` (ports nft's "Support require wrappers" branch). Such a function,
+/// when called with a literal, forwards it to `require`.
+fn is_require_wrapper(params: &FormalParameters, body: &FunctionBody) -> bool {
+    let Some(first) = params.items.first() else { return false };
+    let BindingPattern::BindingIdentifier(param) = &first.pattern else { return false };
+    let param_name = param.name.as_str();
+
+    let mut require_decl: Option<&str> = None;
+    for stmt in &body.statements {
+        if require_decl.is_none() {
+            if let Statement::VariableDeclaration(var) = stmt {
+                for d in &var.declarations {
+                    let (
+                        BindingPattern::BindingIdentifier(id),
+                        Some(Expression::CallExpression(call)),
+                    ) = (&d.id, &d.init)
+                    else {
+                        continue;
+                    };
+                    if let Expression::Identifier(callee) = &call.callee {
+                        if callee.name == "require" {
+                            if let Some(Argument::Identifier(arg)) = call.arguments.first() {
+                                if arg.name == param_name {
+                                    require_decl = Some(id.name.as_str());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if let (Some(name), Statement::ReturnStatement(ret)) = (require_decl, stmt) {
+            if let Some(Expression::Identifier(arg)) = &ret.argument {
+                if arg.name == name {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
 impl<'a> Visit<'a> for BindingCollector {
+    fn visit_function(
+        &mut self,
+        func: &oxc_ast::ast::Function<'a>,
+        flags: oxc_syntax::scope::ScopeFlags,
+    ) {
+        if let (Some(id), Some(body)) = (&func.id, &func.body) {
+            if is_require_wrapper(&func.params, body) {
+                self.require_fns.insert(id.name.to_string(), ReqBase::CurrentFile);
+            }
+        }
+        walk::walk_function(self, func, flags);
+    }
+
     fn visit_variable_declarator(&mut self, decl: &oxc_ast::ast::VariableDeclarator<'a>) {
         if let Some(Expression::CallExpression(call)) = &decl.init {
             if let Expression::Identifier(id) = &call.callee {
@@ -401,6 +457,22 @@ impl<'a> Visit<'a> for BindingCollector {
                         self.eval_bindings.insert(id.name.to_string(), b);
                     }
                 }
+            }
+        }
+        // `const reaction = name => { const r = require(name); …; return r }` —
+        // an arrow/function-expression require wrapper assigned to a var.
+        if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&decl.id, &decl.init) {
+            let wrapper = match init {
+                Expression::ArrowFunctionExpression(a) => {
+                    is_require_wrapper(&a.params, &a.body)
+                }
+                Expression::FunctionExpression(f) => {
+                    f.body.as_ref().is_some_and(|b| is_require_wrapper(&f.params, b))
+                }
+                _ => false,
+            };
+            if wrapper {
+                self.require_fns.insert(id.name.to_string(), ReqBase::CurrentFile);
             }
         }
         // `const req = createRequire(...)` — req becomes a require-like fn.

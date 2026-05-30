@@ -70,6 +70,7 @@ oxc_parser = "0.132"
 oxc_ast = "0.132"
 oxc_ast_visit = "0.132"
 oxc_span = "0.132"
+oxc_syntax = "0.132"
 oxc_resolver = "4.2.0"
 
 # NAPI bindings
