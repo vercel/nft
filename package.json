@@ -19,6 +19,8 @@
   },
   "scripts": {
     "build": "tsc",
+    "release": "node scripts/release.mjs",
+    "setup-trusted-publishing": "bash scripts/setup-trusted-publishing.sh",
     "git-pre-commit": "vp fmt . && git add -A",
     "prepublishOnly": "tsc && rm out/utils/*.d.ts && rm out/tsconfig.tsbuildinfo",
     "fmt": "vp fmt .",

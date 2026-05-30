@@ -20,11 +20,22 @@ Targets (from `crates/nftrs_napi/package.json` → `napi.targets`):
 
 ## How releases work
 
-1. Bump the version in `crates/nftrs_napi/package.json` (and the workspace
-   `Cargo.toml` if you also cut a crate release). Commit it.
-2. Tag the commit `vX.Y.Z` and push the tag (or run **Publish** manually from
-   the Actions tab).
-3. The `build` matrix compiles the addon for all five targets and uploads each
+Cut a release with one command:
+
+```bash
+vp run release minor -y      # 0.0.0 -> 0.1.0  (also: patch / major)
+```
+
+[`scripts/release.mjs`](../scripts/release.mjs) bumps
+`crates/nftrs_napi/package.json` **and** the workspace `Cargo.toml` version,
+syncs `Cargo.lock`, commits `release: vX.Y.Z`, tags it, and pushes the tag.
+Use `--dry-run` to print the plan without changing anything. The tag push is
+what triggers the workflow:
+
+1. `vp run release <patch|minor|major> -y` bumps + tags `vX.Y.Z` + pushes the
+   tag (equivalently: tag a commit `vX.Y.Z` by hand, or run **Publish** from the
+   Actions tab).
+2. The `build` matrix compiles the addon for all five targets and uploads each
    `.node` as an artifact. `aarch64-unknown-linux-gnu` is cross-compiled via
    `@napi-rs/cross-toolchain` (`--use-napi-cross`).
 4. The `publish` job downloads every binary, runs
@@ -49,68 +60,54 @@ GitHub Environment so you can attach required reviewers or restrict it to tags.
 - The npm account/org that owns `@nftrs` must be able to publish to the
   `@nftrs` scope.
 
-### 1. Initial publish from the CLI (bootstrap)
+### 1. Configure the trusted publisher (npm v11 CLI, no token)
 
-> **Why this is manual:** a package must already exist on npm before you can
-> open its settings and add a trusted publisher. You therefore cannot publish
-> the *first* version of a brand-new package via OIDC — the very first release
-> of each package name has to be done with classic auth (an automation token or
-> an interactive `npm login`). After that, OIDC takes over.
-
-From a clean checkout, build and publish all packages once:
+npm **v11** can register a GitHub Actions trusted publisher straight from the
+CLI — including for a package that **does not exist yet** (the first OIDC
+publish then creates it). A helper runs it for all six packages:
 
 ```bash
-# build every target locally (or download the workflow's build artifacts)
-cd crates/nftrs_napi
-npx @napi-rs/cli@3 napi create-npm-dirs
-# place each freshly built nftrs.<platform>.node next to its binding package,
-# then stamp versions + copy addons in:
-npx @napi-rs/cli@3 napi artifacts --output-dir ./artifacts
-npx @napi-rs/cli@3 napi pre-publish
-
-# authenticate once with classic auth for the bootstrap publish
-npm login
-
-# publish the platform packages, then the JS entry
-for dir in npm/*/; do npm publish "$dir" --provenance --access public; done
-npm publish --provenance --access public
+npm login                              # interactive, one-time
+npm run setup-trusted-publishing       # or: bash scripts/setup-trusted-publishing.sh
 ```
 
-This creates `@nftrs/core` and each `@nftrs/binding-*` on the registry so their
-settings pages exist. (If you build all five targets on a single machine is
-inconvenient, instead trigger `publish.yml` once via `workflow_dispatch` *after*
-temporarily granting it a token — but the trusted-publisher route below is the
-intended steady state, so doing the one-off bootstrap from the CLI is simplest.)
+That runs, for `@nftrs/core` and each `@nftrs/binding-*`:
 
-### 2. Configure the trusted publisher on npm (per package)
+```bash
+npm trust github <package> \
+  --file publish.yml \
+  --repo ubugeeei-prod/nftrs \
+  --env  npm-publish \
+  --yes
+```
 
-For **each** package (`@nftrs/core` and every `@nftrs/binding-*`):
+Verify with `npm trust list @nftrs/core`. The `--file` / `--repo` / `--env`
+must match the workflow exactly (`publish.yml`, this repo, the `npm-publish`
+environment) — they form the OIDC subject npm checks at publish time.
 
-1. Go to `https://www.npmjs.com/package/<name>/access` (Settings → Trusted
-   Publisher).
-2. Add a trusted publisher:
-   - **Provider:** GitHub Actions
-   - **Organization / user:** `ubugeeei-prod`
-   - **Repository:** `nftrs`
-   - **Workflow filename:** `publish.yml`
-   - **Environment:** `npm-publish` (must match the `environment:` in the job)
-3. Save.
+> **If your npm rejects an unpublished name** (older server behavior), do one
+> bootstrap publish of each package with classic auth first, then re-run the
+> helper:
+>
+> ```bash
+> cd crates/nftrs_napi
+> npx @napi-rs/cli@3 napi create-npm-dirs
+> npx @napi-rs/cli@3 napi artifacts --output-dir ./artifacts
+> npx @napi-rs/cli@3 napi pre-publish
+> npm login
+> for dir in npm/*/; do npm publish "$dir" --provenance --access public; done
+> npm publish --provenance --access public
+> ```
 
-You can do the same from the CLI with
-`npm trust github-actions --help` (the CLI equivalent of the website's
-trusted-publisher settings).
+### 2. Create the GitHub Environment
 
-> Doing this for ~6 packages is repetitive; once a package is created you only
-> need to set it up once, and subsequent versions publish automatically.
-
-### 3. Create the GitHub Environment
-
-In the repo: **Settings → Environments → New environment** → name it
-`npm-publish`. Optionally add required reviewers or a deployment branch/tag
-rule so only release tags can publish. No secrets are needed — OIDC supplies
+Already created: the `npm-publish` environment exists on this repo (the
+`publish` job's `environment:`). Optionally add required reviewers or a tag
+deployment rule in **Settings → Environments → npm-publish**. No secrets are
+needed — OIDC supplies
 the short-lived token at publish time.
 
-### 4. Confirm permissions
+### 3. Confirm permissions
 
 The `publish` job already declares:
 
