@@ -27,8 +27,8 @@ use oxc_parser::Parser;
 use oxc_span::SourceType;
 
 use static_eval::{
-    contains_trigger, eval, eval_flow, is_absolute_path, normalize_posix, path_resolve,
-    unwrap_expr, Binding, EvalCtx, Flow, Value,
+    contains_trigger, eval_flow, is_absolute_path, normalize_posix, path_resolve, unwrap_expr,
+    Binding, EvalCtx, Flow, Value,
 };
 
 /// A referenced asset, as an absolute path.
@@ -368,6 +368,27 @@ impl<'a> Visit<'a> for BindingCollector {
                 }
             }
         }
+        // `const { readdir } = fs.promises` — bind destructured members of a
+        // known fs object's `.promises` (or `.default`) as fs functions.
+        if let (BindingPattern::ObjectPattern(obj), Some(Expression::StaticMemberExpression(m))) =
+            (&decl.id, &decl.init)
+        {
+            if matches!(m.property.name.as_str(), "promises" | "default") {
+                if let Expression::Identifier(o) = &m.object {
+                    if self.fs_objects.contains(o.name.as_str()) {
+                        for prop in &obj.properties {
+                            if let (BindingPattern::BindingIdentifier(local), Some(imported)) =
+                                (&prop.value, prop.key.name())
+                            {
+                                if let Some(k) = fs_method_kind(&imported) {
+                                    self.fs_fns.insert(local.name.to_string(), k);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         // `const req = createRequire(...)` — req becomes a require-like fn.
         if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&decl.id, &decl.init) {
             if let Some(base) = self.create_require_base(init) {
@@ -501,16 +522,16 @@ impl<'a> DepCollector<'a, '_> {
                         return;
                     }
                 }
-                if let Some(Value::Str(s)) = eval(arg0, self.eval_ctx) {
+                for s in eval_asset_strs(arg0, self.eval_ctx) {
                     if is_absolute_path(&s) {
-                        self.assets.push(Asset::Dir(s));
+                        self.assets.push(Asset::Dir(normalize_posix(&s)));
                     }
                 }
             }
             FsKind::File => {
-                if let Some(Value::Str(s)) = eval(arg0, self.eval_ctx) {
+                for s in eval_asset_strs(arg0, self.eval_ctx) {
                     if is_absolute_path(&s) {
-                        self.assets.push(Asset::File(s));
+                        self.assets.push(Asset::File(normalize_posix(&s)));
                     }
                 }
             }
@@ -533,8 +554,8 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
                 }
             }
             Expression::StaticMemberExpression(member) => {
+                let prop = member.property.name.as_str();
                 if let Expression::Identifier(obj) = &member.object {
-                    let prop = member.property.name.as_str();
                     if let Some(base) = self.require_fns.get(obj.name.as_str()) {
                         // <require-like>.resolve(...)
                         if prop == "resolve" {
@@ -550,6 +571,17 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
                     } else if self.fs_objects.contains(obj.name.as_str()) {
                         if let Some(kind) = fs_method_kind(prop) {
                             self.handle_fs_call(kind, call);
+                        }
+                    }
+                } else if let Expression::StaticMemberExpression(inner) = &member.object {
+                    // `fs.promises.readdir(...)` / `fs.default.readFileSync(...)`
+                    if matches!(inner.property.name.as_str(), "promises" | "default") {
+                        if let Expression::Identifier(o) = &inner.object {
+                            if self.fs_objects.contains(o.name.as_str()) {
+                                if let Some(kind) = fs_method_kind(prop) {
+                                    self.handle_fs_call(kind, call);
+                                }
+                            }
                         }
                     }
                 }
@@ -604,12 +636,41 @@ struct AssetScanner<'b> {
 
 impl<'a> Visit<'a> for AssetScanner<'_> {
     fn visit_expression(&mut self, expr: &Expression<'a>) {
-        if let Some(Value::Str(s)) = eval(expr, self.eval_ctx) {
-            if is_absolute_path(&s) && contains_trigger(expr, self.eval_ctx) {
-                self.assets.push(Asset::File(s));
+        // A conditional (`a ? x : y`) emits both branches as assets.
+        if let Some(flow) = eval_flow(expr, self.eval_ctx) {
+            let strs = flow_asset_strs(&flow);
+            if !strs.is_empty()
+                && strs.iter().all(|s| is_absolute_path(s))
+                && contains_trigger(expr, self.eval_ctx)
+            {
+                for s in strs {
+                    self.assets.push(Asset::File(normalize_posix(&s)));
+                }
                 return; // maximal expression — don't descend into children
             }
         }
         walk::walk_expression(self, expr);
     }
+}
+
+/// Extract the asset path string(s) from a [`Flow`], expanding a conditional
+/// into both of its branches. Only string values are returned.
+fn flow_asset_strs(flow: &Flow) -> Vec<String> {
+    match flow {
+        Flow::Value { value: Value::Str(s), .. } => vec![s.clone()],
+        Flow::Cond { if_true, els } => [if_true, els]
+            .into_iter()
+            .filter_map(|v| match v {
+                Value::Str(s) => Some(s.clone()),
+                _ => None,
+            })
+            .collect(),
+        Flow::Value { .. } => Vec::new(),
+    }
+}
+
+/// Evaluate `expr` to its asset path string(s) (conditionals expand to both
+/// branches), for an `fs.*` argument.
+fn eval_asset_strs(expr: &Expression, ctx: &EvalCtx) -> Vec<String> {
+    eval_flow(expr, ctx).map(|f| flow_asset_strs(&f)).unwrap_or_default()
 }

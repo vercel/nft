@@ -276,62 +276,134 @@ fn eval_conditional(cond: &oxc_ast::ast::ConditionalExpression, ctx: &EvalCtx) -
 }
 
 fn eval_template(t: &TemplateLiteral, ctx: &EvalCtx) -> Option<Flow> {
-    let mut out = String::new();
-    let mut wildcards = 0u32;
+    // Accumulate either a single value (with wildcard count) or, once a single
+    // conditional interpolation is seen, two branches. nft supports at most one
+    // conditional branch per template.
+    enum Acc {
+        Value { out: String, wildcards: u32 },
+        Cond { if_true: String, els: String },
+    }
+    let mut acc = Acc::Value { out: String::new(), wildcards: 0 };
     for (i, quasi) in t.quasis.iter().enumerate() {
-        out.push_str(quasi.value.cooked.as_ref()?.as_str());
-        if let Some(expr) = t.expressions.get(i) {
-            match eval_flow(expr, ctx) {
-                Some(Flow::Value { value, wildcards: w }) => {
-                    out.push_str(&value.as_concat_str());
-                    wildcards += w;
-                }
-                // Unknown interpolation -> wildcard (computeBranches).
-                None => {
-                    out.push(WILDCARD);
-                    wildcards += 1;
-                }
-                // A single conditional branch in a template is unsupported.
-                Some(Flow::Cond { .. }) => return None,
+        let cooked = quasi.value.cooked.as_ref()?.as_str();
+        match &mut acc {
+            Acc::Value { out, .. } => out.push_str(cooked),
+            Acc::Cond { if_true, els } => {
+                if_true.push_str(cooked);
+                els.push_str(cooked);
             }
         }
+        let Some(expr) = t.expressions.get(i) else { continue };
+        match eval_flow(expr, ctx) {
+            Some(Flow::Value { value, wildcards: w }) => {
+                let s = value.as_concat_str();
+                match &mut acc {
+                    Acc::Value { out, wildcards } => {
+                        out.push_str(&s);
+                        *wildcards += w;
+                    }
+                    Acc::Cond { if_true, els } => {
+                        // wildcards inside a branch are unsupported
+                        if w > 0 {
+                            return None;
+                        }
+                        if_true.push_str(&s);
+                        els.push_str(&s);
+                    }
+                }
+            }
+            // Unknown interpolation -> wildcard (computeBranches).
+            None => match &mut acc {
+                Acc::Value { out, wildcards } => {
+                    out.push(WILDCARD);
+                    *wildcards += 1;
+                }
+                Acc::Cond { .. } => return None,
+            },
+            Some(Flow::Cond { if_true: ct, els: ce }) => match acc {
+                // promote to a conditional template (only one allowed)
+                Acc::Value { out, wildcards: 0 } => {
+                    acc = Acc::Cond {
+                        if_true: format!("{out}{}", ct.as_concat_str()),
+                        els: format!("{out}{}", ce.as_concat_str()),
+                    };
+                }
+                _ => return None,
+            },
+        }
     }
-    Some(Flow::Value { value: Value::Str(out), wildcards })
+    Some(match acc {
+        Acc::Value { out, wildcards } => Flow::Value { value: Value::Str(out), wildcards },
+        Acc::Cond { if_true, els } => {
+            Flow::Cond { if_true: Value::Str(if_true), els: Value::Str(els) }
+        }
+    })
 }
 
 fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Flow> {
     let kind = call_kind(call, ctx)?;
     // Evaluate args, substituting WILDCARD for unknown ones (computeBranches).
-    // `concat` does not wildcard-fill (matches nft `allWildcards` gate).
-    let allow_wildcard = !matches!(kind, CallKind::Concat(_));
+    // `concat` never trips the all-unknown bail (matches nft's `allWildcards`
+    // gate: `args.length > 0 && property !== 'concat'`). One conditional arg is
+    // allowed, producing a conditional result (`args` + `args_else`).
+    let is_concat = matches!(kind, CallKind::Concat(_));
     let mut args: Vec<String> = Vec::with_capacity(call.arguments.len());
+    let mut args_else: Option<Vec<String>> = None;
     let mut wildcards = 0u32;
-    let mut all_wildcards = !call.arguments.is_empty() && allow_wildcard;
+    let mut all_wildcards = !call.arguments.is_empty() && !is_concat;
     for arg in &call.arguments {
-        // Spread / non-expression args are treated as unknown -> wildcard.
-        if let Some(v) = arg.as_expression().and_then(|e| eval(e, ctx)) {
-            all_wildcards = false;
-            let s = v.as_concat_str();
-            wildcards += count_wildcards(&s);
-            args.push(s);
-        } else {
-            if !allow_wildcard {
-                return None;
+        match arg.as_expression().and_then(|e| eval_flow(e, ctx)) {
+            Some(Flow::Value { value, .. }) => {
+                all_wildcards = false;
+                let s = value.as_concat_str();
+                wildcards += count_wildcards(&s);
+                if let Some(e) = &mut args_else {
+                    e.push(s.clone());
+                }
+                args.push(s);
             }
-            args.push(WILDCARD.to_string());
-            wildcards += 1;
+            Some(Flow::Cond { if_true, els }) => {
+                // a single conditional arg, no wildcards alongside it
+                if wildcards > 0 || args_else.is_some() {
+                    return None;
+                }
+                all_wildcards = false;
+                args_else = Some(args.clone());
+                if let Some(e) = &mut args_else {
+                    e.push(els.as_concat_str());
+                }
+                args.push(if_true.as_concat_str());
+            }
+            // Spread / non-expression / unknown args become a WILDCARD.
+            None => {
+                if let Some(e) = &mut args_else {
+                    e.push(WILDCARD.to_string());
+                }
+                args.push(WILDCARD.to_string());
+                wildcards += 1;
+            }
         }
     }
     if all_wildcards {
         return None;
     }
-    let result = match kind {
-        CallKind::PathJoin => path_join(&args),
-        CallKind::PathResolve => path_resolve(&ctx.cwd, &args),
-        CallKind::PathDirname => dirname(args.first()?),
-        CallKind::ProcessCwd => ctx.cwd.clone(),
-        CallKind::Concat(base) => format!("{base}{}", args.concat()),
+    let apply = |args: &[String]| -> Option<String> {
+        Some(match &kind {
+            CallKind::PathJoin => path_join(args),
+            CallKind::PathResolve => path_resolve(&ctx.cwd, args),
+            CallKind::PathDirname => dirname(args.first()?),
+            CallKind::ProcessCwd => ctx.cwd.clone(),
+            CallKind::Concat(base) => format!("{base}{}", args.concat()),
+        })
     };
+    let result = apply(&args)?;
+    if let Some(args_else) = args_else {
+        let result_else = apply(&args_else)?;
+        return Some(Flow::Cond {
+            if_true: Value::Str(result),
+            els: Value::Str(result_else),
+        });
+    }
     // nft validates the wildcard count is preserved by the static fn.
     if wildcards > 0 && count_wildcards(&result) != wildcards {
         return None;
