@@ -86,6 +86,36 @@ fn format_index(n: f64) -> String {
     }
 }
 
+/// Browserify marks externals as `undefined`/`void 0` values in a module's
+/// dependency map (`[factory, { "acorn": void 0 }]`). Record those names.
+fn browserify_externals(arr: &oxc_ast::ast::ArrayExpression, out: &mut Externals) {
+    if arr.elements.len() != 2 {
+        return;
+    }
+    let (Some(Expression::FunctionExpression(_)), Some(Expression::ObjectExpression(dep_map))) =
+        (arr.elements[0].as_expression(), arr.elements[1].as_expression())
+    else {
+        return;
+    };
+    for prop in &dep_map.properties {
+        if let oxc_ast::ast::ObjectPropertyKind::ObjectProperty(p) = prop {
+            if is_undefined(&p.value) {
+                if let Some(name) = key_string(&p.key) {
+                    out.insert(name.clone(), name);
+                }
+            }
+        }
+    }
+}
+
+fn is_undefined(expr: &Expression) -> bool {
+    match expr {
+        Expression::Identifier(id) => id.name == "undefined",
+        Expression::UnaryExpression(u) => u.operator == oxc_syntax::operator::UnaryOperator::Void,
+        _ => false,
+    }
+}
+
 impl<'a> Visit<'a> for ExternalCollector {
     fn visit_array_expression(&mut self, arr: &oxc_ast::ast::ArrayExpression<'a>) {
         // A webpack module array: factories indexed by position.
@@ -96,6 +126,8 @@ impl<'a> Visit<'a> for ExternalCollector {
                 }
             }
         }
+        // A browserify `[factory, depMap]` pair: externals are undefined values.
+        browserify_externals(arr, &mut self.externals);
         walk::walk_array_expression(self, arr);
     }
 
@@ -155,6 +187,14 @@ mod tests {
     fn factory_with_use_strict_directive() {
         let ext = externals("({747:(function(m,e){\"use strict\";m.exports=require(\"fs\")})});");
         assert_eq!(ext.get("747").map(String::as_str), Some("fs"));
+    }
+
+    #[test]
+    fn browserify_external_dep_map() {
+        let ext = externals(
+            "(function(){})({1:[function(s,e,t){var a=s(\"acorn\")},{acorn:void 0}]},{},[1])(1);",
+        );
+        assert_eq!(ext.get("acorn").map(String::as_str), Some("acorn"));
     }
 
     #[test]
