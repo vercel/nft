@@ -1,6 +1,6 @@
 //! Node.js module resolution for nftrs.
 //!
-//! A faithful port of `src/resolve-dependency.ts` from `@vercel/nft`: relative
+//! A faithful port of `ref/src/resolve-dependency.ts` from `@vercel/nft`: relative
 //! and `node_modules` resolution, the `exports`/`imports` maps with condition
 //! selection (`require`/`import`/`node`/`browser`/`module-sync`), `browser`
 //! field remappings, the `paths` option, and nft's deliberate over-tracing

@@ -1,6 +1,6 @@
 //! Source analysis for nftrs.
 //!
-//! Ports `src/analyze.ts` from `@vercel/nft`: parse a module with OXC, walk
+//! Ports `ref/src/analyze.ts` from `@vercel/nft`: parse a module with OXC, walk
 //! the AST, and extract `{ deps, imports, assets, is_esm }`. Handles
 //! statically-resolvable `require`/`import`/`export … from`, dynamic
 //! `import()`, `require.resolve`, and `fs.*`/`path.*`-driven asset references

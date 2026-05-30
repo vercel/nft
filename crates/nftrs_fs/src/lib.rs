@@ -1,7 +1,7 @@
 //! Cached filesystem layer for nftrs.
 //!
-//! Ports the caching/realpath responsibilities of `src/fs.ts` and the
-//! `getPjsonBoundary` helper from `src/node-file-trace.ts`. Symlink-aware
+//! Ports the caching/realpath responsibilities of `ref/src/fs.ts` and the
+//! `getPjsonBoundary` helper from `ref/src/node-file-trace.ts`. Symlink-aware
 //! `realpath` is still a lexical normalization for now (no symlink resolution)
 //! — see <https://github.com/ubugeeei-prod/nftrs/issues/10>.
 

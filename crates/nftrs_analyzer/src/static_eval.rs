@@ -1,7 +1,7 @@
 //! Static expression evaluation.
 //!
-//! Ports the parts of `src/utils/static-eval.ts` and the `path`/`process`
-//! static modules from `src/analyze.ts` needed to resolve asset paths and
+//! Ports the parts of `ref/src/utils/static-eval.ts` and the `path`/`process`
+//! static modules from `ref/src/analyze.ts` needed to resolve asset paths and
 //! dynamic `require`/`import` specifiers. Supports:
 //!
 //! - constant folding of string/number/boolean values,

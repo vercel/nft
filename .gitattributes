@@ -1,17 +1,12 @@
 # GitHub Linguist language stats configuration.
 #
 # nftrs is a Rust + napi rewrite of @vercel/nft. The repo vendors the upstream
-# @vercel/nft sources (as a submodule under ref/, plus the ported TypeScript
-# reference in src/ and the imported test fixtures in test/). Mark those as
+# @vercel/nft sources (as a submodule under ref/,, plus the imported test fixtures in test/). Mark those as
 # vendored so GitHub language stats read the repo as primarily Rust.
 
 # Upstream @vercel/nft, vendored as a git submodule.
 ref/** linguist-vendored
 ref/** linguist-detectable=false
-
-# Ported @vercel/nft TypeScript reference.
-src/** linguist-vendored
-src/** linguist-detectable=false
 
 # Imported @vercel/nft test fixtures / tests.
 test/** linguist-vendored

@@ -1,5 +1,5 @@
 //! Bundler-wrapper unwrapping (ports the module-table parts of
-//! `src/utils/wrappers.ts`).
+//! `ref/src/utils/wrappers.ts`).
 //!
 //! Rather than rewrite the AST like nft, we extract the bundle's **module
 //! table** — the array/object of module factory functions webpack/browserify

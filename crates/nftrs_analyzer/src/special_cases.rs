@@ -1,4 +1,4 @@
-//! Per-package special cases (ports `src/utils/special-cases.ts`).
+//! Per-package special cases (ports `ref/src/utils/special-cases.ts`).
 //!
 //! File-`id`-keyed handlers that emit extra assets/dependencies for packages
 //! whose runtime files can't be discovered by static analysis alone (native

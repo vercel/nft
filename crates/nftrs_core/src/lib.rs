@@ -1,6 +1,6 @@
 //! Trace orchestration for nftrs.
 //!
-//! Ports `src/node-file-trace.ts`: the `Job` that drives
+//! Ports `ref/src/node-file-trace.ts`: the `Job` that drives
 //! `emit_file` / `emit_dependency` recursion, dedup, `esm_file_list`,
 //! `depth`, and `base` handling. This early slice emits the entry files,
 //! their nearest `package.json` boundary, and statically-resolvable
