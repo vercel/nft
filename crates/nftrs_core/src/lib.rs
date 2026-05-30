@@ -45,6 +45,9 @@ const EXCLUDE_ASSET_EXTENSIONS: &[&str] = &["h", "cmake", "c", "cpp"];
 /// File names excluded from directory asset globbing.
 const EXCLUDE_ASSET_FILES: &[&str] = &["CHANGELOG.md", "README.md", "readme.md", "changelog.md"];
 
+/// The wildcard sentinel (`\x1a`) embedded by the analyzer in glob paths.
+const WILDCARD: char = '\u{1a}';
+
 /// Result of a trace run.
 pub struct TraceResult {
     pub file_list: Vec<String>,
@@ -251,8 +254,19 @@ impl Job {
             self.resolve_and_emit(&specifier, &real, false, next_depth);
         }
 
+        let module_dir =
+            real.parent().map_or_else(String::new, |p| p.to_string_lossy().into_owned());
+        let module_path = real.to_string_lossy().into_owned();
         for asset in analysis.assets {
-            self.emit_asset(asset, next_depth);
+            self.emit_asset(asset, &module_dir, &module_path, next_depth);
+        }
+
+        // Wildcard `require`/`import` patterns: glob and follow each match as a
+        // dependency (`emitWildcardRequire`).
+        for pattern in analysis.require_globs {
+            for file in glob_require(&pattern, self.ts) {
+                self.emit_dependency(&file, next_depth);
+            }
         }
     }
 
@@ -260,8 +274,26 @@ impl Job {
     /// look like modules (`.js`/`.mjs`/`.node`/extensionless, or in-base
     /// `.ts`/`.tsx`), otherwise emitted as plain files. Directories are
     /// globbed recursively (skipping `node_modules` and excluded names).
-    fn emit_asset(&mut self, asset: Asset, depth: Option<usize>) {
+    fn emit_asset(
+        &mut self,
+        asset: Asset,
+        module_dir: &str,
+        module_path: &str,
+        depth: Option<usize>,
+    ) {
         match asset {
+            Asset::File(p) if p.contains(WILDCARD) => {
+                // `emitAssetDirectory`: glob the wildcard path and emit matches,
+                // but only for valid wildcard directories (`validWildcard`):
+                // never the cwd / __dirname / node_modules / a parent of dir.
+                let cwd = self.cwd.to_string_lossy();
+                if !valid_wildcard(&p, module_dir, &cwd, module_path) {
+                    return;
+                }
+                for f in glob_asset(&p) {
+                    self.emit_asset_path(&f, depth);
+                }
+            }
             Asset::File(p) => self.emit_asset_path(&PathBuf::from(p), depth),
             Asset::Dir(dir) => {
                 let mut files = Vec::new();
@@ -343,6 +375,154 @@ fn collect_dir_files(dir: &Path, out: &mut Vec<PathBuf>) {
             out.push(path);
         }
     }
+}
+
+/// Split a wildcard path (`/dir/.../foo\x1a.txt`) into its non-wildcard
+/// directory prefix and the trailing pattern, with each `\x1a` turned into a
+/// glob: `**/*` when it stands for a whole path segment (preceded by `/`),
+/// else `*`. Mirrors `emitAssetDirectory`/`emitWildcardRequire`.
+fn wildcard_split(wildcard_path: &str) -> (String, String) {
+    let widx = wildcard_path.find(WILDCARD);
+    let dir_index = match widx {
+        None => wildcard_path.len(),
+        // lastIndexOf('/', wildcardIndex)
+        Some(i) => wildcard_path[..i].rfind('/').map_or(0, |x| x),
+    };
+    let dir = wildcard_path[..dir_index].to_string();
+    let pattern_path = &wildcard_path[dir_index..];
+    let chars: Vec<char> = pattern_path.chars().collect();
+    let mut pattern = String::new();
+    for (i, &c) in chars.iter().enumerate() {
+        if c == WILDCARD {
+            if i > 0 && chars[i - 1] == '/' {
+                pattern.push_str("**/*");
+            } else {
+                pattern.push('*');
+            }
+        } else {
+            pattern.push(c);
+        }
+    }
+    if pattern.is_empty() {
+        pattern.push_str("/**/*");
+    }
+    (dir, pattern)
+}
+
+/// Recursively walk `root`, returning files whose full path matches `glob`
+/// (separator-aware), skipping `node_modules` subtrees.
+fn glob_walk(root: &str, glob: &str) -> Vec<PathBuf> {
+    let Ok(matcher) = globset::GlobBuilder::new(glob)
+        .literal_separator(true)
+        .build()
+        .map(|g| g.compile_matcher())
+    else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    walk_match(Path::new(root), &matcher, &mut out);
+    out
+}
+
+fn walk_match(dir: &Path, matcher: &globset::GlobMatcher, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Ok(ft) = entry.file_type() else { continue };
+        if ft.is_dir() {
+            if entry.file_name() == "node_modules" {
+                continue;
+            }
+            walk_match(&path, matcher, out);
+        } else if matcher.is_match(&path) {
+            out.push(path);
+        }
+    }
+}
+
+/// Whether a globbed asset/require name is excluded (native build
+/// intermediates, changelog/readme).
+fn excluded_glob_file(path: &Path) -> bool {
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    EXCLUDE_ASSET_EXTENSIONS.contains(&ext) || EXCLUDE_ASSET_FILES.contains(&name.as_str())
+}
+
+/// Port of nft's `validWildcard`: reject wildcard directory assets that would
+/// over-emit — the cwd, the module's own dir (`__dirname`), `node_modules`,
+/// directories above the module dir, and (inside `node_modules`) anything
+/// above the package's `node_modules` base.
+fn valid_wildcard(asset_path: &str, module_dir: &str, cwd: &str, module_path: &str) -> bool {
+    let suffix = if asset_path.ends_with('/') {
+        "/"
+    } else if asset_path.ends_with("/\u{1a}") {
+        "/\u{1a}"
+    } else if asset_path.ends_with('\u{1a}') {
+        "\u{1a}"
+    } else {
+        ""
+    };
+    let stripped = &asset_path[..asset_path.len() - suffix.len()];
+    // do not emit __dirname or cwd
+    if asset_path == format!("{module_dir}{suffix}") || asset_path == format!("{cwd}{suffix}") {
+        return false;
+    }
+    // do not emit node_modules
+    if asset_path.ends_with(&format!("/node_modules{suffix}")) {
+        return false;
+    }
+    // do not emit directories above __dirname
+    if module_dir.starts_with(&format!("{stripped}/")) {
+        return false;
+    }
+    // inside node_modules: do not emit above the package's node_modules base
+    if let Some(idx) = module_path.find("/node_modules") {
+        let nm_base = format!("{}/node_modules/", &module_path[..idx]);
+        if !asset_path.starts_with(&nm_base) {
+            return false;
+        }
+    }
+    true
+}
+
+/// `emitAssetDirectory`: glob the files matching a wildcard asset path.
+fn glob_asset(wildcard_path: &str) -> Vec<PathBuf> {
+    let (dir, pattern) = wildcard_split(wildcard_path);
+    glob_walk(&dir, &format!("{dir}{pattern}"))
+        .into_iter()
+        .filter(|p| !excluded_glob_file(p))
+        .collect()
+}
+
+/// `emitWildcardRequire`: glob the module files matching a wildcard require
+/// pattern. When the pattern does not end in `*`, nft appends an optional
+/// extension group (`?(.ts|.tsx|.js|.json|.node)`); we model that by unioning
+/// the bare pattern with each extension candidate.
+fn glob_require(wildcard_path: &str, ts: bool) -> Vec<PathBuf> {
+    let (dir, pattern) = wildcard_split(wildcard_path);
+    let mut patterns = Vec::new();
+    if pattern.ends_with('*') {
+        patterns.push(format!("{dir}{pattern}"));
+    } else {
+        let mut exts: Vec<&str> = vec!["", ".js", ".json", ".node"];
+        if ts {
+            exts.push(".ts");
+            exts.push(".tsx");
+        }
+        for ext in exts {
+            patterns.push(format!("{dir}{pattern}{ext}"));
+        }
+    }
+    let mut seen = HashSet::new();
+    let mut out = Vec::new();
+    for pat in patterns {
+        for p in glob_walk(&dir, &pat) {
+            if !excluded_glob_file(&p) && seen.insert(p.clone()) {
+                out.push(p);
+            }
+        }
+    }
+    out
 }
 
 /// Make `path` absolute (resolving against the current working directory when

@@ -19,3 +19,4 @@ nftrs_fs = { workspace = true }
 nftrs_resolver = { workspace = true }
 nftrs_analyzer = { workspace = true }
 rustc-hash = { workspace = true }
+globset = { workspace = true }

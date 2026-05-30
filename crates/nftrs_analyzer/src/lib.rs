@@ -26,12 +26,17 @@ use oxc_ast_visit::{walk, Visit};
 use oxc_parser::Parser;
 use oxc_span::SourceType;
 
-use static_eval::{contains_trigger, eval, is_absolute_path, unwrap_expr, Binding, EvalCtx, Value};
+use static_eval::{
+    contains_trigger, eval, eval_flow, is_absolute_path, normalize_posix, path_resolve,
+    unwrap_expr, Binding, EvalCtx, Flow, Value,
+};
 
 /// A referenced asset, as an absolute path.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Asset {
-    /// A single file (e.g. `fs.readFileSync(__dirname + '/x')`).
+    /// A single file (e.g. `fs.readFileSync(__dirname + '/x')`). The path may
+    /// embed [`static_eval::WILDCARD`] markers, in which case the consumer
+    /// globs it (`emitAssetDirectory`).
     File(String),
     /// A directory to emit recursively (e.g. `fs.readdirSync(__dirname)`).
     Dir(String),
@@ -55,6 +60,9 @@ pub struct AnalyzeResult {
     pub imports: Vec<String>,
     /// Referenced assets (absolute paths).
     pub assets: Vec<Asset>,
+    /// Absolute wildcard require patterns (containing [`static_eval::WILDCARD`]);
+    /// the consumer globs each and follows the matches as dependencies.
+    pub require_globs: Vec<String>,
     /// Whether the module is ESM.
     pub is_esm: bool,
     /// Whether parsing produced (recoverable) errors.
@@ -88,12 +96,17 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
     let mut bindings = BindingCollector::new(&ctx.dirname);
     bindings.visit_program(&ret.program);
 
+    // Pass 1b: collect statically-known local variables (`const x = './a'`),
+    // so later expressions can resolve identifiers to their values.
+    let vars = collect_vars(&ret.program, ctx, &bindings.eval_bindings);
+
     // Pass 2: collect deps/imports/assets.
     let eval_ctx = EvalCtx {
         dirname: ctx.dirname.clone(),
         filename: ctx.filename.clone(),
         cwd: ctx.cwd.clone(),
         bindings: &bindings.eval_bindings,
+        vars: &vars,
     };
     let mut collector = DepCollector {
         compute_file_references: ctx.compute_file_references,
@@ -105,6 +118,7 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
         deps: Vec::new(),
         imports: Vec::new(),
         assets: Vec::new(),
+        require_globs: Vec::new(),
         is_esm: false,
         _marker: std::marker::PhantomData,
     };
@@ -113,6 +127,7 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
     result.deps = collector.deps;
     result.imports = collector.imports;
     result.assets = collector.assets;
+    result.require_globs = collector.require_globs;
     result.is_esm = collector.is_esm;
 
     // Pass 3: general asset scan — emit maximal static absolute-path
@@ -125,6 +140,60 @@ pub fn analyze(path: &Path, source: &str, ctx: &AnalyzeContext) -> AnalyzeResult
     }
 
     result
+}
+
+/// Pass 1b: gather statically-known local variables in source order, so an
+/// identifier later resolves to its constant (or conditional) value. This is a
+/// simplification of nft's scope-aware `knownBindings` (good enough for the
+/// flat top-level declarations the fixtures use). `require`/`__dirname` etc.
+/// are intrinsics and never overridden here.
+fn collect_vars(
+    program: &oxc_ast::ast::Program,
+    ctx: &AnalyzeContext,
+    bindings: &HashMap<String, Binding>,
+) -> HashMap<String, Flow> {
+    let mut vc = VarCollector {
+        dirname: &ctx.dirname,
+        filename: &ctx.filename,
+        cwd: &ctx.cwd,
+        bindings,
+        vars: HashMap::new(),
+    };
+    vc.visit_program(program);
+    vc.vars
+}
+
+/// Evaluates `name = <init>` declarators in source order, growing `vars` so a
+/// later initializer can reference an earlier constant.
+struct VarCollector<'b> {
+    dirname: &'b str,
+    filename: &'b str,
+    cwd: &'b str,
+    bindings: &'b HashMap<String, Binding>,
+    vars: HashMap<String, Flow>,
+}
+
+impl<'a> Visit<'a> for VarCollector<'_> {
+    fn visit_variable_declarator(&mut self, decl: &oxc_ast::ast::VariableDeclarator<'a>) {
+        if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&decl.id, &decl.init) {
+            let name = id.name.as_str();
+            if !matches!(name, "__dirname" | "__filename" | "require") {
+                let ctx = EvalCtx {
+                    dirname: self.dirname.to_string(),
+                    filename: self.filename.to_string(),
+                    cwd: self.cwd.to_string(),
+                    bindings: self.bindings,
+                    vars: &self.vars,
+                };
+                let flow = eval_flow(init, &ctx);
+                drop(ctx);
+                if let Some(f) = flow {
+                    self.vars.insert(name.to_string(), f);
+                }
+            }
+        }
+        walk::walk_variable_declarator(self, decl);
+    }
 }
 
 /// The base a require-like function resolves relative to.
@@ -339,25 +408,80 @@ struct DepCollector<'a, 'b> {
     deps: Vec<String>,
     imports: Vec<String>,
     assets: Vec<Asset>,
+    require_globs: Vec<String>,
     is_esm: bool,
     _marker: std::marker::PhantomData<&'a ()>,
 }
 
 impl<'a> DepCollector<'a, '_> {
-    /// Push the first argument of a require-like call as a dependency, statically
-    /// evaluating it. `base` rebases relative specifiers for `createRequire`.
+    /// Process the first argument of a require-like call. `base` rebases
+    /// relative specifiers for `createRequire`.
     fn push_dep_arg(&mut self, call: &oxc_ast::ast::CallExpression<'a>, base: &ReqBase) {
         if let Some(arg0) = call.arguments.first().and_then(Argument::as_expression) {
-            if let Some(Value::Str(s)) = eval(arg0, self.eval_ctx) {
-                match base {
-                    ReqBase::CurrentFile => self.deps.push(s),
-                    ReqBase::Dir(dir) if s.starts_with('.') => {
-                        self.deps.push(static_eval::normalize_posix(&format!("{dir}/{s}")));
-                    }
-                    ReqBase::Dir(_) => self.deps.push(s),
+            self.process_require_arg(arg0, false, base);
+        }
+    }
+
+    /// Mirror nft's `processRequireArg`: recurse through `?:`/`||`/`&&` so each
+    /// branch is emitted, add plain specifiers, expand conditional values to
+    /// both branches, and route wildcard specifiers to glob requires.
+    fn process_require_arg(&mut self, expr: &Expression<'a>, is_import: bool, base: &ReqBase) {
+        match unwrap_expr(expr) {
+            Expression::ConditionalExpression(c) => {
+                self.process_require_arg(&c.consequent, is_import, base);
+                self.process_require_arg(&c.alternate, is_import, base);
+                return;
+            }
+            Expression::LogicalExpression(l) => {
+                self.process_require_arg(&l.left, is_import, base);
+                self.process_require_arg(&l.right, is_import, base);
+                return;
+            }
+            _ => {}
+        }
+        match eval_flow(expr, self.eval_ctx) {
+            Some(Flow::Value { value: Value::Str(s), wildcards }) => {
+                if wildcards == 0 {
+                    self.add_specifier(s, is_import, base);
+                } else {
+                    self.emit_wildcard_require(&s);
                 }
             }
+            Some(Flow::Cond { if_true, els }) => {
+                if let Value::Str(s) = if_true {
+                    self.add_specifier(s, is_import, base);
+                }
+                if let Value::Str(s) = els {
+                    self.add_specifier(s, is_import, base);
+                }
+            }
+            _ => {}
         }
+    }
+
+    fn add_specifier(&mut self, s: String, is_import: bool, base: &ReqBase) {
+        let target = if is_import {
+            &mut self.imports
+        } else {
+            &mut self.deps
+        };
+        match base {
+            ReqBase::CurrentFile => target.push(s),
+            ReqBase::Dir(dir) if s.starts_with('.') => {
+                target.push(normalize_posix(&format!("{dir}/{s}")));
+            }
+            ReqBase::Dir(_) => target.push(s),
+        }
+    }
+
+    /// `emitWildcardRequire`: resolve a `./`-relative wildcard specifier
+    /// against the module dir and record the absolute pattern for globbing.
+    fn emit_wildcard_require(&mut self, spec: &str) {
+        if !spec.starts_with("./") && !spec.starts_with("../") {
+            return;
+        }
+        let abs = path_resolve(&self.eval_ctx.dirname, &[spec.to_string()]);
+        self.require_globs.push(abs);
     }
 
     /// Handle a recognized `fs.*`/destructured-fs call: emit the computed
@@ -437,9 +561,7 @@ impl<'a> Visit<'a> for DepCollector<'a, '_> {
 
     fn visit_import_expression(&mut self, expr: &oxc_ast::ast::ImportExpression<'a>) {
         // Dynamic `import()` resolves with the ESM (`import`) condition.
-        if let Some(Value::Str(s)) = eval(&expr.source, self.eval_ctx) {
-            self.imports.push(s);
-        }
+        self.process_require_arg(&expr.source, true, &ReqBase::CurrentFile);
         walk::walk_import_expression(self, expr);
     }
 

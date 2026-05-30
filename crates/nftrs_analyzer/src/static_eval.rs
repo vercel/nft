@@ -1,16 +1,25 @@
 //! Static expression evaluation.
 //!
 //! Ports the parts of `src/utils/static-eval.ts` and the `path`/`process`
-//! static modules from `src/analyze.ts` needed to resolve asset paths like
-//! `fs.readFileSync(__dirname + '/asset.txt')`, `` `${__dirname}/x` ``, and
-//! `path.join(__dirname, 'x')`.
+//! static modules from `src/analyze.ts` needed to resolve asset paths and
+//! dynamic `require`/`import` specifiers. Supports:
 //!
-//! Conditional/wildcard branch values (used by glob requires) are not modeled
-//! yet — see <https://github.com/ubugeeei-prod/nftrs/issues/16>.
+//! - constant folding of string/number/boolean values,
+//! - template literals and `path.join`/`resolve`/`dirname`,
+//! - **wildcards**: an unknown sub-expression in a `+`/template/call-arg
+//!   context becomes the [`WILDCARD`] sentinel so the parent computes a glob
+//!   (e.g. `` `./modules/module${n}` `` → `./modules/module\x1a`), and
+//! - **conditional values**: `cond ? a : b` (and tracked variables holding
+//!   them) yield a [`Flow::Cond`] so a `require` emits both branches.
+//!
+//! See <https://github.com/ubugeeei-prod/nftrs/issues/16>, #48.
 
 use std::collections::HashMap;
 
 use oxc_ast::ast::{Expression, TemplateLiteral};
+
+/// The wildcard sentinel char (`\x1a`), matching nft's `WILDCARD`.
+pub const WILDCARD: char = '\u{1a}';
 
 /// What a tracked identifier refers to.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -41,19 +50,22 @@ pub fn unwrap_expr<'a, 'b>(expr: &'b Expression<'a>) -> &'b Expression<'a> {
 }
 
 /// Evaluation context: the intrinsic `__dirname`/`__filename`/`process.cwd()`
-/// values and the set of tracked bindings.
+/// values, tracked bindings, and statically-known local variables.
 pub struct EvalCtx<'b> {
     pub dirname: String,
     pub filename: String,
     pub cwd: String,
     pub bindings: &'b HashMap<String, Binding>,
+    /// Locals bound to a statically-known value, e.g. `const x = './a'`.
+    pub vars: &'b HashMap<String, Flow>,
 }
 
-/// A statically-evaluated value. Only the variants nft's asset analysis needs.
+/// A statically-evaluated value. Only the variants nft's analysis needs.
 #[derive(Clone)]
 pub enum Value {
     Str(String),
     Num(f64),
+    Bool(bool),
 }
 
 impl Value {
@@ -61,7 +73,32 @@ impl Value {
         match self {
             Value::Str(s) => s.clone(),
             Value::Num(n) => format_num(*n),
+            Value::Bool(b) => b.to_string(),
         }
+    }
+
+    fn truthy(&self) -> bool {
+        match self {
+            Value::Str(s) => !s.is_empty(),
+            Value::Num(n) => *n != 0.0 && !n.is_nan(),
+            Value::Bool(b) => *b,
+        }
+    }
+}
+
+/// The result of evaluating an expression: either a single known value
+/// (carrying a wildcard count) or a two-branch conditional.
+#[derive(Clone)]
+pub enum Flow {
+    /// A single known value. `wildcards` counts embedded [`WILDCARD`] markers.
+    Value { value: Value, wildcards: u32 },
+    /// `test ? if_true : els` where `test` is not statically known.
+    Cond { if_true: Value, els: Value },
+}
+
+impl Flow {
+    fn known(value: Value) -> Flow {
+        Flow::Value { value, wildcards: 0 }
     }
 }
 
@@ -73,18 +110,35 @@ fn format_num(n: f64) -> String {
     }
 }
 
-/// Evaluate `expr` to a constant value, if statically knowable.
+fn count_wildcards(s: &str) -> u32 {
+    u32::try_from(s.matches(WILDCARD).count()).unwrap_or(u32::MAX)
+}
+
+/// Evaluate `expr` to a single value, if statically knowable.
+///
+/// Returns the string/number/bool; the string may embed [`WILDCARD`] markers.
+/// Returns `None` for conditional or unknown values.
 pub fn eval(expr: &Expression, ctx: &EvalCtx) -> Option<Value> {
+    match eval_flow(expr, ctx)? {
+        Flow::Value { value, .. } => Some(value),
+        Flow::Cond { .. } => None,
+    }
+}
+
+/// Evaluate `expr` to a [`Flow`] (value-or-conditional), if statically
+/// knowable. This is the full nft `evaluate` with `computeBranches = true`.
+pub fn eval_flow(expr: &Expression, ctx: &EvalCtx) -> Option<Flow> {
     match expr {
-        Expression::StringLiteral(s) => Some(Value::Str(s.value.to_string())),
-        Expression::NumericLiteral(n) => Some(Value::Num(n.value)),
+        Expression::StringLiteral(s) => Some(Flow::known(Value::Str(s.value.to_string()))),
+        Expression::NumericLiteral(n) => Some(Flow::known(Value::Num(n.value))),
+        Expression::BooleanLiteral(b) => Some(Flow::known(Value::Bool(b.value))),
         Expression::TemplateLiteral(t) => eval_template(t, ctx),
         Expression::Identifier(id) => match id.name.as_str() {
-            "__dirname" => Some(Value::Str(ctx.dirname.clone())),
-            "__filename" => Some(Value::Str(ctx.filename.clone())),
+            "__dirname" => Some(Flow::known(Value::Str(ctx.dirname.clone()))),
+            "__filename" => Some(Flow::known(Value::Str(ctx.filename.clone()))),
             name => match ctx.bindings.get(name) {
-                Some(Binding::PathSep) => Some(Value::Str("/".to_string())),
-                _ => None,
+                Some(Binding::PathSep) => Some(Flow::known(Value::Str("/".to_string()))),
+                _ => ctx.vars.get(name).cloned(),
             },
         },
         Expression::StaticMemberExpression(member) => {
@@ -92,106 +146,243 @@ pub fn eval(expr: &Expression, ctx: &EvalCtx) -> Option<Value> {
             if member.property.name == "sep" {
                 if let Expression::Identifier(obj) = &member.object {
                     if matches!(ctx.bindings.get(obj.name.as_str()), Some(Binding::PathModule)) {
-                        return Some(Value::Str("/".to_string()));
+                        return Some(Flow::known(Value::Str("/".to_string())));
                     }
                 }
             }
             None
         }
-        Expression::BinaryExpression(bin) => {
-            use oxc_ast::ast::BinaryOperator;
-            if bin.operator != BinaryOperator::Addition {
-                return None;
-            }
-            let l = eval(&bin.left, ctx)?;
-            let r = eval(&bin.right, ctx)?;
-            match (&l, &r) {
-                (Value::Num(a), Value::Num(b)) => Some(Value::Num(a + b)),
-                _ => Some(Value::Str(format!("{}{}", l.as_concat_str(), r.as_concat_str()))),
-            }
-        }
+        Expression::BinaryExpression(bin) => eval_binary(bin, ctx),
+        Expression::LogicalExpression(log) => eval_logical(log, ctx),
+        Expression::ConditionalExpression(cond) => eval_conditional(cond, ctx),
         Expression::CallExpression(call) => eval_call(call, ctx),
-        Expression::ParenthesizedExpression(p) => eval(&p.expression, ctx),
+        Expression::ParenthesizedExpression(p) => eval_flow(&p.expression, ctx),
+        Expression::SequenceExpression(_) => eval_flow(unwrap_expr(expr), ctx),
         _ => None,
     }
 }
 
-fn eval_template(t: &TemplateLiteral, ctx: &EvalCtx) -> Option<Value> {
-    let mut out = String::new();
-    for (i, quasi) in t.quasis.iter().enumerate() {
-        let cooked = quasi.value.cooked.as_ref()?;
-        out.push_str(cooked.as_str());
-        if let Some(expr) = t.expressions.get(i) {
-            out.push_str(&eval(expr, ctx)?.as_concat_str());
+fn eval_binary(bin: &oxc_ast::ast::BinaryExpression, ctx: &EvalCtx) -> Option<Flow> {
+    use oxc_ast::ast::BinaryOperator;
+    let op = bin.operator;
+    let l = eval_flow(&bin.left, ctx);
+    let r = eval_flow(&bin.right, ctx);
+
+    // Wildcard fallback for `+` when exactly one side is unknown.
+    if op == BinaryOperator::Addition {
+        match (&l, &r) {
+            (None, Some(Flow::Value { value: Value::Str(rs), wildcards })) => {
+                return Some(Flow::Value {
+                    value: Value::Str(format!("{WILDCARD}{rs}")),
+                    wildcards: wildcards + 1,
+                });
+            }
+            (Some(Flow::Value { value: Value::Str(ls), wildcards }), None) => {
+                return Some(Flow::Value {
+                    value: Value::Str(format!("{ls}{WILDCARD}")),
+                    wildcards: wildcards + 1,
+                });
+            }
+            _ => {}
         }
     }
-    Some(Value::Str(out))
+
+    let l = l?;
+    let r = r?;
+    // Conditional propagation: one side conditional, the other a plain value.
+    match (&l, &r) {
+        (Flow::Cond { if_true, els }, Flow::Value { value, .. }) => {
+            return apply_binop(op, if_true, value)
+                .and_then(|t| apply_binop(op, els, value).map(|e| Flow::Cond { if_true: t, els: e }));
+        }
+        (Flow::Value { value, .. }, Flow::Cond { if_true, els }) => {
+            return apply_binop(op, value, if_true)
+                .and_then(|t| apply_binop(op, value, els).map(|e| Flow::Cond { if_true: t, els: e }));
+        }
+        (Flow::Value { value: lv, wildcards: lw }, Flow::Value { value: rv, wildcards: rw }) => {
+            let res = apply_binop(op, lv, rv)?;
+            let wildcards = if op == BinaryOperator::Addition { lw + rw } else { 0 };
+            return Some(Flow::Value { value: res, wildcards });
+        }
+        _ => {}
+    }
+    None
 }
 
-fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Value> {
-    match unwrap_expr(&call.callee) {
-        // join(...), resolve(...), dirname(...) via destructured bindings
-        Expression::Identifier(id) => match ctx.bindings.get(id.name.as_str()) {
-            Some(Binding::PathJoin) => Some(Value::Str(path_join(&str_args(call, ctx)?))),
-            Some(Binding::PathResolve) => {
-                Some(Value::Str(path_resolve(&ctx.cwd, &str_args(call, ctx)?)))
+fn apply_binop(op: oxc_ast::ast::BinaryOperator, l: &Value, r: &Value) -> Option<Value> {
+    use oxc_ast::ast::BinaryOperator as B;
+    match op {
+        B::Addition => Some(match (l, r) {
+            (Value::Num(a), Value::Num(b)) => Value::Num(a + b),
+            _ => Value::Str(format!("{}{}", l.as_concat_str(), r.as_concat_str())),
+        }),
+        B::Equality | B::StrictEquality => Some(Value::Bool(values_eq(l, r))),
+        B::Inequality | B::StrictInequality => Some(Value::Bool(!values_eq(l, r))),
+        _ => None,
+    }
+}
+
+fn values_eq(l: &Value, r: &Value) -> bool {
+    match (l, r) {
+        (Value::Str(a), Value::Str(b)) => a == b,
+        (Value::Num(a), Value::Num(b)) => a == b,
+        (Value::Bool(a), Value::Bool(b)) => a == b,
+        _ => false,
+    }
+}
+
+fn eval_logical(log: &oxc_ast::ast::LogicalExpression, ctx: &EvalCtx) -> Option<Flow> {
+    use oxc_ast::ast::LogicalOperator;
+    let l = eval_flow(&log.left, ctx);
+    match log.operator {
+        LogicalOperator::Or => match l {
+            // A || B -> A if A is truthy and known
+            Some(Flow::Value { value, wildcards }) if value.truthy() => {
+                Some(Flow::Value { value, wildcards })
             }
-            Some(Binding::PathDirname) => {
-                let args = str_args(call, ctx)?;
-                args.first().map(|a| Value::Str(dirname(a)))
-            }
+            Some(Flow::Value { .. }) => eval_flow(&log.right, ctx),
             _ => None,
         },
-        // path.join(...), process.cwd(), etc.
+        LogicalOperator::And => match l {
+            Some(Flow::Value { value, .. }) if !value.truthy() => Some(Flow::known(value)),
+            Some(Flow::Value { .. }) => eval_flow(&log.right, ctx),
+            _ => None,
+        },
+        LogicalOperator::Coalesce => match l {
+            Some(Flow::Value { value, wildcards }) => Some(Flow::Value { value, wildcards }),
+            _ => eval_flow(&log.right, ctx),
+        },
+    }
+}
+
+fn eval_conditional(cond: &oxc_ast::ast::ConditionalExpression, ctx: &EvalCtx) -> Option<Flow> {
+    // Known test -> pick the branch.
+    if let Some(Flow::Value { value, .. }) = eval_flow(&cond.test, ctx) {
+        return if value.truthy() {
+            eval_flow(&cond.consequent, ctx)
+        } else {
+            eval_flow(&cond.alternate, ctx)
+        };
+    }
+    // Unknown test -> two-branch conditional, but only if both branches are
+    // plain wildcard-free values.
+    let Flow::Value { value: then_v, wildcards: 0 } = eval_flow(&cond.consequent, ctx)? else {
+        return None;
+    };
+    let Flow::Value { value: else_v, wildcards: 0 } = eval_flow(&cond.alternate, ctx)? else {
+        return None;
+    };
+    Some(Flow::Cond { if_true: then_v, els: else_v })
+}
+
+fn eval_template(t: &TemplateLiteral, ctx: &EvalCtx) -> Option<Flow> {
+    let mut out = String::new();
+    let mut wildcards = 0u32;
+    for (i, quasi) in t.quasis.iter().enumerate() {
+        out.push_str(quasi.value.cooked.as_ref()?.as_str());
+        if let Some(expr) = t.expressions.get(i) {
+            match eval_flow(expr, ctx) {
+                Some(Flow::Value { value, wildcards: w }) => {
+                    out.push_str(&value.as_concat_str());
+                    wildcards += w;
+                }
+                // Unknown interpolation -> wildcard (computeBranches).
+                None => {
+                    out.push(WILDCARD);
+                    wildcards += 1;
+                }
+                // A single conditional branch in a template is unsupported.
+                Some(Flow::Cond { .. }) => return None,
+            }
+        }
+    }
+    Some(Flow::Value { value: Value::Str(out), wildcards })
+}
+
+fn eval_call(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Flow> {
+    let kind = call_kind(call, ctx)?;
+    // Evaluate args, substituting WILDCARD for unknown ones (computeBranches).
+    // `concat` does not wildcard-fill (matches nft `allWildcards` gate).
+    let allow_wildcard = !matches!(kind, CallKind::Concat(_));
+    let mut args: Vec<String> = Vec::with_capacity(call.arguments.len());
+    let mut wildcards = 0u32;
+    let mut all_wildcards = !call.arguments.is_empty() && allow_wildcard;
+    for arg in &call.arguments {
+        // Spread / non-expression args are treated as unknown -> wildcard.
+        if let Some(v) = arg.as_expression().and_then(|e| eval(e, ctx)) {
+            all_wildcards = false;
+            let s = v.as_concat_str();
+            wildcards += count_wildcards(&s);
+            args.push(s);
+        } else {
+            if !allow_wildcard {
+                return None;
+            }
+            args.push(WILDCARD.to_string());
+            wildcards += 1;
+        }
+    }
+    if all_wildcards {
+        return None;
+    }
+    let result = match kind {
+        CallKind::PathJoin => path_join(&args),
+        CallKind::PathResolve => path_resolve(&ctx.cwd, &args),
+        CallKind::PathDirname => dirname(args.first()?),
+        CallKind::ProcessCwd => ctx.cwd.clone(),
+        CallKind::Concat(base) => format!("{base}{}", args.concat()),
+    };
+    // nft validates the wildcard count is preserved by the static fn.
+    if wildcards > 0 && count_wildcards(&result) != wildcards {
+        return None;
+    }
+    Some(Flow::Value { value: Value::Str(result), wildcards })
+}
+
+/// What kind of statically-evaluable call this is, if any.
+enum CallKind {
+    PathJoin,
+    PathResolve,
+    PathDirname,
+    ProcessCwd,
+    /// `'base'.concat(...)` — carries the base string.
+    Concat(String),
+}
+
+fn call_kind(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<CallKind> {
+    match unwrap_expr(&call.callee) {
+        Expression::Identifier(id) => match ctx.bindings.get(id.name.as_str()) {
+            Some(Binding::PathJoin) => Some(CallKind::PathJoin),
+            Some(Binding::PathResolve) => Some(CallKind::PathResolve),
+            Some(Binding::PathDirname) => Some(CallKind::PathDirname),
+            _ => None,
+        },
         Expression::StaticMemberExpression(member) => {
             let prop = member.property.name.as_str();
             if let Expression::Identifier(obj) = &member.object {
                 match ctx.bindings.get(obj.name.as_str()) {
                     Some(Binding::PathModule) => match prop {
-                        "join" => Some(Value::Str(path_join(&str_args(call, ctx)?))),
-                        "resolve" => {
-                            Some(Value::Str(path_resolve(&ctx.cwd, &str_args(call, ctx)?)))
-                        }
-                        "dirname" => {
-                            let args = str_args(call, ctx)?;
-                            args.first().map(|a| Value::Str(dirname(a)))
-                        }
+                        "join" => Some(CallKind::PathJoin),
+                        "resolve" => Some(CallKind::PathResolve),
+                        "dirname" => Some(CallKind::PathDirname),
                         _ => None,
                     },
-                    Some(Binding::ProcessModule) if prop == "cwd" => {
-                        Some(Value::Str(ctx.cwd.clone()))
-                    }
-                    _ => {
-                        // intrinsic `process.cwd()`
-                        if obj.name == "process" && prop == "cwd" {
-                            Some(Value::Str(ctx.cwd.clone()))
-                        } else {
-                            None
-                        }
-                    }
+                    Some(Binding::ProcessModule) if prop == "cwd" => Some(CallKind::ProcessCwd),
+                    _ if obj.name == "process" && prop == "cwd" => Some(CallKind::ProcessCwd),
+                    _ => None,
                 }
             } else if prop == "concat" {
-                // `'str'.concat(a, b, ...)` on a statically-known string
-                let base = eval(&member.object, ctx)?.as_concat_str();
-                let args = str_args(call, ctx)?;
-                Some(Value::Str(format!("{base}{}", args.concat())))
+                // `'str'.concat(a, b, ...)` on a statically-known string.
+                match eval(&member.object, ctx)? {
+                    Value::Str(base) => Some(CallKind::Concat(base)),
+                    _ => None,
+                }
             } else {
                 None
             }
         }
         _ => None,
     }
-}
-
-/// Evaluate all call arguments to strings, bailing if any is non-static or a
-/// spread.
-fn str_args(call: &oxc_ast::ast::CallExpression, ctx: &EvalCtx) -> Option<Vec<String>> {
-    let mut out = Vec::with_capacity(call.arguments.len());
-    for arg in &call.arguments {
-        let expr = arg.as_expression()?;
-        out.push(eval(expr, ctx)?.as_concat_str());
-    }
-    Some(out)
 }
 
 // ---- posix path helpers (the inputs/fixtures are posix) --------------------
@@ -231,7 +422,7 @@ fn dirname(p: &str) -> String {
 }
 
 /// Collapse `.`/`..` and duplicate slashes in a posix path, preserving a
-/// leading `/`.
+/// leading `/`. Wildcard markers are treated as ordinary path segments.
 #[must_use]
 pub fn normalize_posix(p: &str) -> String {
     let absolute = p.starts_with('/');
