@@ -166,9 +166,19 @@ impl Ctx<'_> {
         if path.is_file() {
             return Some(path.to_path_buf());
         }
-        let under_base_non_nm = path
-            .strip_prefix(self.opts.base)
-            .is_ok_and(|rest| !format!("/{}", rest.to_string_lossy()).contains("/node_modules/"));
+        // `.ts` resolution applies to in-base, non-`node_modules` files. The
+        // in-base check is lexical, but the `node_modules` check follows the
+        // realpath of the parent dir so a workspace symlink under
+        // `node_modules` (pointing at real package sources) still qualifies.
+        let under_base = path.strip_prefix(self.opts.base).is_ok();
+        let real_dir = path.parent().and_then(|p| std::fs::canonicalize(p).ok());
+        let not_in_node_modules = match &real_dir {
+            Some(rd) => !rd.to_string_lossy().contains("/node_modules/"),
+            None => path
+                .strip_prefix(self.opts.base)
+                .is_ok_and(|rest| !format!("/{}", rest.to_string_lossy()).contains("/node_modules/")),
+        };
+        let under_base_non_nm = under_base && not_in_node_modules;
         if self.opts.ts && under_base_non_nm {
             for ext in [".ts", ".tsx"] {
                 let cand = PathBuf::from(format!("{s}{ext}"));
@@ -717,6 +727,22 @@ mod tests {
             .file("node_modules/pkg/index.js", "")
             .file("main.js", "");
         assert_eq!(f.resolve1("pkg", "main.js").as_deref(), Some("node_modules/pkg/index.js"));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn workspace_symlink_resolves_ts_main() {
+        let f = Fixture::new();
+        // packages/x has a `.ts` main; node_modules/x symlinks to it.
+        f.file("packages/x/package.json", r#"{"main":"./main"}"#)
+            .file("packages/x/main.ts", "")
+            .file("main.js", "");
+        std::fs::create_dir_all(f.root.join("node_modules")).unwrap();
+        std::os::unix::fs::symlink(f.root.join("packages/x"), f.root.join("node_modules/x"))
+            .unwrap();
+        // The `.ts` main resolves through the symlink (core normalizes the `./`).
+        let resolved = f.resolve1("x", "main.js").unwrap();
+        assert!(resolved.starts_with("node_modules/x/") && resolved.ends_with("main.ts"));
     }
 
     #[test]
