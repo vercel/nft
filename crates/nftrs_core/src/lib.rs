@@ -1070,10 +1070,14 @@ mod trace_tests {
         let f = Fx::new();
         f.file("input.js", "require('./a');").file("a.js", "");
         let mut opts = opts_for(&f.root);
-        opts.resolve = Some(Box::new(|_id: &str, _p: &Path, _cjs: bool| Some(ResolveOverride::Ignored)));
+        opts.resolve =
+            Some(Box::new(|_id: &str, _p: &Path, _cjs: bool| Some(ResolveOverride::Ignored)));
         let list = node_file_trace(&[f.root.join("input.js")], &opts).file_list;
         assert!(list.contains(&"input.js".to_string()));
-        assert!(!list.contains(&"a.js".to_string()), "ignored specifier must not be emitted: {list:?}");
+        assert!(
+            !list.contains(&"a.js".to_string()),
+            "ignored specifier must not be emitted: {list:?}"
+        );
     }
 
     #[test]
@@ -1086,6 +1090,9 @@ mod trace_tests {
         assert!(list.contains(&"input.js".to_string()));
         // a.js is ignored, so neither it nor its transitive dep b.js is emitted.
         assert!(!list.contains(&"a.js".to_string()), "{list:?}");
-        assert!(!list.contains(&"b.js".to_string()), "ignored file's deps must not be followed: {list:?}");
+        assert!(
+            !list.contains(&"b.js".to_string()),
+            "ignored file's deps must not be followed: {list:?}"
+        );
     }
 }

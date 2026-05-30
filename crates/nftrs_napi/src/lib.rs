@@ -73,10 +73,7 @@ fn opt<V: napi::bindgen_prelude::FromNapiValue>(options: Option<&Object>, key: &
   resolve?: (specifier: string, parent: string, cjs: boolean) => string | Array<string> | false | undefined
   ignore?: (path: string) => boolean
 }")]
-pub fn node_file_trace(
-    files: Vec<String>,
-    options: Option<Object>,
-) -> Result<NodeFileTraceResult> {
+pub fn node_file_trace(files: Vec<String>, options: Option<Object>) -> Result<NodeFileTraceResult> {
     let o = options.as_ref();
     let base = opt::<String>(o, "base")
         .map_or_else(|| std::env::current_dir().unwrap_or_default(), PathBuf::from);
