@@ -153,12 +153,16 @@ jobs:
         working-directory: ${{ env.APP_DIR }}
         run: npx --yes -p @napi-rs/cli@3 napi artifacts --output-dir ./artifacts
 
-      # pre-publish stamps each per-platform package.json version to match the
-      # root package and copies the matching addon in. We do not create a GitHub
-      # release here (the `--gh-release` flag is off by default).
+      # pre-publish stamps each per-platform package.json version (from the root
+      # package.json) and copies the matching addon in. `--no-gh-release` skips
+      # napi's GitHub-release path (we don't pass a GITHUB_TOKEN); `-t npm`
+      # selects the `v<version>` tag style so it derives the version from
+      # package.json instead of scanning the commit message for a lerna-style
+      # `pkg@version` (the default `lerna` style fails on non-release commits and
+      # on workflow_dispatch).
       - name: Stamp versions and copy addons into platform packages
         working-directory: ${{ env.APP_DIR }}
-        run: npx --yes -p @napi-rs/cli@3 napi pre-publish
+        run: npx --yes -p @napi-rs/cli@3 napi pre-publish --no-gh-release -t npm
 
       - name: Inspect publish layout
         working-directory: ${{ env.APP_DIR }}
