@@ -163,6 +163,8 @@ const specialCases: Record<string, (o: SpecialCaseOpts) => void> = {
     }
   },
   sharp: async ({ id, emitAssetDirectory, job }) => {
+    // Prior to sharp@0.35.0, the src was too dynamic so we relied on package.json
+    // See https://github.com/lovell/sharp/issues/4380#issuecomment-4017526484
     if (id.endsWith('sharp/lib/index.js')) {
       const file = resolve(id, '..', '..', 'package.json');
       const pkg = JSON.parse(readFileSync(file, 'utf8'));
