@@ -16,7 +16,11 @@ allowBuilds:
   msgpackr-extract: false
   nice-napi: false
   oracledb: false
-  phantomjs-prebuilt: true
+  # phantomjs-prebuilt (deprecated) downloads and extracts a binary from GitHub
+  # releases in its postinstall, which fails to extract on macOS/Windows and
+  # breaks CI. That postinstall only generates lib/location.js, which the trace
+  # test does not need. Skip the build so installs are reliable everywhere.
+  phantomjs-prebuilt: false
   protobufjs: false
   sharp: false
   unix-dgram: false
