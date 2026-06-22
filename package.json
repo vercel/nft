@@ -35,7 +35,7 @@
     "glob": "^13.0.0",
     "graceful-fs": "^4.2.9",
     "node-gyp-build": "^4.2.2",
-    "picomatch": "^4.0.2",
+    "picomatch": "^4.0.4",
     "resolve-from": "^5.0.0"
   },
   "devDependencies": {
@@ -98,7 +98,7 @@
     "mariadb": "^3.4.1",
     "memcached": "^2.2.2",
     "microtime": "^3.0.0",
-    "mongoose": "^8.13.2",
+    "mongoose": "^8.22.1",
     "mysql": "^2.17.1",
     "oracledb": "^6.2.0",
     "paraphrase": "1.8.0",
@@ -137,7 +137,7 @@
     "typescript": "^5.7.2",
     "uglify-js": "^3.6.0",
     "unified": "^11.0.5",
-    "vm2": "^3.10.4",
+    "vm2": "^3.11.4",
     "vue": "^3.5.13",
     "when": "^3.7.8",
     "zeromq": "^6.0.0-beta.19"
