@@ -340,8 +340,8 @@ importers:
         specifier: ^11.0.5
         version: 11.0.5
       vm2:
-        specifier: ^3.11.4
-        version: 3.11.4
+        specifier: ^3.11.5
+        version: 3.11.5
       vue:
         specifier: ^3.5.13
         version: 3.5.13(typescript@5.7.2)
@@ -9440,8 +9440,8 @@ packages:
   vm-browserify@1.1.2:
     resolution: {integrity: sha512-2ham8XPWTONajOR0ohOKOHXkm3+gaBmGut3SRuu75xLd/RRaY6vqgh8NBYYk7+RW3u5AtzPQZG8F10LHkl0lAQ==}
 
-  vm2@3.11.4:
-    resolution: {integrity: sha512-3assDRyB+A9/5rjECD2e2FAlezOfzCqejZy0L36zij4LgzoWZRA3a26q3PZnl6o5PmNjrTBRbAWACpdK/Y3qOQ==}
+  vm2@3.11.5:
+    resolution: {integrity: sha512-RSrkBiwrj6FRU+QdqNs6KG0XdlvJCjpQ4GXiqmMbrhmwfu5k/XIMpAer0L8f6iuf0uJ3a4T1xJN126Q8yf0VIA==}
     engines: {node: '>=6.0'}
     hasBin: true
 
@@ -21323,7 +21323,7 @@ snapshots:
 
   vm-browserify@1.1.2: {}
 
-  vm2@3.11.4:
+  vm2@3.11.5:
     dependencies:
       acorn: 8.17.0
       acorn-walk: 8.3.5
