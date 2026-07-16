@@ -1,6 +1,7 @@
 import os from 'os';
 import path from 'path';
 import { glob } from 'glob';
+import { fsIgnoreEnoent } from './fs-ignore-enoent';
 import { getPackageBase } from './get-package-base';
 import { Job } from '../node-file-trace';
 
@@ -28,6 +29,7 @@ export async function sharedLibEmit(p: string, job: Job) {
       ignore:
         pkgPath.replaceAll(path.sep, path.posix.sep) + '/**/node_modules/**/*',
       dot: true,
+      fs: fsIgnoreEnoent,
     },
   );
   await Promise.all(files.map((file) => job.emitFile(file, 'sharedlib', p)));
