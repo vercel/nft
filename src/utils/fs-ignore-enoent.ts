@@ -35,21 +35,25 @@ export const fsIgnoreEnoent = {
     }
   },
   stat: (path: any, ...args: any[]) => {
-    const cb = args.pop();
-    nativeFs.stat(path, ...args, (err, stats) => {
+    const cb = args[args.length - 1];
+    if (typeof cb !== 'function') return (nativeFs.stat as any)(path, ...args);
+    args.pop();
+    return nativeFs.stat(path, ...args, (err, stats) => {
       if (err && err.code === 'ENOENT') {
         return cb(null, createMockStats());
       }
-      cb(err, stats);
+      return cb(err, stats);
     });
   },
   lstat: (path: any, ...args: any[]) => {
-    const cb = args.pop();
-    nativeFs.lstat(path, ...args, (err, stats) => {
+    const cb = args[args.length - 1];
+    if (typeof cb !== 'function') return (nativeFs.lstat as any)(path, ...args);
+    args.pop();
+    return nativeFs.lstat(path, ...args, (err, stats) => {
       if (err && err.code === 'ENOENT') {
         return cb(null, createMockStats());
       }
-      cb(err, stats);
+      return cb(err, stats);
     });
   },
   promises: {
