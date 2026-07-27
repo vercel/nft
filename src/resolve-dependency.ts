@@ -193,6 +193,42 @@ function getExportsTarget(
   return undefined;
 }
 
+function patternKeyCompare(a: string, b: string): number {
+  const aPatternIndex = a.indexOf('*');
+  const bPatternIndex = b.indexOf('*');
+
+  const aBaseLength = aPatternIndex === -1 ? a.length : aPatternIndex + 1;
+  const bBaseLength = bPatternIndex === -1 ? b.length : bPatternIndex + 1;
+
+  if (aBaseLength > bBaseLength) return -1;
+  if (bBaseLength > aBaseLength) return 1;
+  if (aPatternIndex === -1) return 1;
+  if (bPatternIndex === -1) return -1;
+  if (a.length > b.length) return -1;
+  if (b.length > a.length) return 1;
+  return 0;
+}
+
+function getPatternMatch(pattern: string, subpath: string): string | undefined {
+  const patternIndex = pattern.indexOf('*');
+  if (patternIndex === -1 || pattern.lastIndexOf('*') !== patternIndex) {
+    return undefined;
+  }
+
+  const patternBase = pattern.slice(0, patternIndex);
+  if (!subpath.startsWith(patternBase)) return undefined;
+
+  const patternTrailer = pattern.slice(patternIndex + 1);
+  if (
+    subpath.length < pattern.length ||
+    (patternTrailer && !subpath.endsWith(patternTrailer))
+  ) {
+    return undefined;
+  }
+
+  return subpath.slice(patternIndex, subpath.length - patternTrailer.length);
+}
+
 function addExportsTargetPath(
   paths: string[],
   pkgPath: string,
@@ -308,10 +344,9 @@ async function resolveExportsImports(
       return Array.isArray(resolved) ? resolved : [resolved];
     }
   }
-  for (const match of Object.keys(matchObj).sort(
-    (a, b) => b.length - a.length,
-  )) {
-    if (match.endsWith('*') && subpath.startsWith(match.slice(0, -1))) {
+  for (const match of Object.keys(matchObj).sort(patternKeyCompare)) {
+    const wildcardReplacement = getPatternMatch(match, subpath);
+    if (wildcardReplacement !== undefined) {
       const target = getExportsTarget(
         matchObj[match],
         job.conditions,
@@ -320,10 +355,8 @@ async function resolveExportsImports(
       );
       if (typeof target === 'string' && target.startsWith('./')) {
         const resolvedPath =
-          pkgPath +
-          target.slice(1).replace(/\*/g, subpath.slice(match.length - 1));
+          pkgPath + target.slice(1).replace(/\*/g, wildcardReplacement);
         const paths = [resolvedPath];
-        const wildcardReplacement = subpath.slice(match.length - 1);
 
         const exportsForSubpath = matchObj[match];
         if (
