@@ -69,6 +69,9 @@ importers:
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.9.0
+      '@paypal/paypal-js':
+        specifier: 10.0.1
+        version: 10.0.1
       '@sentry/node':
         specifier: ^9.2.0
         version: 9.47.1
@@ -2092,6 +2095,9 @@ packages:
 
   '@paulirish/trace_engine@0.0.61':
     resolution: {integrity: sha512-/O08DwmUqIlJjUSPSZbNF8lWnlxaMsIOV6sS+uDKCxBd5i1psAmjEoG3JAqR6+nHD8X+YY474NW7SxUH/K+/kQ==}
+
+  '@paypal/paypal-js@10.0.1':
+    resolution: {integrity: sha512-tVv2p5Wf4YyI3BNa2dx5uRIM0iWi5Ci8dn1yUjwAml7Q+axmyTH5maWkCUBktD6Gmw/AjPBv4lRbkHFZyfH8uQ==}
 
   '@phc/format@1.0.0':
     resolution: {integrity: sha512-m7X9U6BG2+J+R1lSOdCiITLLrxm+cWlNI3HUFA92oLO77ObGNzaKdh8pMLqdZcshtkKuV84olNNXDfMc4FezBQ==}
@@ -7821,6 +7827,9 @@ packages:
   promise-polyfill@1.1.6:
     resolution: {integrity: sha512-7rrONfyLkDEc7OJ5QBkqa4KI4EBhCd340xRuIUPGCfu13znS+vx+VDdrT9ODAJHlXm7w4lbxN3DRjyv58EuzDg==}
 
+  promise-polyfill@8.3.0:
+    resolution: {integrity: sha512-H5oELycFml5yto/atYqmjyigJoAo3+OXwolYiH7OfQuYlAqhxNvTfiNMbV9hsC6Yp83yE5r2KTVmtrG6R9i6Pg==}
+
   promise-the-world@1.0.1:
     resolution: {integrity: sha512-eAXctcYU0ksq9YT5LT0N3e8yvdEAp0aYuzIiaJo9CpZwga45i08MW05GMXZIow7N05d1o4EBoR5hjkb7jhzqKg==}
 
@@ -12265,6 +12274,10 @@ snapshots:
     dependencies:
       legacy-javascript: 0.0.1
       third-party-web: 0.29.2
+
+  '@paypal/paypal-js@10.0.1':
+    dependencies:
+      promise-polyfill: 8.3.0
 
   '@phc/format@1.0.0': {}
 
@@ -19311,6 +19324,8 @@ snapshots:
   progress@2.0.3: {}
 
   promise-polyfill@1.1.6: {}
+
+  promise-polyfill@8.3.0: {}
 
   promise-the-world@1.0.1: {}
 
