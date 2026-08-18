@@ -5,6 +5,7 @@
     "#*": "./generic/*.js",
     "#*.js": "./dist/*.js",
     "#lib/*/index.js": "./src/*/main.js",
-    "#dep/*": "depper/*"
+    "#dep/*": "depper/*",
+    "#missing/*": "not-installed/*"
   }
 }
