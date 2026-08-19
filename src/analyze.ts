@@ -1299,15 +1299,18 @@ export default async function analyze(
         'node_modules' +
         path.sep;
       if (!assetPath.startsWith(nodeModulesBase)) {
-        if (job.log)
-          console.log(
-            'Skipping asset emission of ' +
-              assetPath +
-              ' for ' +
-              id +
-              ' as it is outside the package base ' +
-              pkgBase,
-          );
+        const message =
+          'Skipping asset emission of ' +
+          assetPath +
+          ' for ' +
+          id +
+          ' as it is outside the package base ' +
+          pkgBase;
+        // Also surfaced as a warning, not only under `job.log`: the file is otherwise
+        // simply absent from the output, so the first symptom is a runtime failure in
+        // the deployed application rather than anything visible at build time.
+        job.warnings.add(new Error(message));
+        if (job.log) console.log(message);
         return;
       }
     }
