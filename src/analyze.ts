@@ -1336,12 +1336,12 @@ export default async function analyze(
     if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
       return false;
     // do not emit directories above __dirname
-    if (
-      dir.startsWith(
-        assetPath.slice(0, assetPath.length - wildcardSuffix.length) + path.sep,
-      )
-    )
-      return false;
+    const wildcardIndex = assetPath.indexOf(WILDCARD);
+    const wildcardDir =
+      wildcardIndex === -1
+        ? assetPath.slice(0, assetPath.length - wildcardSuffix.length)
+        : assetPath.slice(0, assetPath.lastIndexOf(path.sep, wildcardIndex));
+    if (dir.startsWith(wildcardDir + path.sep)) return false;
     // do not emit asset directories higher than the node_modules base if a package
     if (pkgBase) {
       const nodeModulesBase =
