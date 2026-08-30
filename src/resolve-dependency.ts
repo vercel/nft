@@ -112,6 +112,12 @@ export class NotFoundError extends Error {
 const nodeBuiltins = new Set<string>(builtinModules);
 const nodeSupportsModuleSync = getNodeMajorVersion() >= 22;
 
+// Specifiers always use '/', while filesystem paths must use the platform
+// separator, or path comparisons against sep-joined prefixes fail on Windows.
+function toPath(specifier: string) {
+  return sep === '/' ? specifier : specifier.replace(/\//g, sep);
+}
+
 function getPkgName(name: string) {
   const segments = name.split('/');
   if (name[0] === '@' && segments.length > 1)
@@ -240,7 +246,7 @@ function addExportsTargetPath(
   const targetPath = wildcardReplacement
     ? target.slice(1).replace(/\*/g, wildcardReplacement)
     : target.slice(1);
-  const path = pkgPath + targetPath;
+  const path = pkgPath + toPath(targetPath);
   if (!paths.includes(path)) {
     paths.push(path);
   }
@@ -303,7 +309,7 @@ async function resolveExportsImports(
       nodeSupportsModuleSync,
     );
     if (typeof target === 'string' && target.startsWith('./')) {
-      const resolvedPath = pkgPath + target.slice(1);
+      const resolvedPath = pkgPath + toPath(target.slice(1));
       const paths = [resolvedPath];
 
       const exportsForSubpath = matchObj[subpath];
@@ -355,7 +361,7 @@ async function resolveExportsImports(
       );
       if (typeof target === 'string' && target.startsWith('./')) {
         const resolvedPath =
-          pkgPath + target.slice(1).replace(/\*/g, wildcardReplacement);
+          pkgPath + toPath(target.slice(1).replace(/\*/g, wildcardReplacement));
         const paths = [resolvedPath];
 
         const exportsForSubpath = matchObj[match];
@@ -416,7 +422,7 @@ async function resolveExportsImports(
         target.startsWith('./')
       ) {
         const resolvedPath =
-          pkgPath + target.slice(1) + subpath.slice(match.length);
+          pkgPath + toPath(target.slice(1) + subpath.slice(match.length));
         return await validateAndResolvePaths(
           [resolvedPath],
           parent,
@@ -512,6 +518,8 @@ async function resolvePackage(
   if (name.startsWith('node:')) return name;
 
   const pkgName = getPkgName(name) || '';
+  const pkgNamePath = toPath(pkgName);
+  const namePath = toPath(name);
 
   // package own name resolution
   let selfResolved: string | string[] | undefined;
@@ -555,12 +563,12 @@ async function resolvePackage(
     const nodeModulesDir = packageParent + sep + 'node_modules';
     const stat = await job.stat(nodeModulesDir);
     if (!stat || !stat.isDirectory()) continue;
-    const pkgCfg = await getPkgCfg(nodeModulesDir + sep + pkgName, job);
+    const pkgCfg = await getPkgCfg(nodeModulesDir + sep + pkgNamePath, job);
     const { exports: pkgExports } = pkgCfg || {};
 
     if (pkgCfg) {
       await resolveRemappings(
-        nodeModulesDir + sep + pkgName,
+        nodeModulesDir + sep + pkgNamePath,
         pkgCfg,
         parent,
         job,
@@ -576,10 +584,10 @@ async function resolvePackage(
       let legacyResolved;
       if (!job.exportsOnly)
         legacyResolved =
-          (await resolveFile(nodeModulesDir + sep + name, parent, job)) ||
-          (await resolveDir(nodeModulesDir + sep + name, parent, job));
+          (await resolveFile(nodeModulesDir + sep + namePath, parent, job)) ||
+          (await resolveDir(nodeModulesDir + sep + namePath, parent, job));
       const resolved = await resolveExportsImports(
-        nodeModulesDir + sep + pkgName,
+        nodeModulesDir + sep + pkgNamePath,
         pkgExports,
         '.' + name.slice(pkgName.length),
         job,
@@ -589,7 +597,7 @@ async function resolvePackage(
       );
       if (resolved) {
         await job.emitFile(
-          nodeModulesDir + sep + pkgName + sep + 'package.json',
+          nodeModulesDir + sep + pkgNamePath + sep + 'package.json',
           'resolve',
           parent,
         );
@@ -600,8 +608,8 @@ async function resolvePackage(
       if (legacyResolved) return legacyResolved;
     } else {
       const resolved =
-        (await resolveFile(nodeModulesDir + sep + name, parent, job)) ||
-        (await resolveDir(nodeModulesDir + sep + name, parent, job));
+        (await resolveFile(nodeModulesDir + sep + namePath, parent, job)) ||
+        (await resolveDir(nodeModulesDir + sep + namePath, parent, job));
       if (resolved) {
         if (selfResolved) {
           if (Array.isArray(selfResolved)) {
