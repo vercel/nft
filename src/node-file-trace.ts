@@ -107,11 +107,13 @@ export class Job {
       };
     } else if (Array.isArray(ignore)) {
       const resolvedIgnores = ignore.map((ignore) =>
-        relative(base, resolve(base || process.cwd(), ignore)),
+        relative(base, resolve(base || process.cwd(), ignore))
+          .split(sep)
+          .join('/'),
       );
       this.ignoreFn = (path: string) => {
         if (path.startsWith('..' + sep)) return true;
-        if (isMatch(path, resolvedIgnores)) return true;
+        if (isMatch(path.split(sep).join('/'), resolvedIgnores)) return true;
         return false;
       };
     }
