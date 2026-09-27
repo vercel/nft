@@ -103,6 +103,15 @@ const moduleSymbols = {
   register: MODULE_FN,
   createRequire: CREATE_REQUIRE,
 };
+// homedir(), tmpdir() and userInfo() describe the machine running the trace,
+// not the deployment target. Evaluating them turns `path.join(os.homedir(), x)`
+// into a glob of the build user's home or temp directory.
+const staticOs = {
+  ...os,
+  homedir: UNKNOWN,
+  tmpdir: UNKNOWN,
+  userInfo: UNKNOWN,
+};
 const staticModules = Object.assign(Object.create(null), {
   bindings: {
     default: BINDINGS,
@@ -141,8 +150,8 @@ const staticModules = Object.assign(Object.create(null), {
     default: {},
   },
   os: {
-    default: os,
-    ...os,
+    default: staticOs,
+    ...staticOs,
   },
   url: {
     default: url,
