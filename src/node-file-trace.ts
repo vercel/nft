@@ -404,7 +404,8 @@ export class Job {
           ext === '.js' ||
           ext === '.mjs' ||
           ext === '.node' ||
-          ext === '' ||
+          // extensionless assets may be sockets or other unreadable file types
+          (ext === '' && (await this.isFile(asset))) ||
           (this.ts &&
             (ext === '.ts' || ext === '.tsx') &&
             asset.startsWith(this.base) &&
