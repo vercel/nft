@@ -510,15 +510,29 @@ export default async function analyze(
     }
   }
 
+  // Same lookup order as the old per-call copy: import.meta, then known
+  // bindings (shadowed ones resolve to undefined), then globals.
+  function getVarDescriptor(name: string | symbol) {
+    if (typeof name !== 'string') return undefined;
+    let value;
+    if (name === 'import.meta') value = { url: importMetaUrl };
+    else if (name in knownBindings) value = getKnownBinding(name);
+    else if (Object.prototype.hasOwnProperty.call(globalBindings, name))
+      value = { value: globalBindings[name] };
+    else return undefined;
+    return { value, writable: true, enumerable: true, configurable: true };
+  }
   async function computePureStaticValue(expr: Node, computeBranches = true) {
-    const vars = Object.create(null);
-    Object.keys(globalBindings).forEach((name) => {
-      vars[name] = { value: globalBindings[name] };
+    // Look bindings up on demand. Copying all of them into a new object on
+    // every call made analysis quadratic in the file size.
+    const vars = new Proxy(Object.create(null), {
+      getOwnPropertyDescriptor: (_target, name) => getVarDescriptor(name),
+      get: (_target, name) => getVarDescriptor(name)?.value,
+      has: (_target, name) => getVarDescriptor(name) !== undefined,
+      set: () => {
+        throw new Error('static eval vars are read-only');
+      },
     });
-    Object.keys(knownBindings).forEach((name) => {
-      vars[name] = getKnownBinding(name);
-    });
-    vars['import.meta'] = { url: importMetaUrl };
     // evaluate returns undefined for non-statically-analyzable
     const result = await evaluate(expr, vars, computeBranches);
     return result;
