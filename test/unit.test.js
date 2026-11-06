@@ -25,19 +25,6 @@ const skipOnWindows = [
   'require-symlink',
 ];
 const skipOnMac = [];
-const skipOnNode20AndBelow = [
-  'module-sync-condition-es',
-  'module-sync-condition-cjs',
-  'module-sync-condition-es-default',
-  'module-sync-condition-es-nested',
-  'imports-module-sync',
-  'imports-module-sync-cjs',
-  'self-reference-module-sync',
-];
-const skipOnNode22AndAbove = [
-  'module-sync-condition-es-node20',
-  'module-sync-condition-cjs-node20',
-];
 // These fixtures rely on native or install-time binaries that do not support Node 26 yet.
 const skipOnNode26AndAbove = ['datadog-pprof-node-gyp', 'phantomjs-prebuilt'];
 if (process.platform === 'darwin' && process.arch === 'arm64') {
@@ -93,14 +80,6 @@ for (const { testName, isRoot } of unitTests) {
   }
   if (process.platform === 'darwin' && skipOnMac.includes(testName)) {
     console.log(`Skipping unit test on macOS: ${testSuffix}`);
-    continue;
-  }
-  if (nodeVersion < 22 && skipOnNode20AndBelow.includes(testName)) {
-    console.log(`Skipping unit test on Node.js 20 or below: ${testSuffix}`);
-    continue;
-  }
-  if (nodeVersion >= 22 && skipOnNode22AndAbove.includes(testName)) {
-    console.log(`Skipping unit test on Node.js 22 or above: ${testSuffix}`);
     continue;
   }
   if (nodeVersion >= 26 && skipOnNode26AndAbove.includes(testName)) {

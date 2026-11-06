@@ -1,7 +1,6 @@
 import { isAbsolute, resolve, sep } from 'path';
 import { builtinModules } from 'module';
 import { Job } from './node-file-trace';
-import { getNodeMajorVersion } from './utils/node-version';
 
 // node resolver
 // custom implementation to emit only needed package.json files for resolver
@@ -110,7 +109,6 @@ export class NotFoundError extends Error {
 }
 
 const nodeBuiltins = new Set<string>(builtinModules);
-const nodeSupportsModuleSync = getNodeMajorVersion() >= 22;
 
 function getPkgName(name: string) {
   const segments = name.split('/');
@@ -300,7 +298,7 @@ async function resolveExportsImports(
       matchObj[subpath],
       job.conditions,
       cjsResolve,
-      nodeSupportsModuleSync,
+      true,
     );
     if (typeof target === 'string' && target.startsWith('./')) {
       const resolvedPath = pkgPath + target.slice(1);
@@ -311,8 +309,7 @@ async function resolveExportsImports(
         typeof exportsForSubpath === 'object' &&
         exportsForSubpath !== null &&
         !Array.isArray(exportsForSubpath) &&
-        'module-sync' in exportsForSubpath &&
-        (nodeSupportsModuleSync || job.moduleSyncCatchall)
+        'module-sync' in exportsForSubpath
       ) {
         const moduleSyncTarget = getExportsTarget(
           exportsForSubpath['module-sync'],
@@ -351,7 +348,7 @@ async function resolveExportsImports(
         matchObj[match],
         job.conditions,
         cjsResolve,
-        nodeSupportsModuleSync,
+        true,
       );
       if (typeof target === 'string' && target.startsWith('./')) {
         const resolvedPath =
@@ -408,7 +405,7 @@ async function resolveExportsImports(
         matchObj[match],
         job.conditions,
         cjsResolve,
-        nodeSupportsModuleSync,
+        true,
       );
       if (
         typeof target === 'string' &&
