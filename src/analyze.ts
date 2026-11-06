@@ -1357,10 +1357,21 @@ export default async function analyze(
     else if (assetPath.endsWith(path.sep + WILDCARD))
       wildcardSuffix = path.sep + WILDCARD;
     else if (assetPath.endsWith(WILDCARD)) wildcardSuffix = WILDCARD;
+    const wildcardIndex = assetPath.indexOf(WILDCARD);
+    const wildcardDir =
+      wildcardIndex === -1
+        ? assetPath.slice(0, assetPath.length - wildcardSuffix.length)
+        : assetPath.slice(0, assetPath.lastIndexOf(path.sep, wildcardIndex));
+    const isWildcardInFinalSegment =
+      wildcardIndex !== -1 && assetPath.indexOf(path.sep, wildcardIndex) === -1;
     // do not emit __dirname
     if (assetPath === dir + wildcardSuffix) return false;
     // do not emit cwd
-    if (assetPath === cwd + wildcardSuffix) return false;
+    if (
+      assetPath === cwd + wildcardSuffix ||
+      (wildcardDir === cwd && isWildcardInFinalSegment)
+    )
+      return false;
     // do not emit node_modules
     if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
       return false;
