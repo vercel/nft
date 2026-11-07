@@ -238,7 +238,7 @@ function addExportsTargetPath(
   if (typeof target !== 'string' || !target.startsWith('./')) return;
 
   const targetPath = wildcardReplacement
-    ? target.slice(1).replace(/\*/g, wildcardReplacement)
+    ? target.slice(1).replace(/\*/g, () => wildcardReplacement)
     : target.slice(1);
   const path = pkgPath + targetPath;
   if (!paths.includes(path)) {
@@ -355,7 +355,7 @@ async function resolveExportsImports(
       );
       if (typeof target === 'string' && target.startsWith('./')) {
         const resolvedPath =
-          pkgPath + target.slice(1).replace(/\*/g, wildcardReplacement);
+          pkgPath + target.slice(1).replace(/\*/g, () => wildcardReplacement);
         const paths = [resolvedPath];
 
         const exportsForSubpath = matchObj[match];
@@ -400,6 +400,15 @@ async function resolveExportsImports(
         }
 
         return await validateAndResolvePaths(paths, parent, job, cjsResolve);
+      } else if (isImports && typeof target === 'string') {
+        // The imports field additionally allows external dependencies as well
+        const resolved = await resolveDependency(
+          target.replace(/\*/g, () => wildcardReplacement),
+          parent,
+          job,
+          cjsResolve,
+        );
+        return Array.isArray(resolved) ? resolved : [resolved];
       }
     }
     if (!match.endsWith('/')) continue;

@@ -1,2 +1,3 @@
 const { test } = require('test-pkg-sync-catchall/feature');
-console.log(test);
+const { dollar } = require('test-pkg-sync-catchall/feature$&name');
+console.log(test, dollar);
