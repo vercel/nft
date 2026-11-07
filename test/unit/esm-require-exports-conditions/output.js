@@ -1,0 +1,7 @@
+[
+  "package.json",
+  "test/unit/esm-require-exports-conditions/input.js",
+  "test/unit/esm-require-exports-conditions/node_modules/dual/cjs/required.js",
+  "test/unit/esm-require-exports-conditions/node_modules/dual/esm/imported.js",
+  "test/unit/esm-require-exports-conditions/node_modules/dual/package.json"
+]

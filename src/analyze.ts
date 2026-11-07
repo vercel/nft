@@ -262,7 +262,12 @@ const repeatGlobRegEx = /([\/\\]\*\*[\/\\]\*)+/g;
 
 export interface AnalyzeResult {
   assets: Set<string>;
+  // Specifiers loaded with CommonJS semantics: require() calls (including
+  // ones made through module.createRequire in an ES module) and other
+  // require-like references. Resolved with the "require" condition.
   deps: Set<string>;
+  // Specifiers loaded with ES module semantics: static import / export from
+  // declarations and dynamic import(). Resolved with the "import" condition.
   imports: Set<string>;
   isESM: boolean;
 }
@@ -512,7 +517,7 @@ export default async function analyze(
     for (const decl of ast.body) {
       if (decl.type === 'ImportDeclaration') {
         const source = String(decl.source.value);
-        deps.add(source);
+        imports.add(source);
         const staticModule =
           staticModules[source.startsWith('node:') ? source.slice(5) : source];
         if (staticModule) {
@@ -537,7 +542,7 @@ export default async function analyze(
         decl.type === 'ExportNamedDeclaration' ||
         decl.type === 'ExportAllDeclaration'
       ) {
-        if (decl.source) deps.add(String(decl.source.value));
+        if (decl.source) imports.add(String(decl.source.value));
       }
     }
   }
