@@ -472,7 +472,9 @@ async function packageImportsResolve(
   job: Job,
   cjsResolve: boolean,
 ): Promise<string[]> {
-  if (name !== '#' && !name.startsWith('#/') && job.conditions) {
+  // Only a bare "#" is invalid. "#/" keys were allowed in Node.js 25.4 and 24.14
+  // (https://github.com/nodejs/node/pull/60864).
+  if (name !== '#' && job.conditions) {
     const pjsonBoundary = await job.getPjsonBoundary(parent);
     if (pjsonBoundary) {
       const pkgCfg = await getPkgCfg(pjsonBoundary, job);
