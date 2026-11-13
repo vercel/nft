@@ -815,6 +815,16 @@ export default async function analyze(
           typeof calleeValue.value === 'symbol'
         ) {
           switch (calleeValue.value) {
+            // const require = module.createRequire(...) in any spelling:
+            // namespace, default or named import under any local name
+            case CREATE_REQUIRE:
+              if (
+                parent.type === 'VariableDeclarator' &&
+                parent.id.type === 'Identifier'
+              ) {
+                setKnownBinding(parent.id.name, { value: BOUND_REQUIRE });
+              }
+              break;
             // customRequireWrapper('...')
             case BOUND_REQUIRE:
               if (
@@ -1238,44 +1248,6 @@ export default async function analyze(
             }
           }
           if (returned) setKnownBinding(fnName.name, { value: BOUND_REQUIRE });
-        }
-      }
-      // Support module.createRequire
-      if (
-        node.type === 'CallExpression' &&
-        node.callee.type === 'MemberExpression' &&
-        node.callee.object.type === 'Identifier' &&
-        node.callee.object.name === 'module' &&
-        node.callee.property.type === 'Identifier' &&
-        node.callee.property.name === 'createRequire'
-      ) {
-        if (
-          parent.type === 'VariableDeclarator' &&
-          parent.id.type === 'Identifier'
-        ) {
-          const requireName = parent.id.name;
-          setKnownBinding(requireName, { value: BOUND_REQUIRE });
-        }
-      }
-      // Support createRequire from named import: import { createRequire } from 'node:module'
-      if (
-        node.type === 'CallExpression' &&
-        node.callee.type === 'Identifier' &&
-        node.callee.name === 'createRequire'
-      ) {
-        const createRequireBinding = getKnownBinding('createRequire');
-        if (
-          createRequireBinding &&
-          'value' in createRequireBinding &&
-          createRequireBinding.value === CREATE_REQUIRE
-        ) {
-          if (
-            parent.type === 'VariableDeclarator' &&
-            parent.id.type === 'Identifier'
-          ) {
-            const requireName = parent.id.name;
-            setKnownBinding(requireName, { value: BOUND_REQUIRE });
-          }
         }
       }
     },
