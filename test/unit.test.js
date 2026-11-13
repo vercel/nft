@@ -176,7 +176,7 @@ for (const { testName, isRoot } of unitTests) {
         // Ignore.
       }
 
-      const { fileList, reasons } = await nodeFileTrace(
+      const { fileList, reasons, warnings } = await nodeFileTrace(
         inputFileNames.map((file) => join(unitPath, file)),
         {
           conditions: testOpts.conditions,
@@ -215,6 +215,19 @@ for (const { testName, isRoot } of unitTests) {
         isRoot ? join('./', unitPath, f) : join('test/unit', testName, f);
 
       const getReasonType = (f) => reasons.get(normalizeInputRoot(f)).type;
+
+      // Only on the uncached pass: the second run replays cached analysis and does not
+      // re-emit warnings.
+      if (!cached && testName === 'pkg-cwd-asset-outside-pkg-base') {
+        // The asset stays out of the output, but the skip has to be reported: silently
+        // omitting a file the package reads at runtime only surfaces once the deployed
+        // application fails.
+        expect(
+          [...warnings].some((warning) =>
+            warning.message.startsWith('Skipping asset emission of'),
+          ),
+        ).toBe(true);
+      }
 
       if (testName === 'multi-input') {
         const collectFiles = (parent, files = new Set()) => {
