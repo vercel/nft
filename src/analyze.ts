@@ -272,6 +272,15 @@ type KnownBindings = Record<
   { shadowDepth: number; value: StaticValue | ConditionalValue }
 >;
 
+// A known binding's value, or undefined while a nested scope shadows it.
+function getKnownBinding(
+  knownBindings: KnownBindings,
+  name: string,
+): EvaluatedValue {
+  const binding = knownBindings[name];
+  return binding && binding.shadowDepth === 0 ? binding.value : undefined;
+}
+
 // The vars that static-eval reads, looked up on demand. Copying every binding
 // into a new object on each evaluation made analysis quadratic in the file
 // size. Same lookup order as that copy: import.meta, then known bindings
@@ -287,10 +296,9 @@ export function createStaticEvalVars(
     if (typeof name !== 'string') return undefined;
     let value;
     if (name === 'import.meta') value = { url: importMetaUrl };
-    else if (hasOwn.call(knownBindings, name)) {
-      const binding = knownBindings[name];
-      value = binding.shadowDepth === 0 ? binding.value : undefined;
-    } else if (hasOwn.call(globals, name)) value = { value: globals[name] };
+    else if (hasOwn.call(knownBindings, name))
+      value = getKnownBinding(knownBindings, name);
+    else if (hasOwn.call(globals, name)) value = { value: globals[name] };
     else return undefined;
     // A proxy can only report a property its target lacks as configurable.
     return { value, writable: true, enumerable: true, configurable: true };
@@ -494,18 +502,8 @@ export default async function analyze(
       value: value,
     };
   }
-  function getKnownBinding(name: string): EvaluatedValue {
-    const binding = knownBindings[name];
-    if (binding) {
-      if (binding.shadowDepth === 0) {
-        return binding.value;
-      }
-    }
-    return undefined;
-  }
   function hasKnownBindingValue(name: string) {
-    const binding = knownBindings[name];
-    return binding && binding.shadowDepth === 0;
+    return getKnownBinding(knownBindings, name) !== undefined;
   }
 
   if ((isESM || job.mixedModules) && isAst(ast)) {
@@ -709,7 +707,9 @@ export default async function analyze(
           // __dirname,  __filename
           if (
             (typeof (binding = (
-              getKnownBinding(node.name) as StaticValue | undefined
+              getKnownBinding(knownBindings, node.name) as
+                | StaticValue
+                | undefined
             )?.value) === 'string' &&
               binding.match(absoluteRegEx)) ||
             (binding &&
@@ -754,8 +754,7 @@ export default async function analyze(
         ) {
           if (
             node.callee.name === 'require' &&
-            knownBindings.require &&
-            knownBindings.require.shadowDepth === 0
+            hasKnownBindingValue('require')
           ) {
             await processRequireArg(node.arguments[0]);
             return;
@@ -778,8 +777,7 @@ export default async function analyze(
           node.callee.type === 'MemberExpression' &&
           node.callee.object.type === 'Identifier' &&
           node.callee.object.name === 'require' &&
-          knownBindings.require &&
-          knownBindings.require.shadowDepth === 0 &&
+          hasKnownBindingValue('require') &&
           node.callee.property.type === 'Identifier' &&
           !node.callee.computed &&
           node.callee.property.name === 'resolve' &&
@@ -821,8 +819,7 @@ export default async function analyze(
                 node.arguments.length === 1 &&
                 node.arguments[0].type === 'Literal' &&
                 node.callee.type === 'Identifier' &&
-                (!knownBindings.require ||
-                  knownBindings.require.shadowDepth === 0)
+                (!knownBindings.require || hasKnownBindingValue('require'))
               ) {
                 await processRequireArg(node.arguments[0]);
               }
@@ -1220,7 +1217,7 @@ export default async function analyze(
                   decl.init.type === 'CallExpression' &&
                   decl.init.callee.type === 'Identifier' &&
                   decl.init.callee.name === 'require' &&
-                  knownBindings.require.shadowDepth === 0 &&
+                  hasKnownBindingValue('require') &&
                   decl.init.arguments[0] &&
                   decl.init.arguments[0].type === 'Identifier' &&
                   decl.init.arguments[0].name === args[0].name,
@@ -1263,7 +1260,10 @@ export default async function analyze(
         node.callee.type === 'Identifier' &&
         node.callee.name === 'createRequire'
       ) {
-        const createRequireBinding = getKnownBinding('createRequire');
+        const createRequireBinding = getKnownBinding(
+          knownBindings,
+          'createRequire',
+        );
         if (
           createRequireBinding &&
           'value' in createRequireBinding &&
