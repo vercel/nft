@@ -267,6 +267,44 @@ export interface AnalyzeResult {
   isESM: boolean;
 }
 
+type KnownBindings = Record<
+  string,
+  { shadowDepth: number; value: StaticValue | ConditionalValue }
+>;
+
+// The vars that static-eval reads, looked up on demand. Copying every binding
+// into a new object on each evaluation made analysis quadratic in the file
+// size. Same lookup order as that copy: import.meta, then known bindings
+// (shadowed ones resolve to undefined), then globals. Lookups are live, so
+// bindings added or removed later are seen.
+export function createStaticEvalVars(
+  knownBindings: KnownBindings,
+  globals: Record<string, unknown>,
+  importMetaUrl: string,
+) {
+  const hasOwn = Object.prototype.hasOwnProperty;
+  function getDescriptor(name: string | symbol) {
+    if (typeof name !== 'string') return undefined;
+    let value;
+    if (name === 'import.meta') value = { url: importMetaUrl };
+    else if (hasOwn.call(knownBindings, name)) {
+      const binding = knownBindings[name];
+      value = binding.shadowDepth === 0 ? binding.value : undefined;
+    } else if (hasOwn.call(globals, name)) value = { value: globals[name] };
+    else return undefined;
+    // A proxy can only report a property its target lacks as configurable.
+    return { value, writable: true, enumerable: true, configurable: true };
+  }
+  return new Proxy(Object.create(null), {
+    getOwnPropertyDescriptor: (_target, name) => getDescriptor(name),
+    get: (_target, name) => getDescriptor(name)?.value,
+    has: (_target, name) => getDescriptor(name) !== undefined,
+    set: () => {
+      throw new Error('static eval vars are read-only');
+    },
+  });
+}
+
 // Helper: process pino transport config object
 // Extracts target strings from { target: '...' }, { targets: [...] }, or { pipeline: [...] }
 async function processPinoTransportObject(
@@ -400,13 +438,7 @@ export default async function analyze(
 
   const importMetaUrl = pathToFileURL(id).href;
 
-  const knownBindings: Record<
-    string,
-    {
-      shadowDepth: number;
-      value: StaticValue | ConditionalValue;
-    }
-  > = Object.assign(Object.create(null), {
+  const knownBindings: KnownBindings = Object.assign(Object.create(null), {
     __dirname: {
       shadowDepth: 0,
       value: { value: path.resolve(id, '..') },
@@ -510,17 +542,14 @@ export default async function analyze(
     }
   }
 
+  const staticEvalVars = createStaticEvalVars(
+    knownBindings,
+    globalBindings,
+    importMetaUrl,
+  );
   async function computePureStaticValue(expr: Node, computeBranches = true) {
-    const vars = Object.create(null);
-    Object.keys(globalBindings).forEach((name) => {
-      vars[name] = { value: globalBindings[name] };
-    });
-    Object.keys(knownBindings).forEach((name) => {
-      vars[name] = getKnownBinding(name);
-    });
-    vars['import.meta'] = { url: importMetaUrl };
     // evaluate returns undefined for non-statically-analyzable
-    const result = await evaluate(expr, vars, computeBranches);
+    const result = await evaluate(expr, staticEvalVars, computeBranches);
     return result;
   }
 
