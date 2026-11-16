@@ -794,6 +794,21 @@ export default async function analyze(
         ) {
           await processRequireArg(node.arguments[0]);
           return;
+        } else if (
+          node.callee.type === 'MemberExpression' &&
+          node.callee.object.type === 'MetaProperty' &&
+          node.callee.object.meta.name === 'import' &&
+          node.callee.object.property.name === 'meta' &&
+          (node.callee.computed
+            ? node.callee.property.type === 'Literal' &&
+              node.callee.property.value === 'resolve'
+            : node.callee.property.type === 'Identifier' &&
+              node.callee.property.name === 'resolve') &&
+          node.arguments.length
+        ) {
+          // import.meta.resolve('./file.js') resolves like import()
+          await processRequireArg(node.arguments[0], true);
+          return;
         }
 
         const calleeValue =
