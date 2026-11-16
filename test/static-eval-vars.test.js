@@ -3,7 +3,7 @@ const { createStaticEvalVars } = require('../out/analyze.js');
 const hasOwn = (obj, name) => Object.prototype.hasOwnProperty.call(obj, name);
 
 // The eager copy that computePureStaticValue used to build on every call.
-function copyVars(knownBindings, globals, importMetaUrl) {
+function copyVars(knownBindings, globals, importMeta) {
   const vars = Object.create(null);
   for (const name of Object.keys(globals))
     vars[name] = { value: globals[name] };
@@ -11,7 +11,7 @@ function copyVars(knownBindings, globals, importMetaUrl) {
     const binding = knownBindings[name];
     vars[name] = binding.shadowDepth === 0 ? binding.value : undefined;
   }
-  vars['import.meta'] = { url: importMetaUrl };
+  vars['import.meta'] = importMeta;
   return vars;
 }
 
@@ -27,9 +27,13 @@ function setup() {
     Buffer: 'global Buffer',
     MONGOOSE_DRIVER_PATH: undefined,
   };
-  const importMetaUrl = 'file:///app/index.js';
-  const vars = createStaticEvalVars(knownBindings, globals, importMetaUrl);
-  return { knownBindings, globals, importMetaUrl, vars };
+  const importMeta = {
+    url: 'file:///app/index.js',
+    dirname: '/app',
+    filename: '/app/index.js',
+  };
+  const vars = createStaticEvalVars(knownBindings, globals, importMeta);
+  return { knownBindings, globals, importMeta, vars };
 }
 
 const PROTOTYPE_NAMES = [
@@ -40,8 +44,8 @@ const PROTOTYPE_NAMES = [
 ];
 
 test('matches the eager copy for every lookup', () => {
-  const { knownBindings, globals, importMetaUrl, vars } = setup();
-  const copy = copyVars(knownBindings, globals, importMetaUrl);
+  const { knownBindings, globals, importMeta, vars } = setup();
+  const copy = copyVars(knownBindings, globals, importMeta);
   const names = [
     'import.meta',
     ...Object.keys(knownBindings),
@@ -61,7 +65,11 @@ test('matches the eager copy for every lookup', () => {
 
 test('looks up import.meta, then known bindings, then globals', () => {
   const { vars } = setup();
-  expect(vars['import.meta']).toEqual({ url: 'file:///app/index.js' });
+  expect(vars['import.meta']).toEqual({
+    url: 'file:///app/index.js',
+    dirname: '/app',
+    filename: '/app/index.js',
+  });
   expect(vars.URL).toEqual({ value: 'known URL' });
   expect(vars.Buffer).toEqual({ value: 'global Buffer' });
 });
