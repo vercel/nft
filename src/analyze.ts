@@ -267,6 +267,44 @@ export interface AnalyzeResult {
   isESM: boolean;
 }
 
+type KnownBindings = Record<
+  string,
+  { shadowDepth: number; value: StaticValue | ConditionalValue }
+>;
+
+// The vars that static-eval reads, looked up on demand. Copying every binding
+// into a new object on each evaluation made analysis quadratic in the file
+// size. Same lookup order as that copy: import.meta, then known bindings
+// (shadowed ones resolve to undefined), then globals. Lookups are live, so
+// bindings added or removed later are seen.
+export function createStaticEvalVars(
+  knownBindings: KnownBindings,
+  globals: Record<string, unknown>,
+  importMeta: { url: string; dirname: string; filename: string },
+) {
+  const hasOwn = Object.prototype.hasOwnProperty;
+  function getDescriptor(name: string | symbol) {
+    if (typeof name !== 'string') return undefined;
+    let value;
+    if (name === 'import.meta') value = importMeta;
+    else if (hasOwn.call(knownBindings, name)) {
+      const binding = knownBindings[name];
+      value = binding.shadowDepth === 0 ? binding.value : undefined;
+    } else if (hasOwn.call(globals, name)) value = { value: globals[name] };
+    else return undefined;
+    // A proxy can only report a property its target lacks as configurable.
+    return { value, writable: true, enumerable: true, configurable: true };
+  }
+  return new Proxy(Object.create(null), {
+    getOwnPropertyDescriptor: (_target, name) => getDescriptor(name),
+    get: (_target, name) => getDescriptor(name)?.value,
+    has: (_target, name) => getDescriptor(name) !== undefined,
+    set: () => {
+      throw new Error('static eval vars are read-only');
+    },
+  });
+}
+
 // Helper: process pino transport config object
 // Extracts target strings from { target: '...' }, { targets: [...] }, or { pipeline: [...] }
 async function processPinoTransportObject(
@@ -398,22 +436,20 @@ export default async function analyze(
     }
   }
 
-  const importMetaUrl = pathToFileURL(id).href;
+  const importMeta = {
+    url: pathToFileURL(id).href,
+    dirname: path.resolve(id, '..'),
+    filename: id,
+  };
 
-  const knownBindings: Record<
-    string,
-    {
-      shadowDepth: number;
-      value: StaticValue | ConditionalValue;
-    }
-  > = Object.assign(Object.create(null), {
+  const knownBindings: KnownBindings = Object.assign(Object.create(null), {
     __dirname: {
       shadowDepth: 0,
-      value: { value: path.resolve(id, '..') },
+      value: { value: importMeta.dirname },
     },
     __filename: {
       shadowDepth: 0,
-      value: { value: id },
+      value: { value: importMeta.filename },
     },
     process: {
       shadowDepth: 0,
@@ -510,17 +546,14 @@ export default async function analyze(
     }
   }
 
+  const staticEvalVars = createStaticEvalVars(
+    knownBindings,
+    globalBindings,
+    importMeta,
+  );
   async function computePureStaticValue(expr: Node, computeBranches = true) {
-    const vars = Object.create(null);
-    Object.keys(globalBindings).forEach((name) => {
-      vars[name] = { value: globalBindings[name] };
-    });
-    Object.keys(knownBindings).forEach((name) => {
-      vars[name] = getKnownBinding(name);
-    });
-    vars['import.meta'] = { url: importMetaUrl };
     // evaluate returns undefined for non-statically-analyzable
-    const result = await evaluate(expr, vars, computeBranches);
+    const result = await evaluate(expr, staticEvalVars, computeBranches);
     return result;
   }
 
@@ -699,14 +732,17 @@ export default async function analyze(
         node.type === 'MemberExpression' &&
         node.object.type === 'MetaProperty' &&
         node.object.meta.name === 'import' &&
-        node.object.property.name === 'meta' &&
-        (node.property.computed ? node.property.value : node.property.name) ===
-          'url'
+        node.object.property.name === 'meta'
       ) {
-        // import.meta.url leaf trigger
-        staticChildValue = { value: importMetaUrl };
-        staticChildNode = node;
-        await backtrack(parent, this);
+        // import.meta.url, import.meta.dirname and import.meta.filename leaf triggers
+        const prop: string = node.property.computed
+          ? node.property.value
+          : node.property.name;
+        if (prop === 'url' || prop === 'dirname' || prop === 'filename') {
+          staticChildValue = { value: importMeta[prop] };
+          staticChildNode = node;
+          await backtrack(parent, this);
+        }
       } else if (node.type === 'ImportExpression') {
         await processRequireArg(node.source, true);
         return;
@@ -757,6 +793,21 @@ export default async function analyze(
           node.arguments.length
         ) {
           await processRequireArg(node.arguments[0]);
+          return;
+        } else if (
+          node.callee.type === 'MemberExpression' &&
+          node.callee.object.type === 'MetaProperty' &&
+          node.callee.object.meta.name === 'import' &&
+          node.callee.object.property.name === 'meta' &&
+          (node.callee.computed
+            ? node.callee.property.type === 'Literal' &&
+              node.callee.property.value === 'resolve'
+            : node.callee.property.type === 'Identifier' &&
+              node.callee.property.name === 'resolve') &&
+          node.arguments.length
+        ) {
+          // import.meta.resolve('./file.js') resolves like import()
+          await processRequireArg(node.arguments[0], true);
           return;
         }
 
@@ -1023,9 +1074,9 @@ export default async function analyze(
                     // Resolve the srcURL from the parentURL
                     const srcURL = new URL(pathOrSpecifier, parentURL).href;
 
-                    const currentDirURL = importMetaUrl.slice(
+                    const currentDirURL = importMeta.url.slice(
                       0,
-                      importMetaUrl.lastIndexOf('/'),
+                      importMeta.url.lastIndexOf('/'),
                     );
 
                     // Resolve the srcPath relative to the current file
