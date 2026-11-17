@@ -69,7 +69,7 @@ const { fileList } = await nodeFileTrace(files, {
 
 Only the `"node"` export should be explicitly included (if needed) when specifying the exact export condition list. The `"require"`, `"import"` and `"default"` conditions will always be traced as defined, no matter what custom conditions are set.
 
-The `"module-sync"` condition is enabled by default when tracing with Node.js 22 or newer. Set `moduleSyncCatchall` to trace both the `module-sync` branch and the normal runtime/fallback branch:
+The `"module-sync"` condition is enabled by default. Set `moduleSyncCatchall` to trace both the `module-sync` branch and the normal runtime/fallback branch:
 
 ```js
 const { fileList } = await nodeFileTrace(files, {
