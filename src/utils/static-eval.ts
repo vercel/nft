@@ -19,10 +19,14 @@ export async function evaluate(
   // 2. Conditional value: { test, ifTrue, else }
   // 3. Unknown value: undefined
   function walk(node: Node) {
-    if (!cache.has(node)) {
-      cache.set(node, visitors[node.type]?.call(state, node, walk));
+    if (cache.has(node)) {
+      return cache.get(node);
     }
-    return cache.get(node);
+    const result = visitors[node.type]?.call(state, node, walk);
+    if (node.type === 'CallExpression') {
+      cache.set(node, result);
+    }
+    return result;
   }
 }
 
