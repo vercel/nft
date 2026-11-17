@@ -1,0 +1,21 @@
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { nodeFileTrace } = require('../out/index.js');
+
+it('traces a file with a long string concatenation', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nft-static-eval-'));
+  try {
+    const chain = Array.from({ length: 3000 }, (_, i) => `'line ${i}\\n'`);
+    fs.writeFileSync(
+      path.join(dir, 'index.js'),
+      `exports.profiles = { ca: [${chain.join(' + ')}] };\n`,
+    );
+    const { fileList } = await nodeFileTrace([path.join(dir, 'index.js')], {
+      base: dir,
+    });
+    expect([...fileList]).toEqual(['index.js']);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

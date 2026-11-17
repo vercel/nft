@@ -11,6 +11,7 @@ export async function evaluate(
     computeBranches,
     vars,
   };
+  const chainValues = new Map<Node, EvaluatedValue>();
   return walk(ast);
 
   // walk returns:
@@ -18,12 +19,36 @@ export async function evaluate(
   // 2. Conditional value: { test, ifTrue, else }
   // 3. Unknown value: undefined
   function walk(node: Node) {
+    if (chainValues.has(node)) {
+      return Promise.resolve(chainValues.get(node));
+    }
+    if (isBinaryNode(node) && isBinaryNode(node.left)) {
+      return walkBinaryChain(node);
+    }
     const visitor = visitors[node.type];
     if (visitor) {
       return visitor.call(state, node, walk);
     }
     return undefined;
   }
+
+  async function walkBinaryChain(node: Node) {
+    const chain: Node[] = [];
+    for (let left = node.left; isBinaryNode(left); left = left.left) {
+      chain.push(left);
+    }
+    for (let i = chain.length - 1; i >= 0; i--) {
+      chainValues.set(
+        chain[i],
+        await visitors[chain[i].type].call(state, chain[i], walk),
+      );
+    }
+    return visitors[node.type].call(state, node, walk);
+  }
+}
+
+function isBinaryNode(node: Node) {
+  return node.type === 'BinaryExpression' || node.type === 'LogicalExpression';
 }
 
 export const UNKNOWN = Symbol();
