@@ -11,6 +11,7 @@ export async function evaluate(
     computeBranches,
     vars,
   };
+  const cache = new Map<Node, ReturnType<Walk>>();
   return walk(ast);
 
   // walk returns:
@@ -18,11 +19,10 @@ export async function evaluate(
   // 2. Conditional value: { test, ifTrue, else }
   // 3. Unknown value: undefined
   function walk(node: Node) {
-    const visitor = visitors[node.type];
-    if (visitor) {
-      return visitor.call(state, node, walk);
+    if (!cache.has(node)) {
+      cache.set(node, visitors[node.type]?.call(state, node, walk));
     }
-    return undefined;
+    return cache.get(node);
   }
 }
 
