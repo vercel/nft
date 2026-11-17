@@ -403,6 +403,7 @@ export class Job {
         if (
           ext === '.js' ||
           ext === '.mjs' ||
+          ext === '.cjs' ||
           ext === '.node' ||
           ext === '' ||
           (this.ts &&
