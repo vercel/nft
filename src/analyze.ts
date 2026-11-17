@@ -28,12 +28,37 @@ import mapboxPregyp from '@mapbox/node-pre-gyp';
 import { Job } from './node-file-trace';
 import { fileURLToPath, pathToFileURL, URL } from 'url';
 
+const isStringLiteral = (node: Node) =>
+  node.type === 'Literal' && typeof node.value === 'string';
+
+function foldStringConcat(BaseParser: any): any {
+  return class extends BaseParser {
+    buildBinary(
+      startPos: number,
+      startLoc: unknown,
+      left: Node,
+      right: Node,
+      op: string,
+      logical: boolean,
+    ) {
+      if (op === '+' && isStringLiteral(left) && isStringLiteral(right)) {
+        const node = this.startNodeAt(startPos, startLoc);
+        node.value = left.value + right.value;
+        node.raw = this.input.slice(startPos, right.end);
+        return this.finishNode(node, 'Literal');
+      }
+      return super.buildBinary(startPos, startLoc, left, right, op, logical);
+    }
+  };
+}
+
 // Note: these should be deprecated over time as they ship in Acorn core
 const acorn = Parser.extend(
   //require("acorn-class-fields"),
   //require("acorn-static-class-features"),
   //require("acorn-private-class-elements")
   require('acorn-import-attributes').importAttributesOrAssertions,
+  foldStringConcat,
 );
 
 import os from 'os';
