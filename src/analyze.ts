@@ -12,6 +12,7 @@ import { Parser } from 'acorn';
 import bindings from 'bindings';
 import { isIdentifierRead, isLoop, isVarLoop } from './utils/ast-helpers';
 import { glob } from 'glob';
+import { fsIgnoreEnoent } from './utils/fs-ignore-enoent';
 import { getPackageBase } from './utils/get-package-base';
 import { pregyp, nbind } from './utils/binary-locators';
 import {
@@ -385,6 +386,7 @@ export default async function analyze(
         ignore: assetDirPath + '/**/node_modules/**/*',
         dot: true,
         nodir: true,
+        fs: fsIgnoreEnoent,
       });
       files
         .filter(
@@ -604,6 +606,7 @@ export default async function analyze(
         mark: true,
         ignore: wildcardDirPath + '/**/node_modules/**/*',
         nodir: true,
+        fs: fsIgnoreEnoent,
       });
       files
         .filter(

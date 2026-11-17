@@ -22,6 +22,7 @@ const skipOnWindows = [
   'yarn-workspaces-base-root',
   'yarn-workspace-esm',
   'asset-symlink',
+  'asset-symlink-broken',
   'require-symlink',
 ];
 const skipOnMac = [];
