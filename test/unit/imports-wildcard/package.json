@@ -2,6 +2,10 @@
   "name": "imports-wildcard",
   "type": "module",
   "imports": {
-    "#*.js": "./dist/*.js"
+    "#*": "./generic/*.js",
+    "#*.js": "./dist/*.js",
+    "#lib/*/index.js": "./src/*/main.js",
+    "#dep/*": "depper/*",
+    "#missing/*": "not-installed/*"
   }
 }
