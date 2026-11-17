@@ -262,12 +262,15 @@ const repeatGlobRegEx = /([\/\\]\*\*[\/\\]\*)+/g;
 
 export interface AnalyzeResult {
   assets: Set<string>;
-  // Specifiers loaded with CommonJS semantics: require() calls (including
-  // ones made through module.createRequire in an ES module) and other
-  // require-like references. Resolved with the "require" condition.
+  // Resolved with the "require" condition. Mostly specifiers loaded with
+  // CommonJS semantics: require() calls (including ones made through
+  // module.createRequire in an ES module) and other require-like references.
+  // Also receives the files matched by wildcard require() and import()
+  // expressions; those are paths, so conditions do not apply to them.
   deps: Set<string>;
-  // Specifiers loaded with ES module semantics: static import / export from
-  // declarations and dynamic import(). Resolved with the "import" condition.
+  // Resolved with the "import" condition. Mostly specifiers loaded with ES
+  // module semantics: static import / export from declarations and dynamic
+  // import(). Also receives module.register() sources.
   imports: Set<string>;
   isESM: boolean;
 }
