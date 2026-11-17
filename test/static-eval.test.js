@@ -57,3 +57,42 @@ it('parses a body that starts with a string concatenation', async () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('traces past a value static-eval throws on', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nft-static-eval-'));
+  try {
+    fs.writeFileSync(
+      path.join(dir, 'index.js'),
+      `const big = 10n;\nconst doubled = typeof big === 'bigint' ? big * 2n : big * 2;\nrequire('./dep');\n`,
+    );
+    fs.writeFileSync(path.join(dir, 'dep.js'), 'module.exports = 1;\n');
+    const { fileList, warnings } = await nodeFileTrace(
+      [path.join(dir, 'index.js')],
+      { base: dir },
+    );
+    expect([...fileList].sort()).toEqual(['dep.js', 'index.js']);
+    expect([...warnings]).toEqual([]);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('warns instead of rejecting on an expression too deep to analyze', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nft-static-eval-'));
+  try {
+    fs.writeFileSync(
+      path.join(dir, 'index.js'),
+      `var a = {};\nexports.x = a${'.b'.repeat(50000)};\n`,
+    );
+    const { fileList, warnings } = await nodeFileTrace(
+      [path.join(dir, 'index.js')],
+      { base: dir },
+    );
+    expect([...fileList]).toEqual(['index.js']);
+    expect([...warnings].map((w) => w.message)).toEqual([
+      expect.stringContaining('Failed to analyze'),
+    ]);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

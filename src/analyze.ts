@@ -582,8 +582,11 @@ export default async function analyze(
   );
   async function computePureStaticValue(expr: Node, computeBranches = true) {
     // evaluate returns undefined for non-statically-analyzable
-    const result = await evaluate(expr, staticEvalVars, computeBranches);
-    return result;
+    try {
+      return await evaluate(expr, staticEvalVars, computeBranches);
+    } catch {
+      return undefined;
+    }
   }
 
   // statically determinable leaves are tracked, and inlined when the
