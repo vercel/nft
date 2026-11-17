@@ -31,6 +31,10 @@ import { fileURLToPath, pathToFileURL, URL } from 'url';
 const isStringLiteral = (node: Node) =>
   node.type === 'Literal' && typeof node.value === 'string';
 
+const keepRawForDirectiveCheck = (literal: Node, source: string) => {
+  literal.raw = source;
+};
+
 function foldStringConcat(BaseParser: any): any {
   return class extends BaseParser {
     buildBinary(
@@ -44,7 +48,7 @@ function foldStringConcat(BaseParser: any): any {
       if (op === '+' && isStringLiteral(left) && isStringLiteral(right)) {
         const node = this.startNodeAt(startPos, startLoc);
         node.value = left.value + right.value;
-        node.raw = this.input.slice(startPos, right.end);
+        keepRawForDirectiveCheck(node, this.input.slice(startPos, right.end));
         return this.finishNode(node, 'Literal');
       }
       return super.buildBinary(startPos, startLoc, left, right, op, logical);

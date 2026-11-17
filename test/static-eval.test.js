@@ -39,3 +39,21 @@ it('traces a file with many chained concat calls', async () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('parses a body that starts with a string concatenation', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nft-static-eval-'));
+  try {
+    fs.writeFileSync(
+      path.join(dir, 'index.js'),
+      `'a' + 'b';\nfunction f() {\n  'c' + 'd';\n}\n`,
+    );
+    const { fileList, warnings } = await nodeFileTrace(
+      [path.join(dir, 'index.js')],
+      { base: dir },
+    );
+    expect([...fileList]).toEqual(['index.js']);
+    expect([...warnings]).toEqual([]);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
