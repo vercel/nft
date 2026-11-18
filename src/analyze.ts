@@ -1335,12 +1335,22 @@ export default async function analyze(
         : assetPath.slice(0, assetPath.lastIndexOf(path.sep, wildcardIndex));
     const isWildcardInFinalSegment =
       wildcardIndex !== -1 && assetPath.indexOf(path.sep, wildcardIndex) === -1;
+    const lastWildcardIndex = assetPath.lastIndexOf(WILDCARD);
+    const wildcardSegmentEnd = assetPath.indexOf(path.sep, lastWildcardIndex);
+    const hasFixedWildcardSuffix =
+      lastWildcardIndex !== -1 &&
+      (wildcardSegmentEnd === -1
+        ? assetPath.length
+        : wildcardSegmentEnd) >
+        lastWildcardIndex + WILDCARD.length;
     // do not emit __dirname
     if (assetPath === dir + wildcardSuffix) return false;
     // do not emit cwd
     if (
       assetPath === cwd + wildcardSuffix ||
-      (wildcardDir === cwd && isWildcardInFinalSegment)
+      (wildcardDir === cwd &&
+        isWildcardInFinalSegment &&
+        !hasFixedWildcardSuffix)
     )
       return false;
     // do not emit node_modules
