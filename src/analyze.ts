@@ -1339,9 +1339,7 @@ export default async function analyze(
     const wildcardSegmentEnd = assetPath.indexOf(path.sep, lastWildcardIndex);
     const hasFixedWildcardSuffix =
       lastWildcardIndex !== -1 &&
-      (wildcardSegmentEnd === -1
-        ? assetPath.length
-        : wildcardSegmentEnd) >
+      (wildcardSegmentEnd === -1 ? assetPath.length : wildcardSegmentEnd) >
         lastWildcardIndex + WILDCARD.length;
     // do not emit __dirname
     if (assetPath === dir + wildcardSuffix) return false;
