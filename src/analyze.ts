@@ -28,12 +28,41 @@ import mapboxPregyp from '@mapbox/node-pre-gyp';
 import { Job } from './node-file-trace';
 import { fileURLToPath, pathToFileURL, URL } from 'url';
 
+const isStringLiteral = (node: Node) =>
+  node.type === 'Literal' && typeof node.value === 'string';
+
+const keepRawForDirectiveCheck = (literal: Node, source: string) => {
+  literal.raw = source;
+};
+
+function foldStringConcat(BaseParser: any): any {
+  return class extends BaseParser {
+    buildBinary(
+      startPos: number,
+      startLoc: unknown,
+      left: Node,
+      right: Node,
+      op: string,
+      logical: boolean,
+    ) {
+      if (op === '+' && isStringLiteral(left) && isStringLiteral(right)) {
+        const node = this.startNodeAt(startPos, startLoc);
+        node.value = left.value + right.value;
+        keepRawForDirectiveCheck(node, this.input.slice(startPos, right.end));
+        return this.finishNode(node, 'Literal');
+      }
+      return super.buildBinary(startPos, startLoc, left, right, op, logical);
+    }
+  };
+}
+
 // Note: these should be deprecated over time as they ship in Acorn core
 const acorn = Parser.extend(
   //require("acorn-class-fields"),
   //require("acorn-static-class-features"),
   //require("acorn-private-class-elements")
   require('acorn-import-attributes').importAttributesOrAssertions,
+  foldStringConcat,
 );
 
 import os from 'os';
@@ -288,13 +317,13 @@ type KnownBindings = Record<
 export function createStaticEvalVars(
   knownBindings: KnownBindings,
   globals: Record<string, unknown>,
-  importMetaUrl: string,
+  importMeta: { url: string; dirname: string; filename: string },
 ) {
   const hasOwn = Object.prototype.hasOwnProperty;
   function getDescriptor(name: string | symbol) {
     if (typeof name !== 'string') return undefined;
     let value;
-    if (name === 'import.meta') value = { url: importMetaUrl };
+    if (name === 'import.meta') value = importMeta;
     else if (hasOwn.call(knownBindings, name)) {
       const binding = knownBindings[name];
       value = binding.shadowDepth === 0 ? binding.value : undefined;
@@ -444,16 +473,20 @@ export default async function analyze(
     }
   }
 
-  const importMetaUrl = pathToFileURL(id).href;
+  const importMeta = {
+    url: pathToFileURL(id).href,
+    dirname: path.resolve(id, '..'),
+    filename: id,
+  };
 
   const knownBindings: KnownBindings = Object.assign(Object.create(null), {
     __dirname: {
       shadowDepth: 0,
-      value: { value: path.resolve(id, '..') },
+      value: { value: importMeta.dirname },
     },
     __filename: {
       shadowDepth: 0,
-      value: { value: id },
+      value: { value: importMeta.filename },
     },
     process: {
       shadowDepth: 0,
@@ -553,12 +586,15 @@ export default async function analyze(
   const staticEvalVars = createStaticEvalVars(
     knownBindings,
     globalBindings,
-    importMetaUrl,
+    importMeta,
   );
   async function computePureStaticValue(expr: Node, computeBranches = true) {
     // evaluate returns undefined for non-statically-analyzable
-    const result = await evaluate(expr, staticEvalVars, computeBranches);
-    return result;
+    try {
+      return await evaluate(expr, staticEvalVars, computeBranches);
+    } catch {
+      return undefined;
+    }
   }
 
   // statically determinable leaves are tracked, and inlined when the
@@ -736,14 +772,17 @@ export default async function analyze(
         node.type === 'MemberExpression' &&
         node.object.type === 'MetaProperty' &&
         node.object.meta.name === 'import' &&
-        node.object.property.name === 'meta' &&
-        (node.property.computed ? node.property.value : node.property.name) ===
-          'url'
+        node.object.property.name === 'meta'
       ) {
-        // import.meta.url leaf trigger
-        staticChildValue = { value: importMetaUrl };
-        staticChildNode = node;
-        await backtrack(parent, this);
+        // import.meta.url, import.meta.dirname and import.meta.filename leaf triggers
+        const prop: string = node.property.computed
+          ? node.property.value
+          : node.property.name;
+        if (prop === 'url' || prop === 'dirname' || prop === 'filename') {
+          staticChildValue = { value: importMeta[prop] };
+          staticChildNode = node;
+          await backtrack(parent, this);
+        }
       } else if (node.type === 'ImportExpression') {
         await processRequireArg(node.source, true);
         return;
@@ -795,6 +834,21 @@ export default async function analyze(
         ) {
           await processRequireArg(node.arguments[0]);
           return;
+        } else if (
+          node.callee.type === 'MemberExpression' &&
+          node.callee.object.type === 'MetaProperty' &&
+          node.callee.object.meta.name === 'import' &&
+          node.callee.object.property.name === 'meta' &&
+          (node.callee.computed
+            ? node.callee.property.type === 'Literal' &&
+              node.callee.property.value === 'resolve'
+            : node.callee.property.type === 'Identifier' &&
+              node.callee.property.name === 'resolve') &&
+          node.arguments.length
+        ) {
+          // import.meta.resolve('./file.js') resolves like import()
+          await processRequireArg(node.arguments[0], true);
+          return;
         }
 
         const calleeValue =
@@ -823,6 +877,16 @@ export default async function analyze(
           typeof calleeValue.value === 'symbol'
         ) {
           switch (calleeValue.value) {
+            // const require = module.createRequire(...) in any spelling:
+            // namespace, default or named import under any local name
+            case CREATE_REQUIRE:
+              if (
+                parent.type === 'VariableDeclarator' &&
+                parent.id.type === 'Identifier'
+              ) {
+                setKnownBinding(parent.id.name, { value: BOUND_REQUIRE });
+              }
+              break;
             // customRequireWrapper('...')
             case BOUND_REQUIRE:
               if (
@@ -1060,9 +1124,9 @@ export default async function analyze(
                     // Resolve the srcURL from the parentURL
                     const srcURL = new URL(pathOrSpecifier, parentURL).href;
 
-                    const currentDirURL = importMetaUrl.slice(
+                    const currentDirURL = importMeta.url.slice(
                       0,
-                      importMetaUrl.lastIndexOf('/'),
+                      importMeta.url.lastIndexOf('/'),
                     );
 
                     // Resolve the srcPath relative to the current file
@@ -1246,44 +1310,6 @@ export default async function analyze(
             }
           }
           if (returned) setKnownBinding(fnName.name, { value: BOUND_REQUIRE });
-        }
-      }
-      // Support module.createRequire
-      if (
-        node.type === 'CallExpression' &&
-        node.callee.type === 'MemberExpression' &&
-        node.callee.object.type === 'Identifier' &&
-        node.callee.object.name === 'module' &&
-        node.callee.property.type === 'Identifier' &&
-        node.callee.property.name === 'createRequire'
-      ) {
-        if (
-          parent.type === 'VariableDeclarator' &&
-          parent.id.type === 'Identifier'
-        ) {
-          const requireName = parent.id.name;
-          setKnownBinding(requireName, { value: BOUND_REQUIRE });
-        }
-      }
-      // Support createRequire from named import: import { createRequire } from 'node:module'
-      if (
-        node.type === 'CallExpression' &&
-        node.callee.type === 'Identifier' &&
-        node.callee.name === 'createRequire'
-      ) {
-        const createRequireBinding = getKnownBinding('createRequire');
-        if (
-          createRequireBinding &&
-          'value' in createRequireBinding &&
-          createRequireBinding.value === CREATE_REQUIRE
-        ) {
-          if (
-            parent.type === 'VariableDeclarator' &&
-            parent.id.type === 'Identifier'
-          ) {
-            const requireName = parent.id.name;
-            setKnownBinding(requireName, { value: BOUND_REQUIRE });
-          }
         }
       }
     },

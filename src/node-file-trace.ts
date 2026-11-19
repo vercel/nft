@@ -387,7 +387,15 @@ export class Job {
       // analyze should not have any side-effects e.g. calling `job.emitFile`
       // directly as this will not be included in the cachedAnalysis and won't
       // be emit for successive runs that leverage the cache
-      analyzeResult = await analyze(realPath, source.toString(), this);
+      try {
+        analyzeResult = await analyze(realPath, source.toString(), this);
+      } catch (e: any) {
+        if (!(e instanceof RangeError)) throw e;
+        this.warnings.add(
+          new Error(`Failed to analyze ${realPath}:\n${e.message}`),
+        );
+        return;
+      }
       this.analysisCache.set(realPath, analyzeResult);
     }
 
@@ -403,6 +411,7 @@ export class Job {
         if (
           ext === '.js' ||
           ext === '.mjs' ||
+          ext === '.cjs' ||
           ext === '.node' ||
           ext === '' ||
           (this.ts &&
