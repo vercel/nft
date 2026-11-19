@@ -26,3 +26,5 @@ allowBuilds:
   unix-dgram: false
   zeromq: false
 minimumReleaseAge: 2880
+minimumReleaseAgeExclude:
+  - glob
