@@ -178,7 +178,7 @@ for (const { testName, isRoot } of unitTests) {
         // Ignore.
       }
 
-      const { fileList, reasons } = await nodeFileTrace(
+      const { fileList, reasons, warnings } = await nodeFileTrace(
         inputFileNames.map((file) => join(unitPath, file)),
         {
           conditions: testOpts.conditions,
@@ -290,6 +290,9 @@ for (const { testName, isRoot } of unitTests) {
           'dependency',
           'asset',
         ]);
+      }
+      if (testName === 'pkg-main-html') {
+        expect([...warnings]).toEqual([]);
       }
       let sortedFileList = [...fileList].sort();
 
