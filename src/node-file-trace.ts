@@ -357,7 +357,7 @@ export class Job {
 
     const emitted = await this.emitFile(path, 'dependency', parent);
     if (!emitted) return;
-    if (realPath.endsWith('.json')) return;
+    if (realPath.endsWith('.json') || realPath.endsWith('.html')) return;
     if (realPath.endsWith('.node')) return await sharedLibEmit(realPath, this);
 
     // .js and .ts files can change behavior based on { "type": "module" }
