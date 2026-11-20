@@ -413,7 +413,10 @@ export class Job {
           ext === '.mjs' ||
           ext === '.cjs' ||
           ext === '.node' ||
-          ext === '' ||
+          // only regular files can be analyzed, an extensionless asset may be
+          // a socket or point to one
+          (ext === '' &&
+            (await this.isFile(await this.realpath(asset, realPath)))) ||
           (this.ts &&
             (ext === '.ts' || ext === '.tsx') &&
             asset.startsWith(this.base) &&
