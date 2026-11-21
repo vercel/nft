@@ -476,7 +476,7 @@ const visitors: Record<
     for (let i = 0; i < node.properties.length; i++) {
       const prop = node.properties[i];
       const keyValue = prop.computed
-        ? walk(prop.key)
+        ? await walk(prop.key)
         : prop.key && { value: prop.key.name || prop.key.value };
       if (!keyValue || 'test' in keyValue) return;
       const value = await walk(prop.value);
