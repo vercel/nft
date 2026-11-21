@@ -203,9 +203,9 @@ const visitors: Record<
       if (op === '^')
         return { test: r.test, ifTrue: v ^ r.ifTrue, else: v ^ r.else };
       if (op === '&&')
-        return { test: r.test, ifTrue: v && r.ifTrue, else: l && r.else };
+        return { test: r.test, ifTrue: v && r.ifTrue, else: v && r.else };
       if (op === '||')
-        return { test: r.test, ifTrue: v || r.ifTrue, else: l || r.else };
+        return { test: r.test, ifTrue: v || r.ifTrue, else: v || r.else };
     } else if ('value' in l && 'value' in r) {
       if (op === '==') return { value: l.value == r.value };
       if (op === '===') return { value: l.value === r.value };
