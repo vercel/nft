@@ -1,0 +1,10 @@
+[
+  "package.json",
+  "test/unit/argon2-cjs/input.js",
+  "test/unit/argon2-cjs/node_modules/argon2/argon2.cjs",
+  "test/unit/argon2-cjs/node_modules/argon2/build/Release/argon2.node",
+  "test/unit/argon2-cjs/node_modules/argon2/lib/binding/napi-v3/argon2.node",
+  "test/unit/argon2-cjs/node_modules/argon2/package.json",
+  "test/unit/argon2-cjs/node_modules/argon2/prebuilds/linux-x64/argon2.glibc.node",
+  "test/unit/argon2-cjs/node_modules/argon2/prebuilds/linux-x64/argon2.musl.node"
+]
