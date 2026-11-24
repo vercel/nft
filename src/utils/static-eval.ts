@@ -366,6 +366,26 @@ const visitors: Record<
           },
         };
       }
+      if (typeof obj.value === 'string' && node.property.name === 'replace') {
+        return {
+          value: {
+            [FUNCTION]: (pattern: unknown, replacement: unknown) => {
+              if (
+                typeof replacement !== 'string' ||
+                !(
+                  typeof pattern === 'string' ||
+                  (pattern instanceof RegExp && !/[*+?{|]/.test(pattern.source))
+                ) ||
+                [obj.value, pattern, replacement].some((v) =>
+                  String(v).includes(WILDCARD),
+                )
+              )
+                return UNKNOWN;
+              return obj.value.replace(pattern, replacement);
+            },
+          },
+        };
+      }
       if (typeof obj.value === 'object' && obj.value !== null) {
         const objValue = obj.value as any;
         if (node.computed) {

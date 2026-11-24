@@ -96,3 +96,15 @@ it('warns instead of rejecting on an expression too deep to analyze', async () =
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('returns unknown for string replace calls it cannot evaluate safely', async () => {
+  const { parse } = require('acorn');
+  const { evaluate } = require('../out/utils/static-eval.js');
+  for (const code of [
+    `'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!'.replace(/(a+)+$/, '')`,
+    `'abc'.replace(/b/, () => 'X')`,
+  ]) {
+    const ast = parse(code, { ecmaVersion: 'latest' }).body[0].expression;
+    expect(await evaluate(ast)).toBeUndefined();
+  }
+});
