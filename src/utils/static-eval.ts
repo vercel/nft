@@ -424,10 +424,17 @@ const visitors: Record<
                 )
               )
                 return UNKNOWN;
-              const result = obj.value.replace(safePattern, replacement);
-              return result.length > MAX_REPLACE_RESULT_LENGTH
-                ? UNKNOWN
-                : result;
+              const matches =
+                typeof safePattern !== 'string' && safePattern.global
+                  ? obj.value.length + 1
+                  : 1;
+              if (
+                replacement.includes('$') ||
+                obj.value.length + matches * replacement.length >
+                  MAX_REPLACE_RESULT_LENGTH
+              )
+                return UNKNOWN;
+              return obj.value.replace(safePattern, replacement);
             },
           },
         };
