@@ -109,6 +109,14 @@ it('returns unknown for string replace calls it cannot evaluate safely', async (
   }
 });
 
+it('returns unknown for a global replace on a string over 1 KiB', async () => {
+  const { parse } = require('acorn');
+  const { evaluate } = require('../out/utils/static-eval.js');
+  const code = `'${'b'.repeat(1025)}'.replace(/b/g, 'b')`;
+  const ast = parse(code, { ecmaVersion: 'latest' }).body[0].expression;
+  expect(await evaluate(ast)).toBeUndefined();
+});
+
 const execFile = require('util').promisify(require('child_process').execFile);
 
 async function traceInChild(dir, input) {

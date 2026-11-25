@@ -35,6 +35,7 @@ export const FUNCTION = Symbol();
 export const WILDCARD = '\x1a';
 export const wildcardRegEx = /\x1a/g;
 const MAX_REPLACE_RESULT_LENGTH = 32 * 1024;
+const MAX_GLOBAL_REPLACE_INPUT_LENGTH = 1024;
 
 const regExpSource = Object.getOwnPropertyDescriptor(
   RegExp.prototype,
@@ -424,10 +425,14 @@ const visitors: Record<
                 )
               )
                 return UNKNOWN;
-              const matches =
-                typeof safePattern !== 'string' && safePattern.global
-                  ? obj.value.length + 1
-                  : 1;
+              const isGlobal =
+                typeof safePattern !== 'string' && safePattern.global;
+              if (
+                isGlobal &&
+                obj.value.length > MAX_GLOBAL_REPLACE_INPUT_LENGTH
+              )
+                return UNKNOWN;
+              const matches = isGlobal ? obj.value.length + 1 : 1;
               if (
                 replacement.includes('$') ||
                 obj.value.length + matches * replacement.length >
