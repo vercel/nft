@@ -96,3 +96,60 @@ it('warns instead of rejecting on an expression too deep to analyze', async () =
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('returns unknown for string replace calls it cannot evaluate safely', async () => {
+  const { parse } = require('acorn');
+  const { evaluate } = require('../out/utils/static-eval.js');
+  for (const code of [
+    `'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!'.replace(/(a+)+$/, '')`,
+    `'abc'.replace(/b/, () => 'X')`,
+  ]) {
+    const ast = parse(code, { ecmaVersion: 'latest' }).body[0].expression;
+    expect(await evaluate(ast)).toBeUndefined();
+  }
+});
+
+it('returns unknown for a global replace on a string over 1 KiB', async () => {
+  const { parse } = require('acorn');
+  const { evaluate } = require('../out/utils/static-eval.js');
+  const code = `'${'b'.repeat(1025)}'.replace(/b/g, 'b')`;
+  const ast = parse(code, { ecmaVersion: 'latest' }).body[0].expression;
+  expect(await evaluate(ast)).toBeUndefined();
+});
+
+const execFile = require('util').promisify(require('child_process').execFile);
+
+async function traceInChild(dir, input) {
+  const { stdout } = await execFile(
+    process.execPath,
+    [
+      '--max-old-space-size=128',
+      path.join(__dirname, '../out/cli.js'),
+      'print',
+      input,
+    ],
+    { cwd: dir, timeout: 10_000 },
+  );
+  return stdout.split('\n').filter((line) => line && line !== 'FILELIST:');
+}
+
+it('traces a regex whose exec is overridden with a native function', async () => {
+  const dir = path.join(__dirname, 'fixtures/regexp-exec-override');
+  expect(await traceInChild(dir, 'input.js')).toEqual(['dep.js', 'input.js']);
+}, 15_000);
+
+it('stops evaluating replace calls that grow the string', async () => {
+  const double = (c, n) => `'${c}'` + `.replace(/${c}/g, '${c}${c}')`.repeat(n);
+  for (const expr of [
+    double('a', 27),
+    `${double('a', 15)}.replace(/a/g, '${'$&'.repeat(8192)}')`,
+  ]) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nft-static-eval-'));
+    try {
+      fs.writeFileSync(path.join(dir, 'index.js'), `require(${expr});\n`);
+      expect(await traceInChild(dir, 'index.js')).toEqual(['index.js']);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+}, 30_000);
