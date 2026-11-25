@@ -34,6 +34,45 @@ export const UNKNOWN = Symbol();
 export const FUNCTION = Symbol();
 export const WILDCARD = '\x1a';
 export const wildcardRegEx = /\x1a/g;
+const MAX_REPLACE_RESULT_LENGTH = 32 * 1024;
+const MAX_GLOBAL_REPLACE_INPUT_LENGTH = 1024;
+
+const regExpSource = Object.getOwnPropertyDescriptor(
+  RegExp.prototype,
+  'source',
+)!.get!;
+const regExpFlags = (
+  [
+    ['d', 'hasIndices'],
+    ['g', 'global'],
+    ['i', 'ignoreCase'],
+    ['m', 'multiline'],
+    ['s', 'dotAll'],
+    ['u', 'unicode'],
+    ['v', 'unicodeSets'],
+    ['y', 'sticky'],
+  ] as const
+).flatMap(([flag, name]) => {
+  const get = Object.getOwnPropertyDescriptor(RegExp.prototype, name)?.get;
+  return get ? [{ flag, get }] : [];
+});
+
+function cloneRegExp(value: unknown): RegExp | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  try {
+    const source: unknown = regExpSource.call(value);
+    if (typeof source !== 'string') return undefined;
+    let flags = '';
+    for (const { flag, get } of regExpFlags) {
+      const set: unknown = get.call(value);
+      if (typeof set !== 'boolean') return undefined;
+      if (set) flags += flag;
+    }
+    return new RegExp(source, flags);
+  } catch {
+    return undefined;
+  }
+}
 
 function countWildcards(str: string) {
   wildcardRegEx.lastIndex = 0;
@@ -363,6 +402,45 @@ const visitors: Record<
         return {
           value: {
             [FUNCTION]: (...args: string[]) => obj.value.concat(args),
+          },
+        };
+      }
+      if (typeof obj.value === 'string' && node.property.name === 'replace') {
+        return {
+          value: {
+            [FUNCTION]: (pattern: unknown, replacement: unknown) => {
+              if (typeof replacement !== 'string') return UNKNOWN;
+              const safePattern =
+                typeof pattern === 'string' ? pattern : cloneRegExp(pattern);
+              if (safePattern === undefined) return UNKNOWN;
+              const patternText =
+                typeof safePattern === 'string'
+                  ? safePattern
+                  : safePattern.source;
+              if (
+                (typeof safePattern !== 'string' &&
+                  /[*+?{|]/.test(patternText)) ||
+                [obj.value, patternText, replacement].some((v) =>
+                  v.includes(WILDCARD),
+                )
+              )
+                return UNKNOWN;
+              const isGlobal =
+                typeof safePattern !== 'string' && safePattern.global;
+              if (
+                isGlobal &&
+                obj.value.length > MAX_GLOBAL_REPLACE_INPUT_LENGTH
+              )
+                return UNKNOWN;
+              const matches = isGlobal ? obj.value.length + 1 : 1;
+              if (
+                replacement.includes('$') ||
+                obj.value.length + matches * replacement.length >
+                  MAX_REPLACE_RESULT_LENGTH
+              )
+                return UNKNOWN;
+              return obj.value.replace(safePattern, replacement);
+            },
           },
         };
       }
