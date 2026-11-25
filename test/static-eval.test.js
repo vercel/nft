@@ -108,3 +108,13 @@ it('returns unknown for string replace calls it cannot evaluate safely', async (
     expect(await evaluate(ast)).toBeUndefined();
   }
 });
+
+it('replaces with a fresh copy of a regex whose exec is overridden', async () => {
+  const { parse } = require('acorn');
+  const { evaluate } = require('../out/utils/static-eval.js');
+  const ast = parse(`'abc'.replace(re, 'X')`, { ecmaVersion: 'latest' }).body[0]
+    .expression;
+  const re = /b/g;
+  re.exec = () => Object.assign([''], { index: 0 });
+  expect(await evaluate(ast, { re: { value: re } })).toEqual({ value: 'aXc' });
+});

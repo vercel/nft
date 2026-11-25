@@ -35,6 +35,43 @@ export const FUNCTION = Symbol();
 export const WILDCARD = '\x1a';
 export const wildcardRegEx = /\x1a/g;
 
+const regExpSource = Object.getOwnPropertyDescriptor(
+  RegExp.prototype,
+  'source',
+)!.get!;
+const regExpFlags = (
+  [
+    ['d', 'hasIndices'],
+    ['g', 'global'],
+    ['i', 'ignoreCase'],
+    ['m', 'multiline'],
+    ['s', 'dotAll'],
+    ['u', 'unicode'],
+    ['v', 'unicodeSets'],
+    ['y', 'sticky'],
+  ] as const
+).flatMap(([flag, name]) => {
+  const get = Object.getOwnPropertyDescriptor(RegExp.prototype, name)?.get;
+  return get ? [{ flag, get }] : [];
+});
+
+function cloneRegExp(value: unknown): RegExp | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  try {
+    const source: unknown = regExpSource.call(value);
+    if (typeof source !== 'string') return undefined;
+    let flags = '';
+    for (const { flag, get } of regExpFlags) {
+      const set: unknown = get.call(value);
+      if (typeof set !== 'boolean') return undefined;
+      if (set) flags += flag;
+    }
+    return new RegExp(source, flags);
+  } catch {
+    return undefined;
+  }
+}
+
 function countWildcards(str: string) {
   wildcardRegEx.lastIndex = 0;
   let cnt = 0;
@@ -370,18 +407,23 @@ const visitors: Record<
         return {
           value: {
             [FUNCTION]: (pattern: unknown, replacement: unknown) => {
+              if (typeof replacement !== 'string') return UNKNOWN;
+              const safePattern =
+                typeof pattern === 'string' ? pattern : cloneRegExp(pattern);
+              if (safePattern === undefined) return UNKNOWN;
+              const patternText =
+                typeof safePattern === 'string'
+                  ? safePattern
+                  : safePattern.source;
               if (
-                typeof replacement !== 'string' ||
-                !(
-                  typeof pattern === 'string' ||
-                  (pattern instanceof RegExp && !/[*+?{|]/.test(pattern.source))
-                ) ||
-                [obj.value, pattern, replacement].some((v) =>
-                  String(v).includes(WILDCARD),
+                (typeof safePattern !== 'string' &&
+                  /[*+?{|]/.test(patternText)) ||
+                [obj.value, patternText, replacement].some((v) =>
+                  v.includes(WILDCARD),
                 )
               )
                 return UNKNOWN;
-              return obj.value.replace(pattern, replacement);
+              return obj.value.replace(safePattern, replacement);
             },
           },
         };
