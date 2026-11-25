@@ -34,6 +34,7 @@ export const UNKNOWN = Symbol();
 export const FUNCTION = Symbol();
 export const WILDCARD = '\x1a';
 export const wildcardRegEx = /\x1a/g;
+const MAX_REPLACE_RESULT_LENGTH = 32 * 1024;
 
 const regExpSource = Object.getOwnPropertyDescriptor(
   RegExp.prototype,
@@ -423,7 +424,10 @@ const visitors: Record<
                 )
               )
                 return UNKNOWN;
-              return obj.value.replace(safePattern, replacement);
+              const result = obj.value.replace(safePattern, replacement);
+              return result.length > MAX_REPLACE_RESULT_LENGTH
+                ? UNKNOWN
+                : result;
             },
           },
         };

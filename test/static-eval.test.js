@@ -109,12 +109,31 @@ it('returns unknown for string replace calls it cannot evaluate safely', async (
   }
 });
 
-it('replaces with a fresh copy of a regex whose exec is overridden', async () => {
-  const { parse } = require('acorn');
-  const { evaluate } = require('../out/utils/static-eval.js');
-  const ast = parse(`'abc'.replace(re, 'X')`, { ecmaVersion: 'latest' }).body[0]
-    .expression;
-  const re = /b/g;
-  re.exec = () => Object.assign([''], { index: 0 });
-  expect(await evaluate(ast, { re: { value: re } })).toEqual({ value: 'aXc' });
-});
+const execFile = require('util').promisify(require('child_process').execFile);
+
+async function traceInChild(dir, input) {
+  const { stdout } = await execFile(
+    process.execPath,
+    [path.join(__dirname, '../out/cli.js'), 'print', input],
+    { cwd: dir, timeout: 10_000 },
+  );
+  return stdout.split('\n').filter((line) => line && line !== 'FILELIST:');
+}
+
+it('traces a regex whose exec is overridden with a native function', async () => {
+  const dir = path.join(__dirname, 'fixtures/regexp-exec-override');
+  expect(await traceInChild(dir, 'input.js')).toEqual(['dep.js', 'input.js']);
+}, 15_000);
+
+it('stops evaluating chained replace calls that grow the string', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nft-static-eval-'));
+  try {
+    fs.writeFileSync(
+      path.join(dir, 'index.js'),
+      `require('a'${".replace(/a/g, 'aa')".repeat(27)});\n`,
+    );
+    expect(await traceInChild(dir, 'index.js')).toEqual(['index.js']);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}, 15_000);
