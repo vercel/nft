@@ -134,7 +134,7 @@ const visitors: Record<
 
     let l = await walk(node.left);
 
-    if (!l && op !== '+') return;
+    if (!l && op !== '+' && op !== '||' && op !== '??') return;
 
     let r = await walk(node.right);
 
@@ -147,11 +147,13 @@ const visitors: Record<
         r &&
         'value' in r &&
         typeof r.value === 'string'
-      )
+      ) {
+        if (op !== '+') return r;
         return {
           value: WILDCARD + r.value,
           wildcards: [node.left, ...(r.wildcards || [])],
         };
+      }
       return;
     }
 
