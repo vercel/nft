@@ -11,7 +11,7 @@ import {
 import { Parser } from 'acorn';
 import bindings from 'bindings';
 import { isIdentifierRead, isLoop, isVarLoop } from './utils/ast-helpers';
-import { glob } from 'glob';
+import { glob, escape as escapeGlob } from 'glob';
 import { getPackageBase } from './utils/get-package-base';
 import { pregyp, nbind } from './utils/binary-locators';
 import {
@@ -289,6 +289,12 @@ function isAbsolutePathOrUrl(str: any): boolean {
 const BOUND_REQUIRE = Symbol();
 const repeatGlobRegEx = /([\/\\]\*\*[\/\\]\*)+/g;
 
+// Escape a directory path before using it as a glob prefix, so names
+// like `[id]`, `+(group)` or `{a,b}` are matched as plain text.
+function escapeGlobDir(dir: string) {
+  return escapeGlob(dir, { magicalBraces: true });
+}
+
 export interface AnalyzeResult {
   assets: Set<string>;
   // Resolved with the "require" condition. Mostly specifiers loaded with
@@ -417,9 +423,10 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + assetDirPath + wildcardPattern);
-      const files = await glob(assetDirPath + wildcardPattern, {
+      const globDirPath = escapeGlobDir(assetDirPath);
+      const files = await glob(globDirPath + wildcardPattern, {
         mark: true,
-        ignore: assetDirPath + '/**/node_modules/**/*',
+        ignore: globDirPath + '/**/node_modules/**/*',
         dot: true,
         nodir: true,
       });
@@ -640,9 +647,10 @@ export default async function analyze(
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       if (job.log) console.log('Globbing ' + wildcardDirPath + wildcardPattern);
-      const files = await glob(wildcardDirPath + wildcardPattern, {
+      const globDirPath = escapeGlobDir(wildcardDirPath);
+      const files = await glob(globDirPath + wildcardPattern, {
         mark: true,
-        ignore: wildcardDirPath + '/**/node_modules/**/*',
+        ignore: globDirPath + '/**/node_modules/**/*',
         nodir: true,
       });
       files
