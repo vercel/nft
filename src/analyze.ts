@@ -1416,6 +1416,28 @@ export default async function analyze(
         : path.resolve(value);
   }
 
+  async function emitLogicalFallbacks({ value, wildcards }: StaticValue) {
+    if (typeof value !== 'string' || !wildcards) return;
+    for (let i = 0; i < wildcards.length; i++) {
+      const node: Node = wildcards[i] as any;
+      if (
+        node.type !== 'LogicalExpression' ||
+        (node.operator !== '||' && node.operator !== '??')
+      )
+        continue;
+      const fallback = await computePureStaticValue(node.right, false);
+      if (!fallback || !('value' in fallback)) continue;
+      if (typeof fallback.value !== 'string') continue;
+      let index = 0;
+      const assetPath = value.replace(wildcardRegEx, (match) =>
+        index++ === i ? fallback.value : match,
+      );
+      try {
+        await emitAssetPath(resolveAbsolutePathOrUrl(assetPath));
+      } catch (e) {}
+    }
+  }
+
   async function emitStaticChildAsset() {
     if (!staticChildValue) {
       return;
@@ -1429,6 +1451,7 @@ export default async function analyze(
         const resolved = resolveAbsolutePathOrUrl(staticChildValue.value);
         await emitAssetPath(resolved);
       } catch (e) {}
+      await emitLogicalFallbacks(staticChildValue);
     } else if (
       'ifTrue' in staticChildValue &&
       'else' in staticChildValue &&
