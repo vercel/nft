@@ -22,7 +22,7 @@ export default async function resolveDependency(
   ) {
     const trailingSlash = specifier.endsWith('/');
     resolved = await resolvePath(
-      resolve(parent, '..', specifier) + (trailingSlash ? '/' : ''),
+      resolve(parent, '..', specifier) + (trailingSlash ? sep : ''),
       parent,
       job,
     );
@@ -62,7 +62,7 @@ async function resolveFile(
   parent: string,
   job: Job,
 ): Promise<string | undefined> {
-  if (path.endsWith('/')) return undefined;
+  if (path.endsWith(sep)) return undefined;
   path = await job.realpath(path, parent);
   if (await job.isFile(path)) return path;
   if (
@@ -86,7 +86,7 @@ async function resolveFile(
 }
 
 async function resolveDir(path: string, parent: string, job: Job) {
-  if (path.endsWith('/')) path = path.slice(0, -1);
+  if (path.endsWith(sep)) path = path.slice(0, -1);
   if (!(await job.isDir(path))) return;
   const pkgCfg = await getPkgCfg(path, job);
   if (pkgCfg && typeof pkgCfg.main === 'string') {
@@ -458,9 +458,13 @@ async function resolveRemappings(
         if (!key.startsWith('./') || !value.startsWith('./')) {
           continue;
         }
-        const keyResolved = await resolveFile(pkgPath + sep + key, parent, job);
+        const keyResolved = await resolveFile(
+          pkgPath + sep + toPath(key),
+          parent,
+          job,
+        );
         const valueResolved = await resolveFile(
-          pkgPath + sep + value,
+          pkgPath + sep + toPath(value),
           parent,
           job,
         );
@@ -632,7 +636,7 @@ async function resolvePackage(
   }
   for (const path of Object.keys(job.paths)) {
     if (path.endsWith('/') && name.startsWith(path)) {
-      const pathTarget = job.paths[path] + name.slice(path.length);
+      const pathTarget = job.paths[path] + toPath(name.slice(path.length));
       const resolved =
         (await resolveFile(pathTarget, parent, job)) ||
         (await resolveDir(pathTarget, parent, job));

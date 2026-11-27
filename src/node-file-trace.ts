@@ -141,7 +141,7 @@ export class Job {
     for (const path of Object.keys(paths)) {
       const trailer = paths[path].endsWith('/');
       const resolvedPath = resolve(base, paths[path]);
-      resolvedPaths[path] = resolvedPath + (trailer ? '/' : '');
+      resolvedPaths[path] = resolvedPath + (trailer ? sep : '');
     }
     this.paths = resolvedPaths;
     this.log = log;
