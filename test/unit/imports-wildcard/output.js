@@ -1,5 +1,11 @@
 [
+  "test/unit/imports-wildcard/dist/a$&b.js",
   "test/unit/imports-wildcard/dist/internal/marker.js",
+  "test/unit/imports-wildcard/dist/precedence.js",
   "test/unit/imports-wildcard/input.js",
-  "test/unit/imports-wildcard/package.json"
+  "test/unit/imports-wildcard/node_modules/depper/a$&b.js",
+  "test/unit/imports-wildcard/node_modules/depper/package.json",
+  "test/unit/imports-wildcard/node_modules/depper/thing.js",
+  "test/unit/imports-wildcard/package.json",
+  "test/unit/imports-wildcard/src/feature/main.js"
 ]
