@@ -4,7 +4,16 @@ import {
   NodeFileTraceReasons,
   NodeFileTraceReasonType,
 } from './types';
-import { basename, dirname, extname, join, relative, resolve, sep } from 'path';
+import {
+  basename,
+  dirname,
+  extname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+  sep,
+} from 'path';
 import analyze, { AnalyzeResult } from './analyze';
 import resolveDependency, { NotFoundError } from './resolve-dependency';
 import { isMatch } from 'picomatch';
@@ -14,6 +23,14 @@ import { CachedFileSystem } from './fs';
 function inPath(path: string, parent: string) {
   const pathWithSep = join(parent, sep);
   return path.startsWith(pathWithSep) && path !== pathWithSep;
+}
+
+// relative() ignores letter case on Windows, as the check in emitFile() does
+function isOutside(path: string, base: string) {
+  const fromBase = relative(base, path);
+  return (
+    fromBase === '..' || fromBase.startsWith('..' + sep) || isAbsolute(fromBase)
+  );
 }
 
 export async function nodeFileTrace(
@@ -124,7 +141,7 @@ export class Job {
     for (const path of Object.keys(paths)) {
       const trailer = paths[path].endsWith('/');
       const resolvedPath = resolve(base, paths[path]);
-      resolvedPaths[path] = resolvedPath + (trailer ? '/' : '');
+      resolvedPaths[path] = resolvedPath + (trailer ? sep : '');
     }
     this.paths = resolvedPaths;
     this.log = log;
@@ -264,9 +281,11 @@ export class Job {
       const parentPath = dirname(path);
       const resolved = resolve(parentPath, symlink);
       const realParent = await this.realpath(parentPath, parent);
-      if (inPath(path, realParent))
+      const realPath = await this.realpath(resolved, parent, seen);
+      // the target outside base is ignored, so its symlink would dangle
+      if (inPath(path, realParent) && !isOutside(realPath, this.base))
         await this.emitFile(path, 'resolve', parent, true);
-      return this.realpath(resolved, parent, seen);
+      return realPath;
     }
     // keep backtracking for realpath, emitting folder symlinks within base
     if (!inPath(path, this.base)) return path;
