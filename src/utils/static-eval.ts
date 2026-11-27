@@ -312,25 +312,10 @@ const visitors: Record<
           x.wildcards.forEach((w) => wildcards.push(w));
       } else {
         if (!this.computeBranches) return;
-        const arg = node.arguments[i];
-        const fallback: EvaluatedValue =
-          !predicate &&
-          wildcards.length === 0 &&
-          arg.type === 'LogicalExpression' &&
-          (arg.operator === '||' || arg.operator === '??')
-            ? await walk(arg.right)
-            : undefined;
-        if (
-          fallback &&
-          'value' in fallback &&
-          typeof fallback.value === 'string' &&
-          !fallback.wildcards
-        ) {
-          x = { test: arg.left, ifTrue: WILDCARD, else: fallback.value };
-        } else {
-          x = { value: WILDCARD };
-          wildcards.push(arg);
-        }
+        // this works because provided static functions
+        // operate on known string inputs
+        x = { value: WILDCARD };
+        wildcards.push(node.arguments[i]);
       }
       if ('test' in x) {
         if (wildcards.length) return;
