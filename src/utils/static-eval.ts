@@ -134,7 +134,7 @@ const visitors: Record<
 
     let l = await walk(node.left);
 
-    if (!l && op !== '+' && op !== '||' && op !== '??') return;
+    if (!l && op !== '+') return;
 
     let r = await walk(node.right);
 
@@ -147,13 +147,11 @@ const visitors: Record<
         r &&
         'value' in r &&
         typeof r.value === 'string'
-      ) {
-        if (op !== '+') return r;
+      )
         return {
           value: WILDCARD + r.value,
           wildcards: [node.left, ...(r.wildcards || [])],
         };
-      }
       return;
     }
 
@@ -314,10 +312,25 @@ const visitors: Record<
           x.wildcards.forEach((w) => wildcards.push(w));
       } else {
         if (!this.computeBranches) return;
-        // this works because provided static functions
-        // operate on known string inputs
-        x = { value: WILDCARD };
-        wildcards.push(node.arguments[i]);
+        const arg = node.arguments[i];
+        const fallback: EvaluatedValue =
+          !predicate &&
+          wildcards.length === 0 &&
+          arg.type === 'LogicalExpression' &&
+          (arg.operator === '||' || arg.operator === '??')
+            ? await walk(arg.right)
+            : undefined;
+        if (
+          fallback &&
+          'value' in fallback &&
+          typeof fallback.value === 'string' &&
+          !fallback.wildcards
+        ) {
+          x = { test: arg.left, ifTrue: WILDCARD, else: fallback.value };
+        } else {
+          x = { value: WILDCARD };
+          wildcards.push(arg);
+        }
       }
       if ('test' in x) {
         if (wildcards.length) return;
