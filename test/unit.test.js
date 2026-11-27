@@ -341,6 +341,18 @@ for (const { testName, isRoot } of unitTests) {
         sortedFileList = sortedFileList.map(normalizeReactIsLayout).sort();
         expected = expected.map(normalizeReactIsLayout).sort();
       }
+      if (testName === 'pixelmatch') {
+        // pnpm may place pixelmatch's pngjs dependency either nested under
+        // pixelmatch or hoisted at the root depending on the install graph.
+        const normalizePngjsLayout = (file) =>
+          file.replace(
+            /(^|[\\/])node_modules([\\/])pixelmatch[\\/]node_modules[\\/]pngjs(?=[\\/])/,
+            (_match, prefix, separator) =>
+              `${prefix}node_modules${separator}pngjs`,
+          );
+        sortedFileList = sortedFileList.map(normalizePngjsLayout).sort();
+        expected = expected.map(normalizePngjsLayout).sort();
+      }
       try {
         expect(sortedFileList).toEqual(expected);
       } catch (e) {
